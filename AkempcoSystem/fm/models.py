@@ -31,3 +31,26 @@ class UnitOfMeasure(models.Model):
 
     class Meta:
         ordering = ['uom_description']
+
+
+
+# Category model
+class Category(models.Model):
+    category_description = models.CharField(
+        _("Category description"), 
+        max_length=50, 
+        help_text='Use singular form.',
+        null=False
+    )
+    status = models.CharField(
+        _("Status"), 
+        max_length=10,
+        choices=STATUS,
+        default=ACTIVE
+    )
+
+    def __str__(self):
+        return self.category_description
+
+    class Meta:
+        ordering = ['category_description']
