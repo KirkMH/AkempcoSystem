@@ -1,0 +1,80 @@
+
+      <nav class="mt-2">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+          <li class="nav-item">
+            <a href="{% url 'dashboard' %}" class="nav-link {% block dashboard %}{% endblock %}">
+              <i class="nav-icon fas fa-tachometer-alt"></i>
+              <p>
+                Dashboard
+              </p>
+            </a>
+          </li>
+
+          <li class="nav-item" id="menu_fm">
+            <a href="#" class="nav-link">
+              <i class="nav-icon fas fa-file-signature"></i>
+              <p>
+                File Maintenance
+                <i class="fas fa-angle-left right"></i>
+              </p>
+            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item" id="menu1">
+                <a href="#" class="nav-link" id="menu_fm_product">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>Products</p>
+                </a>
+              </li>
+              <li class="nav-item" id="menu2">
+                <a href="#" class="nav-link" id="menu_fm_supplier">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>Suppliers</p>
+                </a>
+              </li>
+              <li class="nav-item" id="menu3">
+                <a href="#" class="nav-link" id="menu_fm_category">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>Categories</p>
+                </a>
+              </li>
+              <li class="nav-item" id="menu4">
+                <a href="#" class="nav-link" id="menu_fm_uom">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>Units of Measure</p>
+                </a>
+              </li>
+            </ul>
+          </li>
+
+          <li class="nav-item" id="menu_trans">
+            <a href="#" class="nav-link">
+              <i class="nav-icon fab fa-artstation"></i>
+              <p>
+                Transactions
+                <i class="fas fa-angle-left right"></i>
+              </p>
+            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item" id="menu5">
+                <a href="#" class="nav-link" id="menu_trans_po">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>Purchases</p>
+                </a>
+              </li>
+              <li class="nav-item" id="menu7">
+                <a href="#" class="nav-link" id="menu_trans_pricing">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>Price Management</p>
+                </a>
+              </li>
+              <li class="nav-item" id="menu8">
+                <a href="#" class="nav-link" id="menu_trans_rv">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>Requisition Voucher</p>
+                </a>
+              </li>
+            </ul>
+          </li>
+
+        </ul>
+      </nav>

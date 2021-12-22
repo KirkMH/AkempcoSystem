@@ -1,0 +1,39 @@
+{% extends '../base_accounts.html' %}
+{% load static %}
+
+{% block title %}Log in{% endblock title %}
+
+{% block content %}
+  <style>
+    label {
+      display: block;
+    }
+  </style>
+
+  <p class="login-box-msg">New user registration</p>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include '../includes/form.html' %}
+    {{ formset.as_p }}
+    <div class="row">
+      <div class="col-8">
+      </div>
+      <!-- /.col -->
+      <div class="col-4">
+        <button type="submit" class="btn btn-primary btn-block">Register</button>
+      </div>
+      <!-- /.col -->
+    </div>
+  </form>
+      
+
+{% block js %}
+  <script>
+    $(document).ready(function () {
+      $('#id_first_name').focus()
+    })
+  </script>
+{% endblock js %}
+  
+{% endblock content %}

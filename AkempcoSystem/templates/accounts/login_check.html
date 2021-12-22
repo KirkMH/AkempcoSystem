@@ -1,0 +1,16 @@
+{% extends '../base_accounts.html' %}
+{% load static %}
+
+{% block title %}Log in{% endblock title %}
+
+{% block content %}
+  
+    <p class="login-box-msg">Inactivated User</p>
+
+    <p>Sorry, your sign-in failed because you have not been activated by the administrator yet. Your registration details has been successfully submitted. Please wait for the administrator to activate your account before signing in.</p>
+  
+    <div class="col-12">
+        <a href="{% url 'login' %}" class="btn btn-default btn-block">Back to sign-in page</a>
+    </div>
+      
+{% endblock content %}

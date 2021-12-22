@@ -1,0 +1,4 @@
+label.required::after, .asteriskField {
+    content: ' *';
+    color: red;
+}

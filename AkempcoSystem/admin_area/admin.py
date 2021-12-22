@@ -5,6 +5,11 @@ from .models import UserDetail
 from django.utils.translation import gettext_lazy as _
 
 
+admin.site.site_header = 'AKEMPCO System Admin'
+admin.site.site_title  =  'AKEMPCO System Admin Area'
+admin.site.index_title  =  'AKEMPCO System Admin'
+
+
 # Define an inline admin descriptor for UserDetail model
 # which acts a bit like a singleton
 class UserDetailInline(admin.StackedInline):

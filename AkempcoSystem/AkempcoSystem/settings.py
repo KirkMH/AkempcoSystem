@@ -37,10 +37,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
+    'multiselectfield', # to store multiple values in a field
+    'widget_tweaks',
+    'crispy_forms',
 
     # internally-created apps
     'admin_area',
 ]
+
+# setting the default pack to be used by crispy-form
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -50,6 +57,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'AkempcoSystem.urls'
@@ -86,9 +94,9 @@ DATABASES = {
     }
 }
 
-# import dj_database_url 
-# prod_db  =  dj_database_url.config(conn_max_age=500)
-# DATABASES['default'].update(prod_db)
+import dj_database_url 
+prod_db  =  dj_database_url.config(conn_max_age=500)
+DATABASES['default'].update(prod_db)
 
 
 # Password validation
@@ -136,3 +144,14 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# the login route/URL
+LOGIN_URL = 'login'
+# which route to take after logging in
+LOGIN_REDIRECT_URL = 'login_check'
+# which route to take after logging out
+LOGOUT_REDIRECT_URL = 'login'
+
+# other settings required by check --deploy
+# SECURE_SSL_REDIRECT = True
+CSRF_COOKIE_SECURE = True
