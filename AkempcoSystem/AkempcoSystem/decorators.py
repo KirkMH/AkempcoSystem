@@ -1,5 +1,5 @@
 from django.core.exceptions import PermissionDenied
-from admin_trans.models import Feature
+from admin_area.models import Feature
 
 def xx(feature):
     def wrap(request, *args, **kwargs):
