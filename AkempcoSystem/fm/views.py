@@ -49,13 +49,13 @@ class UomListView(ListView):
         if key:
             object_list = object_list.filter(
                 Q(uom_description__icontains=key) |
-                Q(status__icontains=key)
+                Q(status_icontains=key)
             )
         return object_list
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        return add_search_key(self.request, context)       
+        return add_search_key(self.request, context)    
     
     
 @method_decorator(login_required, name='dispatch')
