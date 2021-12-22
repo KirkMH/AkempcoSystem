@@ -32,13 +32,13 @@ class NewCategoryForm(forms.ModelForm):
     required_css_class = 'required'
     class Meta:
         model = Category
-        fields = ['category_description']
+        exclude = ['status']
 
 class UpdateCategoryForm(forms.ModelForm):
     required_css_class = 'required'
     class Meta:
         model = Category
-        fields = ['category_description', 'status']
+        fields = '__all__'
         
 
 ############################

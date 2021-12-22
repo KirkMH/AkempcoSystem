@@ -1,6 +1,8 @@
 from django.db import models
-from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
+
+from django.contrib.auth.models import User
+from admin_area.models import UserDetail
 
 # will be used for the status of different models
 ACTIVE = 'ACTIVE'
@@ -41,6 +43,12 @@ class Category(models.Model):
         max_length=50, 
         help_text='Use singular form.',
         null=False
+    )
+    oic = models.ForeignKey(
+        UserDetail, 
+        verbose_name=_("Officer-in-Charge"), 
+        on_delete=models.RESTRICT,
+        null=True
     )
     status = models.CharField(
         _("Status"), 

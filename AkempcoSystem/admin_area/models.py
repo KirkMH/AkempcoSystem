@@ -76,7 +76,11 @@ class UserDetail(models.Model):
     )
 
     def __str__(self):
-        return "Details of %s" % self.user.username
+        # TODO: Return full name if available
+        # if self.user.firstname:
+        #     pass
+        # else:
+        return "%s" % self.user.username
 
     def get_permissions(self):
         list = []
