@@ -44,6 +44,7 @@ INSTALLED_APPS = [
 
     # internally-created apps
     'admin_area',
+    'fm',
 ]
 
 # setting the default pack to be used by crispy-form
