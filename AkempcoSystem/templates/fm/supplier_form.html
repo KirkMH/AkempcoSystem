@@ -1,0 +1,68 @@
+{% extends '../base.html' %}
+{% load static %}
+
+{% block page_title %}
+
+{% if supplier %}
+Edit Supplier
+{% else %}
+New Supplier    
+{% endif %}
+    
+{% endblock page_title %}
+
+{% block css %}
+  <link rel="stylesheet" href="{% static 'css/asterisk_on_required.css' %}">
+{% endblock css %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'supplier_list' %}">Supplier</a></li>
+    <li class="breadcrumb-item active">
+        
+        {% if supplier %}
+            Edit
+        {% else %}
+            New
+        {% endif %}
+            
+    </li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+    <div class="card m-4">
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="card-header">
+                <h3 class="card-title">Please fill in all the fields marked with an <label class="required">asterisk</label>.</h3>
+            </div>
+
+            <div class="card-body">
+                <div class="col-lg-6 col-md-8 col-sm-10 col-xs-12">
+                    {% include '../includes/form.html' %}
+                </div>
+            </div>
+            
+            <div class="card-footer">
+                
+                {% if not supplier %}
+                <button type="submit" class="btn btn-primary" name="another">Save and add another</button>
+                {% endif %}
+                    
+                <button type="submit" class="btn btn-success" name="save">Save</button>
+                <a href="{% url 'supplier_list' %}" class="btn btn-default">Cancel</a>    
+            </div>
+        </form>
+    </div>
+{% endblock main_content %}
+
+
+{% block js %}
+    <script>
+        $(document).ready(function() {
+            $("#menu_fm").addClass("menu-open")
+            $("#menu_fm_supplier").addClass("active")
+        })
+    </script>
+{% endblock js %}

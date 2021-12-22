@@ -1,0 +1,72 @@
+{% extends '../base.html' %}
+{% load static %}
+
+{% block page_title %}Supplier list{% endblock page_title %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item active">Supplier</li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+<div class="card m-4">
+    <form method="get">
+        <div class="card-header">
+            <div class="row">
+            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                <a href="{% url 'new_supplier' %}" class="btn btn-primary">New</a>
+            </div>
+            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                {% include 'includes/search_tool.html' %}
+            </div>
+            </div>
+        </div>
+    </form>
+    <div class="card-body table-responsive">
+        <table class="table table-hover table-head-fixed table-sm">
+                <thead>
+                    <tr>
+                        <th class="text-center">Action</th>
+                        <th>Supplier</th>
+                        <th>Address</th>
+                        <th>Contact Person</th>
+                        <th>Contact Information</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for supplier in suppliers %}
+                        <tr>
+                            <td class="text-center">
+                                <a href="{% url 'supplier_detail' supplier.pk %}" title="View details"><i class="far fa-eye"></i></a>
+                                <a href="{% url 'edit_supplier' supplier.pk %}" title="Edit"><i class="far fa-edit"></i></a>
+                            </td>
+                            <td>{{ supplier.supplier_name }}</td>
+                            <td>{{ supplier.address }}</td>
+                            <td>{{ supplier.contact_person }}</td>
+                            <td>{{ supplier.contact_info }}</td>
+                            <td>{{ supplier.email }}</td>
+                            <td>{{ supplier.status }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="card-footer">
+            {% include 'includes/pagination.html' %}
+        </div>
+    </div>
+    
+{% endblock main_content %}
+
+
+{% block js %}
+    <script>
+        $(document).ready(function() {
+            $("#menu_fm").addClass("menu-open")
+            $("#menu_fm_supplier").addClass("active")
+        })
+    </script>
+{% endblock js %}
