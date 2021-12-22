@@ -32,6 +32,7 @@
                         <th>Contact Person</th>
                         <th>Contact Information</th>
                         <th>Email</th>
+                        <th>Deducts VAT?</th>
                         <th>Status</th>
                     </tr>
                 </thead>
@@ -47,6 +48,7 @@
                             <td>{{ supplier.contact_person }}</td>
                             <td>{{ supplier.contact_info }}</td>
                             <td>{{ supplier.email }}</td>
+                            <td class="text-center">{{ supplier.less_vat|yesno:"Yes, No" }}</td>
                             <td>{{ supplier.status }}</td>
                         </tr>
                     {% endfor %}

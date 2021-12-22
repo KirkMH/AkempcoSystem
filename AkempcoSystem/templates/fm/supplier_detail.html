@@ -15,11 +15,16 @@
         <div class="card-header">
             <h3>{{ supplier.supplier_name }}</h3>
             <h5 class="card-subtitle mb-2 text-muted">{{ supplier.address }}</h5>
+            
+            {% if supplier.less_vat %}
+            <h5 class="card-subtitle mb-2 text-muted text-italic">This supplier deducts VAT from total.</h5>
+            {% endif %}
+                
         </div>
         <div class="card-body">
             <div class="row mb-2">
                 <div class="col-lg-6 col-md-6 col-sm-6">
-                    <p class="card-text"><span class="text-muted">Contact number: </span>{{ supplier.contact_number }}</p>
+                    <p class="card-text"><span class="text-muted">Contact information: </span>{{ supplier.contact_info }}</p>
                 </div>
                 <div class="col-lg-6 col-md-6 col-sm-6">
                     <p class="card-text"><span class="text-muted">Email: </span>{{ supplier.email }}</p>
