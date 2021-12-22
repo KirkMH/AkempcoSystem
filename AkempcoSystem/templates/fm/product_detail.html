@@ -1,0 +1,125 @@
+{% extends '../base.html' %}
+{% load static %}
+{% load humanize %}
+{% load form_tags %}
+
+{% block page_title %}Product details{% endblock page_title %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'product_list' %}">Product</a></li>
+    <li class="breadcrumb-item active">Details</li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+    <div class="card m-4">
+        <div class="card-header">
+            <h3>{{ product.short_name }}</h3>
+            <h5 class="card-subtitle mb-2 text-muted">{{ product.barcode }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-2">
+                <div class="col-lg-12 col-md-12 col-sm-12">
+                    <p class="card-text"><span class="text-muted">Full Description: </span>{{ product.full_description }}</p>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-lg-4 col-md-4 col-sm-4">
+                    <p class="card-text"><span class="text-muted">Category: </span>{{ product.category.category_description }}</p>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-4">
+                    <p class="card-text"><span class="text-muted">Reorder Point: </span>{{ product.reorder_point }}</p>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-4">
+                    <p class="card-text"><span class="text-muted">Ceiling Qty: </span>{{ product.ceiling_qty }}</p>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-lg-4 col-md-4 col-sm-4">
+                    <p class="card-text"><span class="text-muted">Unit of Measure: </span>{{ product.uom }}</p>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-4">
+                    <p class="card-text"><span class="text-muted">Wholesale Qty: </span>{{ product.wholesale_qty }}</p>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-4">
+                    <p class="card-text"><span class="text-muted">Tax Type: </span>{{ product.tax_type }}</p>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-lg-4 col-md-4 col-sm-4">
+                    <p class="card-text"><span class="text-muted"><abbr title="Suggested Retail Price">SRP</abbr>: </span>{{ product.suggested_retail_price|peso }}</p>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-4">
+                    <p class="card-text"><span class="text-muted">Retail price: </span>{{ product.selling_price|peso }}</p>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-4">
+                    <p class="card-text"><span class="text-muted">Wholesale price: </span>{{ product.wholesale_price|peso }}</p>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-lg-4 col-md-4 col-sm-4">
+                    <p class="card-text"><span class="text-muted">Consigned?: </span>{{ product.is_consigned }}</p>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-4">
+                    <p class="card-text"><span class="text-muted">Buyer's information needed?: </span>{{ product.is_buyer_info_required }}</p>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-4">
+                    <p class="card-text"><span class="text-muted">Last price update: </span>{{ product.price_updated_on|naturaltime }}</p>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-lg-4 col-md-4 col-sm-4">
+                    <p class="card-text"><span class="text-muted">Created: </span>{{ product.created_at|naturaltime }}</p>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-lg-6 col-md-6 col-sm-6">
+                    <p class="card-text"><span class="text-muted">Other information: </span>
+                       <div class="ml-4 mr-4">{{ product.other_info }}</div>
+                    </p>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-6">
+                    <p class="card-text"><span class="text-muted">Supplier list: </span>
+                       <div class="ml-4 mr-4">
+                            <ul>
+                                {% for supplier in product.suppliers.all %}
+                                <li>
+                                    <a href="{% url 'supplier_detail' supplier.pk %}" title="View details">
+                                        {{ supplier.supplier_name }}
+                                    </a>
+                                </li>
+                                {% empty %}
+                                    <li>No assigned suppliers.</li>
+                                {% endfor %}
+                            </ol>
+                       </div>
+                    </p>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-lg-6 col-md-6 col-sm-6">
+                    <p class="card-text"><span class="text-muted">Status: </span>{{ product.status }}</p>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-6">
+                    <p class="card-text"><span class="text-muted">Cancelled: </span>{{ product.cancelled_at|naturaltime|default:'-' }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <div class="row">
+                <a href="{% url 'edit_product' product.pk %}" class="btn btn-warning card-link">Edit</a>
+                <a href="{% url 'product_list' %}" class="btn btn-default card-link">Back to list</a>
+            </div>
+        </div>
+    </div>
+{% endblock main_content %}
+
+
+{% block js %}
+    <script>
+        $(document).ready(function() {
+            $("#menu_fm").addClass("menu-open")
+            $("#menu_fm_product").addClass("active")
+        })
+    </script>
+{% endblock js %}

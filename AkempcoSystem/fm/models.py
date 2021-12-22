@@ -146,3 +146,171 @@ class Supplier(models.Model):
 
     class Meta:
         ordering = ['supplier_name']
+
+
+# Product model
+class Product(models.Model):
+    # for TaxType
+    VAT = 'VAT'
+    VATEX = 'VAT Exempt'
+    ZERO = 'Zero-Rated'
+    TAXTYPE = [
+        (VAT, _("VAT")),
+        (VATEX, _("VAT Exempt")),
+        (ZERO, _("Zero Rated"))
+    ]
+
+    barcode = models.CharField(
+        _("Barcode"), 
+        max_length=50,
+        unique=True,
+    )
+    full_description = models.CharField(
+        _("Product description"), 
+        max_length=250,
+        unique=True
+    )
+    short_name = models.CharField(
+        _("Short name"), 
+        max_length=50,
+        unique=True,
+        help_text=_("This will appear in the receipt")
+    )
+    category = models.ForeignKey(
+        Category, 
+        verbose_name=_("Category"), 
+        on_delete=models.RESTRICT
+    )
+    uom = models.ForeignKey(
+        UnitOfMeasure, 
+        verbose_name=_("Unit of Measurement"), 
+        on_delete=models.RESTRICT
+    )
+    reorder_point = models.PositiveIntegerField(
+        _("Reorder Point"),
+        default=20,
+        help_text=_("The level (quantity) when you will need to place an order so you won't run out of stock.")
+    )
+    ceiling_qty = models.PositiveIntegerField(
+        _("Ceiling Quantity"),
+        default=50,
+        help_text=_("The maximum quantity you should keep in inventory in order to meet your demand and avoid overstocking.")
+    )
+    suggested_retail_price = models.DecimalField(
+        _("Suggested Retail Price"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0,
+        null=True,
+        blank=True
+    )
+    selling_price = models.DecimalField(
+        _("Selling Price"), 
+        max_digits=11, 
+        decimal_places=2,
+        null=True,
+        blank=True
+    )
+    wholesale_price = models.DecimalField(
+        _("Wholesale Price"), 
+        max_digits=11, 
+        decimal_places=2,
+        null=True,
+        blank=True
+    )
+    wholesale_qty = models.IntegerField(
+        _("Wholesale Quantity"),
+        default=0,
+        help_text=_("Quantity to consider as wholesale")
+    )
+    tax_type = models.CharField(
+        _("Tax Type"), 
+        max_length=15,
+        choices=TAXTYPE,
+        default=VAT
+    )
+    is_consignment = models.BooleanField(
+        _("Consigned product?"),
+        help_text=_("Is this a consigned product?"),
+        default=False
+    )
+    is_buyer_info_needed = models.BooleanField(
+        _("Buyer's information needed?"),
+        help_text=_("Do you need to get the buyer's information upon purchase?"),
+        default=False
+    )
+    other_info = models.TextField(
+        _("Other Information"),
+        null=True,
+        blank=True
+    )
+    for_price_review = models.BooleanField(
+        _("For price review?"),
+        default=False
+    )
+    created_at = models.DateTimeField(
+        _("Created at"), 
+        auto_now_add=True
+    )
+    price_updated_on = models.DateField(
+        _("Price updated on"),
+        null=True,
+        default=None 
+    )
+    cancelled_at = models.DateTimeField(
+        _("Cancelled at"),
+        null=True,
+        default=None 
+    )
+    suppliers = models.ManyToManyField(Supplier)
+    status = models.CharField(
+        _("Status"), 
+        max_length=10,
+        choices=STATUS,
+        default=ACTIVE
+    )
+
+    def __str__(self):
+        return self.full_description
+
+    def is_consigned(self):
+        return 'Yes' if self.is_consignment else 'No'
+
+    def is_buyer_info_required(self):
+        return 'Yes' if self.is_buyer_info_needed else 'No'
+
+    class Meta:
+        ordering = ['full_description']
+    
+
+# ProductPricing model, for price monitoring
+class ProductPricing(models.Model):
+    product = models.ForeignKey(
+        Product, 
+        verbose_name=_("Product"), 
+        on_delete=models.CASCADE
+    )
+    selling_price = models.DecimalField(
+        _("Selling Price"), 
+        max_digits=11, 
+        decimal_places=2,
+        null=True,
+        blank=True
+    )
+    wholesale_price = models.DecimalField(
+        _("Wholesale Price"), 
+        max_digits=11, 
+        decimal_places=2,
+        null=True,
+        blank=True
+    )
+    price_updated_on = models.DateField(
+        _("Price updated on"),
+        null=True,
+        default=None 
+    )
+    price_tagged_by = models.ForeignKey(
+        User,
+        verbose_name=_("Price tagged by"),
+        on_delete=models.RESTRICT
+    )

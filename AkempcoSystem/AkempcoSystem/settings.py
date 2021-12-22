@@ -88,7 +88,7 @@ WSGI_APPLICATION = 'AkempcoSystem.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'django_akempcosainsys_draft',
+        'NAME': 'django_akempcosystem',
         'USER': 'root',
         'PASSWORD': 'p@$$w0rD',
         'HOST': 'localhost'

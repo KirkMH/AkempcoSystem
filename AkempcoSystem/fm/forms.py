@@ -83,3 +83,58 @@ class UpdateSupplierForm(forms.ModelForm):
             'notes',
             'status'
         ]
+
+
+############################
+#       Product
+############################
+
+
+class NewProductForm(forms.ModelForm):
+    is_consignment = forms.ChoiceField(choices = TRUE_FALSE_CHOICES,
+                                initial=False, widget=forms.Select(), label=_("Is this a consigned product?"))
+    is_buyer_info_needed = forms.ChoiceField(choices = TRUE_FALSE_CHOICES,
+                                initial=False, widget=forms.Select(), label=_("Do you need to store the buyer's information?"))
+    required_css_class = 'required'
+    class Meta:
+        model = Product
+        fields = [
+            'barcode', 
+            'full_description',
+            'short_name',
+            'category',
+            'uom',
+            'reorder_point',
+            'ceiling_qty',
+            'wholesale_qty',
+            'tax_type',
+            'is_consignment',
+            'is_buyer_info_needed',
+            'other_info'
+        ]
+
+        
+class UpdateProductForm(forms.ModelForm):
+
+    is_consignment = forms.ChoiceField(choices = TRUE_FALSE_CHOICES,
+                                initial=False, widget=forms.Select(), label=_("Is this a consigned product?"))
+    is_buyer_info_needed = forms.ChoiceField(choices = TRUE_FALSE_CHOICES,
+                                initial=False, widget=forms.Select(), label=_("Do you need to store the buyer's information?"))
+    required_css_class = 'required'
+    class Meta:
+        model = Product
+        fields = [
+            'barcode', 
+            'full_description',
+            'short_name',
+            'category',
+            'uom',
+            'reorder_point',
+            'ceiling_qty',
+            'wholesale_qty',
+            'tax_type',
+            'is_consignment',
+            'is_buyer_info_needed',
+            'other_info',
+            'status'
+        ]

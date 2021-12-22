@@ -12,6 +12,9 @@ from admin_area.models import Feature
 from .models import *
 from .forms import *
 
+import random
+import json
+
 
 # used by pagination
 MAX_ITEMS_PER_PAGE = 10
@@ -224,3 +227,111 @@ class SupplierUpdateView(UpdateView):
     template_name = "fm/supplier_form.html"
     pk_url_kwarg = 'pk'
     success_url = reverse_lazy('supplier_list')
+
+
+################################
+#   Product
+################################
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.FM_PRODUCT), name='dispatch')
+class ProductListView(ListView):
+    model = Product
+    context_object_name = 'products'
+    template_name = "fm/product_list.html"
+    paginate_by = MAX_ITEMS_PER_PAGE
+
+    def get_queryset(self):
+        # check if the user searched for something
+        key = get_index(self.request, "table_search")
+        object_list = self.model.objects.all()
+        if key:
+            object_list = object_list.filter(
+                Q(barcode__icontains=key) |
+                Q(short_name__icontains=key) |
+                Q(category__category_description__icontains=key) |
+                Q(is_consignment__icontains=key) |
+                Q(status__icontains=key)
+            )
+        return object_list
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return add_search_key(self.request, context)      
+
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.FM_PRODUCT), name='dispatch')
+class ProductDetailView(DetailView):
+    model = Product
+    template_name = "fm/product_detail.html"
+    context_object_name = 'product'
+
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.FM_PRODUCT), name='dispatch')
+class ProductCreateView(CreateView):
+    def get(self, request, *args, **kwargs):
+        suppliers = Supplier.objects.filter(status='ACTIVE')
+        context = {
+            'form': NewProductForm(),
+            'suppliers': suppliers
+        }
+        return render(request, 'fm/product_form.html', context)
+
+    def post(self, request, *args, **kwargs):
+        form = NewProductForm(request.POST)
+        suppliers = request.POST.getlist('suppliers')
+        if form.is_valid() and len(suppliers) > 0:
+            product = form.save()
+            for supplier in suppliers:
+                sup = Supplier.objects.get(pk=supplier)
+                product.suppliers.add(sup)
+            if "another" in request.POST:
+                return redirect('new_product')
+            else:
+                return redirect('product_list')
+        
+        else:
+            return render(request, 'fm/product_new.html', {'form': form})
+        
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.FM_PRODUCT), name='dispatch')
+class ProductUpdateView(UpdateView):
+    model = Product
+    form_class = UpdateProductForm
+    context_object_name = 'product'
+    template_name = "fm/product_form.html"
+    pk_url_kwarg = 'pk'
+
+    def get_context_data(self, **kwargs):
+        product = Product.objects.get(pk=self.object.pk)
+        list=[]
+        for supplier in product.suppliers.all():
+            list.append(supplier.pk)
+        context = super().get_context_data(**kwargs)
+        context["suppliers"] = Supplier.objects.filter(status='ACTIVE')
+        context["selected_suppliers"] = list
+
+        return context    
+
+    def form_valid(self, form):
+        product = form.save()
+        suppliers = self.request.POST.get('suppliers')
+        product.suppliers.clear()
+        for supplier in suppliers:
+            sup = Supplier.objects.get(pk=supplier)
+            product.suppliers.add(sup)
+
+        # TODO: update logs
+        return redirect('product_detail', pk=product.pk)
+
+
+def generate_barcode_number(request):
+    barcode = random.randint(1000000000000, 9999999999999)
+    # make sure that this is unique
+    while Product.objects.filter(barcode=barcode).exists():
+        barcode = random.randint(1000000000000, 9999999999999)
+
+    return HttpResponse(json.dumps({'barcode': barcode}), content_type="application/json")

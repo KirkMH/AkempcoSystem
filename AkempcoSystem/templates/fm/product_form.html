@@ -1,0 +1,161 @@
+{% extends '../base.html' %}
+{% load static %}
+
+{% block css %}
+  <!-- BS Stepper -->
+  <link rel="stylesheet" href="{% static 'plugins/bs-stepper/css/bs-stepper.min.css' %}">
+  
+  <!-- Bootstrap4 Duallistbox -->
+  <link rel="stylesheet" href="{% static 'plugins/bootstrap4-duallistbox/bootstrap-duallistbox.min.css' %}">
+
+  <link rel="stylesheet" href="{% static 'css/asterisk_on_required.css' %}">
+{% endblock css %}
+
+{% block page_title %}
+
+{% if product %}
+Edit Product
+{% else %}
+New Product  
+{% endif %}
+  
+{% endblock page_title %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'product_list' %}">Product</a></li>
+    <li class="breadcrumb-item active">
+      
+      {% if product %}
+        Edit
+      {% else %}
+        New
+      {% endif %}
+        
+    </li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+
+<div class="card m-3">
+    <div class="bs-stepper">
+        <div class="bs-stepper-header" role="tablist">
+          <!-- 2 steps: new product, assign suppliers -->
+          <div class="step" data-target="#product-info-part">
+            <button type="button" class="step-trigger" role="tab" aria-controls="product-info-part" id="product-info-part-trigger">
+              <span class="bs-stepper-circle">1</span>
+              <span class="bs-stepper-label">Product Information</span>
+            </button>
+          </div>
+          <div class="line"></div>
+          <div class="step" data-target="#supplier-part">
+            <button type="button" class="step-trigger" role="tab" aria-controls="supplier-part" id="supplier-part-trigger">
+              <span class="bs-stepper-circle">2</span>
+              <span class="bs-stepper-label">Assign suppliers</span>
+            </button>
+          </div>
+        </div>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="bs-stepper-content">
+              <!-- steps content -->
+              <div id="product-info-part" class="content" role="tabpanel" aria-labelledby="product-info-part-trigger">
+            
+                <div class="card-header">
+                  <h3 class="card-title">Please fill in all the fields marked with an <label class="required">asterisk</label>.</h3>
+                </div>
+                <div class="card-body p-0">
+                    <div class="m-4 col-lg-6 col-md-8 col-sm-10 col-xs-12">
+                        <button type="button" name="generate" id="generate" class="btn btn-outline-info">Generate Barcode...</button>
+                        <br><br>
+                        {% include '../includes/form.html' %}
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="button" class="btn btn-success" onclick="stepper.next()">Next</button>
+                </div>
+              </div>
+            </div>
+            <div id="supplier-part" class="content" role="tabpanel" aria-labelledby="supplier-part-trigger">
+                <div class="card">
+                  <div class="card-header">
+                    <h3 class="card-title">Assign suppliers</h3>
+                  </div>
+                  <div class="card-body">
+                    <div class="row">
+                        <div class="col-12">
+                        <div class="form-group">
+                            <label>Suppliers</label>
+                            <small class="form-text text-muted">
+                                Select supplier(s) from the left column to add it to the list of suppliers for this product.
+                            </small>
+                            <select class="duallistbox" multiple="multiple" name="suppliers" id="suppliers">
+                              {% for supplier in suppliers %}
+                                <option value="{{ supplier.pk }}">{{ supplier.supplier_name }}</option>
+                              {% endfor %}
+                            </select>
+                        </div>
+                        </div>
+                    </div>
+                  </div>
+                  <div class="card-footer">
+                    <button type="button" class="btn btn-success" name="previous" onclick="stepper.previous()">Previous</button>
+                    
+                    {% if not product %}
+                    <button type="submit" class="btn btn-primary" name="another">Save and add another</button>                      
+                    {% endif %}
+                      
+                    <button type="submit" class="btn btn-info" name="save">Save</button>
+                    <a href="{% url 'product_list' %}" class="btn btn-default">Cancel</a>
+                  </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock main_content %}
+
+
+{% block js %}
+  <!-- BS-Stepper -->
+  <script src="{% static 'plugins/bs-stepper/js/bs-stepper.min.js' %}"></script>
+  <!-- Bootstrap4 Duallistbox -->
+  <script src="{% static 'plugins/bootstrap4-duallistbox/jquery.bootstrap-duallistbox.min.js' %}"></script>
+  <!-- modal form -->
+  <script src="{% static 'js/jquery.bootstrap.modal.forms.min.js' %}"></script>
+  <script>
+    // BS-Stepper Init
+    document.addEventListener('DOMContentLoaded', function () {
+        window.stepper = new Stepper(document.querySelector('.bs-stepper'))
+    })
+
+    $(document).ready(function() {
+        $("#menu_fm").addClass("menu-open")
+        $("#menu_fm_product").addClass("active")
+
+        //Bootstrap Duallistbox
+        $('.duallistbox').bootstrapDualListbox()
+
+        // generate
+        $('#generate').click(function() {
+            $.ajax({
+                url : '/fm/product/new/barcoding',
+                dataType : 'json',
+                type : 'GET',
+                success: function(data)
+                {
+                    console.log(data);
+                    $('#id_barcode').val(data.barcode)
+                }
+            });
+        })
+
+        // changing full description
+        $("#id_full_description").keyup(function() {
+          let name = $("#id_full_description").val()
+          name = name.substring(0, 50)
+          $("#id_short_name").val(name)
+        })
+    })
+  </script>
+{% endblock js %}
