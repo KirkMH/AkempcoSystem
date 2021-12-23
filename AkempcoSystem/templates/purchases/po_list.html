@@ -30,7 +30,7 @@
         <div class="card-header">
             <div class="row">
             <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
-                <a href="#" class="btn btn-primary type1">New</a>
+                <a href="{% url 'po_create' supplier.pk %}" class="btn btn-primary type1">New</a>
             </div>
             
             <div class="col-lg-8 col-md-8 col-sm-8 col-xs-8">
@@ -48,7 +48,7 @@
                     <th class="text-left">PO Date</th>
                     <th># of Items</th>
                     <th>Total Amount</th>
-                    <th>Status</th>
+                    <th class="text-center">Status</th>
                 </tr>
             </thead>
             <tbody>
@@ -73,9 +73,9 @@
                         </td>
                         <td>{{ item.sequence_number|seq_num }}</td>
                         <td>{{ item.po_date|date:"F d, Y" }}</td>
-                        <td class="text-center">{{ item.item_count }}</td>
+                        <td class="text-center">{{ item.get_item_count }}</td>
                         <td class="text-right">{{ item.po_total|peso }}</td>
-                        <td>{{ item.is_open|yesno:'Open,Close' }}</td>
+                        <td class="text-center">{{ item.is_open|yesno:'Open,Close' }}</td>
                     </tr>
                 {% endfor %}
 

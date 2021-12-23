@@ -77,9 +77,7 @@ class PurchaseOrder(models.Model):
     )
     prepared_at = models.DateTimeField(
         _("Prepared at"),
-        null=True,
-        blank=True,
-        default=None,
+        auto_now_add=True
     )
     oic_checker = models.ForeignKey(
         User,
@@ -151,11 +149,17 @@ class PurchaseOrder(models.Model):
     )
     # details for receiving
     received_date = models.DateField(
-        _("Date Received"),        
+        _("Date Received"),
+        null=True,
+        blank=True,
+        default=None,       
     )
     reference_number = models.CharField(
         _("Reference Number"), 
         max_length=250,
+        null=True,
+        blank=True,
+        default=None,
     )
     received_by = models.ForeignKey(
         User,
@@ -204,9 +208,9 @@ class PurchaseOrder(models.Model):
         return None
 
     def get_status_css_class(self):
-        if self.status == 0: # rejected
+        if self.process_step == 6: # rejected
             return 'bg-danger'
-        elif self.status == 5: # approved
+        elif self.process_step == 5: # approved
             return 'bg-info'
         else:
             return ''

@@ -1,5 +1,5 @@
-from django.shortcuts import render
-from django.views.generic import ListView, DetailView
+from django.shortcuts import render, reverse
+from django.views.generic import ListView, DetailView, CreateView
 from django.db.models import Q
 from django.core.paginator import Paginator
 
@@ -11,6 +11,7 @@ from admin_area.models import Feature
 from fm.views import get_index, add_search_key
 from fm.models import Supplier
 from .models import PurchaseOrder
+from .forms import PurchaseOrderForm
 
 
 # for pagination
@@ -50,4 +51,28 @@ class PurchaseSupplierDetailView(DetailView):
         supplier = Supplier.objects.get(pk=self.kwargs['pk'])
         context["po"] = PurchaseOrder.objects.filter(supplier=supplier)
         return context
+
+
+# Create new PO
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
+class POCreateView(CreateView):
+    model = PurchaseOrder
+    form_class = PurchaseOrderForm
+    template_name = 'purchases/po_new.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        supplier = Supplier.objects.get(pk=self.kwargs['pk'])
+        context["supplier"] = supplier
+        return context
     
+    def form_valid(self, form):
+        form.instance.supplier = Supplier.objects.get(pk=self.kwargs.get('pk'))
+        form.instance.prepared_by = self.request.user
+        form.save()
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        # return reverse('ro_product_list', kwargs={'pk' : self.object.pk})
+        return reverse('po_list', kwargs={'pk' : self.kwargs.get('pk')})
