@@ -34,24 +34,14 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td class="text-center">
-                            <a href="#" title="View"><i class="far fa-eye"></i></a>
-                        </td>
-                        <td>Cash Purchases</td>
-                        <td>{{ cash_purchase.last_po_num|seq_num|default:'-' }}</td>
-                        <td>{{ cash_purchase.last_po_date|default:'-' }}</td>
-                        <td class="text-center">{{ cash_purchase.number_of_open_po }}</td>
-                        <td class="text-center">{{ cash_purchase.completion_rate|percentage }}</td>
-                    </tr>
                     {% for supplier in suppliers %}
                         <tr>
                             <td class="text-center">
-                                <a href="#" title="View supplier"><i class="far fa-eye"></i></a>
+                                <a href="{% url 'po_list' supplier.pk %}" title="View supplier"><i class="far fa-eye"></i></a>
                             </td>
                             <td>{{ supplier.supplier_name }}</td>
                             <td>{{ supplier.get_last_po.sequence_number|seq_num|default:'-' }}</td>
-                            <td>{{ supplier.get_last_po.po_date|default:'-' }}</td>
+                            <td>{{ supplier.get_last_po.po_date|date:"F d, Y"|default:'-' }}</td>
                             <td class="text-center">{{ supplier.get_number_of_open_po }}</td>
                             <td class="text-center">{{ supplier.get_completion_rate|percentage }}</td>
                         </tr>

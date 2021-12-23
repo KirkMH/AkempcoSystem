@@ -305,6 +305,10 @@ class Product(models.Model):
         choices=STATUS,
         default=ACTIVE
     )
+    price_review = models.BooleanField(
+        _("For price review?"),
+        default=False
+    )
 
     def __str__(self):
         return self.full_description

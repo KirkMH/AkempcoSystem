@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.views.generic import ListView
+from django.views.generic import ListView, DetailView
 from django.db.models import Q
 from django.core.paginator import Paginator
 
@@ -17,6 +17,7 @@ from .models import PurchaseOrder
 MAX_ITEMS_PER_PAGE = 10
 
 
+# List of Suppliers to choose from
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
 class PurchaseSupplierListView(ListView):
@@ -35,13 +36,18 @@ class PurchaseSupplierListView(ListView):
             )
         return object_list
 
+
+# PO List of selected supplier
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
+class PurchaseSupplierDetailView(DetailView):
+    model = Supplier
+    context_object_name = 'supplier'
+    template_name = "purchases/po_list.html"
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        cash_purchase = {
-            'last_po_date': PurchaseOrder.cash_purchase.get_last_po_date(),
-            'last_po_num': PurchaseOrder.cash_purchase.get_last_po_number(),
-            'number_of_open_po': PurchaseOrder.cash_purchase.get_number_of_open_po(),
-            'completion_rate': PurchaseOrder.cash_purchase.get_completion_rate()
-        }
-        context['cash_purchase'] = cash_purchase
-        return add_search_key(self.request, context)  
+        supplier = Supplier.objects.get(pk=self.kwargs['pk'])
+        context["po"] = PurchaseOrder.objects.filter(supplier=supplier)
+        return context
+    

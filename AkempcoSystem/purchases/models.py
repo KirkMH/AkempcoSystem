@@ -19,52 +19,6 @@ class PO_PROCESS:
     ]
 
 
-
-
-# Custom Manager for PurchaseOrder to represent cash purchases
-class CashPurchaseManager(models.Manager):
-    def get_queryset(self):
-        return super().get_queryset().filter(supplier=None)
-
-    def get_last_po(self, **kwargs):
-        try:
-            return PurchaseOrder.cash_purchase.order_by('-sequence_number')[:1].get()
-        except:
-            return None
-
-    def get_last_po_number(self, **kwargs):
-        try:
-            return get_last_po(**kwargs).sequence_number
-        except:
-            return None
-
-    def get_last_po_date(self, **kwargs):
-        try:
-            return get_last_po(**kwargs).po_date
-        except:
-            return None
-
-    def get_number_of_open_po(self, **kwargs):
-        try:
-            return self.filter(is_open=True, **kwargs).count()
-        except:
-            return 0
-
-    def get_po_count(self, **kwargs):
-        try:
-            return self.count()
-        except:
-            return 0
-
-    def get_completion_rate(self, **kwargs):
-        try:
-            open_ctr = get_number_of_open_po()
-            po_ctr = get_po_count()
-            closed_ctr = po_ctr - open_ctr
-            return closed_ctr / po_ctr
-        except:
-            return 0
-
 # PurchaseOrder model
 class PurchaseOrder(models.Model):
 
@@ -99,6 +53,12 @@ class PurchaseOrder(models.Model):
         max_digits=11, 
         decimal_places=2,
         default=0
+    )
+    parent_po = models.PositiveIntegerField(
+        _("Parent PO"),
+        help_text="When PO is split for back-order, this is the source PO.",
+        null=True,
+        default=None
     )
     # approval details
     process_step = models.PositiveSmallIntegerField(
@@ -210,9 +170,6 @@ class PurchaseOrder(models.Model):
         verbose_name=_('Is open?'),
         default=True
     )
-    # managers
-    objects = models.Manager()
-    cash_purchase = CashPurchaseManager()
 
     def __str__(self):
         if self.sequence_number:
