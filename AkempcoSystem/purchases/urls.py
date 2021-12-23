@@ -3,5 +3,5 @@ from . import views
 
 
 urlpatterns = [
-    # path('uom', views.UomListView.as_view(), name='uom_list'),
+    path('', views.PurchaseSupplierListView.as_view(), name='purchase_suppliers'),
 ]

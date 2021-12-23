@@ -1,0 +1,78 @@
+{% extends '../base.html' %}
+{% load static form_tags %}
+
+{% block page_title %}Supplier list{% endblock page_title %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item active">Purchases</li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+<div class="card m-4">
+    <form method="get">
+        <div class="card-header">
+            <div class="row">
+            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+            </div>
+            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                {% include 'includes/search_tool.html' %}
+            </div>
+            </div>
+        </div>
+    </form>
+    <div class="card-body table-responsive">
+        <table class="table table-hover table-head-fixed table-sm">
+                <thead>
+                    <tr>
+                        <th class="text-center">Action</th>
+                        <th>Supplier</th>
+                        <th>Last PO #</th>
+                        <th>Last PO Date</th>
+                        <th class="text-center">Num. of Open POs</th>
+                        <th class="text-center">Completion Rate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="text-center">
+                            <a href="#" title="View"><i class="far fa-eye"></i></a>
+                        </td>
+                        <td>Cash Purchases</td>
+                        <td>{{ cash_purchase.last_po_num|seq_num|default:'-' }}</td>
+                        <td>{{ cash_purchase.last_po_date|default:'-' }}</td>
+                        <td class="text-center">{{ cash_purchase.number_of_open_po }}</td>
+                        <td class="text-center">{{ cash_purchase.completion_rate|percentage }}</td>
+                    </tr>
+                    {% for supplier in suppliers %}
+                        <tr>
+                            <td class="text-center">
+                                <a href="#" title="View supplier"><i class="far fa-eye"></i></a>
+                            </td>
+                            <td>{{ supplier.supplier_name }}</td>
+                            <td>{{ supplier.get_last_po.sequence_number|seq_num|default:'-' }}</td>
+                            <td>{{ supplier.get_last_po.po_date|default:'-' }}</td>
+                            <td class="text-center">{{ supplier.get_number_of_open_po }}</td>
+                            <td class="text-center">{{ supplier.get_completion_rate|percentage }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="card-footer">
+            {% include 'includes/pagination.html' %}
+        </div>
+    </div>
+    
+{% endblock main_content %}
+
+
+{% block js %}
+    <script>
+        $(document).ready(function() {
+            $("#menu_trans").addClass("menu-open")
+            $("#menu_trans_purchases").addClass("active")
+        })
+    </script>
+{% endblock js %}

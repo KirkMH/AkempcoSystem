@@ -31,3 +31,10 @@ def seq_num(number):
         return "%08d" % number
     else:
         return ""
+
+@register.filter
+def percentage(value):
+    if value:
+        return format(value, "%")
+    else:
+        return "0%"

@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 
 from django.contrib.auth.models import User
 from admin_area.models import UserDetail
+from purchases.models import PurchaseOrder
 
 # will be used for the status of different models
 ACTIVE = 'ACTIVE'
@@ -151,6 +152,33 @@ class Supplier(models.Model):
 
     def __str__(self):
         return self.supplier_name
+
+    def get_last_po(self):
+        try:
+            return PurchaseOrder.objects.filter(supplier=self).order_by('-sequence_number')[:1].get()
+        except:
+            return None
+
+    def get_number_of_open_po(self):
+        try:
+            return PurchaseOrder.objects.filter(supplier=self).filter(is_open=True).count()
+        except:
+            return 0
+
+    def get_po_count(self):
+        try:
+            return PurchaseOrder.objects.filter(supplier=self).count()
+        except:
+            return 0
+
+    def get_completion_rate(self):
+        try:
+            open_ctr = get_number_of_open_po()
+            po_ctr = get_po_count()
+            closed_ctr = po_ctr - open_ctr
+            return closed_ctr / po_ctr
+        except:
+            return 0
 
     class Meta:
         ordering = ['supplier_name']
