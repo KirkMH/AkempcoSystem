@@ -1,7 +1,9 @@
-from django.shortcuts import render, reverse
-from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.shortcuts import render, reverse, get_object_or_404
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.db.models import Q
 from django.core.paginator import Paginator
+from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView, BSModalDeleteView
+from django.http import JsonResponse
 
 from AkempcoSystem.decorators import user_is_allowed
 from django.contrib.auth.decorators import login_required
@@ -9,9 +11,9 @@ from django.utils.decorators import method_decorator
 
 from admin_area.models import Feature
 from fm.views import get_index, add_search_key
-from fm.models import Supplier
+from fm.models import Product, Supplier
 from .models import PurchaseOrder, PO_Product
-from .forms import PurchaseOrderForm
+from .forms import PurchaseOrderForm, PO_ProductForm
 
 
 # for pagination
@@ -48,8 +50,7 @@ class PurchaseSupplierDetailView(DetailView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        supplier = Supplier.objects.get(pk=self.kwargs['pk'])
-        context["po"] = PurchaseOrder.objects.filter(supplier=supplier)
+        context["po"] = PurchaseOrder.objects.filter(supplier=self.object)
         return context
 
 
@@ -73,25 +74,24 @@ class POCreateView(CreateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse('po_products', kwargs={'pk' : self.kwargs.get('pk')})
+        return reverse('po_products', kwargs={'pk' : self.object.pk})
 
         
 # Update PO details
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
-class POCreateView(UpdateView):
+class POUpdateView(UpdateView):
     model = PurchaseOrder
     form_class = PurchaseOrderForm
     template_name = 'purchases/po_create.html'
-    pk_url_kwarg = 'po_pk'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["supplier"] = Supplier.objects.get(pk=self.kwargs['pk'])
+        context["supplier"] = self.object.supplier
         return context
 
     def get_success_url(self):
-        return reverse('po_products', kwargs={'pk' : self.kwargs.get('pk'), 'po_pk' : self.object.pk})
+        return reverse('po_products', kwargs={'pk' : self.object.pk})
 
 
 # List of Products under PO
@@ -104,7 +104,126 @@ class PODetailView(DetailView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        po = PurchaseOrder.objects.get(pk=self.kwargs['po_pk'])
-        context["products"] = PO_Product.objects.filter(purchase_order=po)
-        context["supplier"] = Supplier.objects.get(pk=self.kwargs['pk'])
+        context["products"] = PO_Product.objects.filter(purchase_order=self.object)
+        context["supplier"] = self.object.supplier
         return context
+
+
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
+class PODeleteView(DeleteView):
+    model = PurchaseOrder
+    
+    def get(self, request, *args, **kwargs):
+        return self.post(request, *args, **kwargs)
+        
+    def get_success_url(self):
+        return reverse('po_list', kwargs={'pk' : self.object.supplier.pk})
+
+
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
+class POProductCreateView(BSModalCreateView):
+    template_name = 'purchases/product_add.html'
+    model = PO_Product
+    form_class = PO_ProductForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        po = get_object_or_404(PurchaseOrder, pk=self.kwargs['pk'])
+        context["form"].fields["product"].queryset = Product.objects.filter(status='ACTIVE', suppliers=po.supplier, category=po.category)
+        return context
+
+    def get_success_url(self):
+        return reverse('po_products', kwargs={'pk' : self.kwargs['pk']})
+
+    def form_valid(self, form):
+        form.instance.purchase_order = get_object_or_404(PurchaseOrder, pk=self.kwargs['pk'])
+        # messages.success(self.request, form.instance.product.full_description + ' was added.')  
+        return super().form_valid(form)
+    
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
+class POProductUpdateView(BSModalUpdateView):
+    template_name = 'purchases/product_add.html'
+    model = PO_Product
+    form_class = PO_ProductForm
+
+    def get_context_data(self, **kwargs):
+        po = get_object_or_404(PurchaseOrder, pk=self.kwargs['pk'])
+        context["form"].fields["product"].queryset = Product.objects.filter(status='ACTIVE', suppliers=po.supplier, category=po.category)
+        return context
+
+    def get_object(self):
+        item_pk = self.kwargs['item_pk']
+        return PO_Product.objects.get(pk=item_pk)
+
+    def get_success_url(self):
+        return reverse('po_products', 
+                        kwargs={'pk' : self.kwargs['pk']})
+
+    def form_valid(self, form):
+        prod = self.get_object().product.full_description
+        # messages.success(self.request, prod + ' was updated.')  
+        return super().form_valid(form)
+    
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
+class POProductDeleteView(BSModalDeleteView):
+    model = PO_Product
+    success_url = "/"
+    # success_message = "Successfully removed."
+
+    def get_object(self):
+        item_pk = self.kwargs['item_pk']
+        return PO_Product.objects.get(pk=item_pk)
+
+    def get(self, request, *args, **kwargs):
+        return self.post(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return reverse('po_products', 
+                        kwargs={'pk' : self.kwargs['pk']})
+
+
+@login_required()
+def select_product(request):
+    ''' returns the inventory uom, supplier price of the selected product '''
+    try:
+        pk = request.GET.get('pk', 0)
+        product = Product.objects.get(pk=pk)
+        inv_uom = product.uom.uom_description
+
+        # retrieve supplier price from PO_Product.unit_price
+        po = PO_Product.objects.filter(product=product).filter(received_qty__gt=0).order_by('-id').first()
+        supplier_price = 0
+        if po:
+            supplier_price = po.unit_price
+
+        data = {
+            'supplier_price': supplier_price,
+            'inv_uom': inv_uom
+        }
+
+        return JsonResponse(data, safe=False)
+
+    except Product.DoesNotExist:
+        return JsonResponse({'message': 'Cannot find product.'}, safe=False)
+
+
+@login_required()
+def load_data(request):
+    key = request.GET['key']
+    # filter to contain products under a specified supplier and category only
+    supplier_id = request.GET['supplier_id']
+    supplier = get_object_or_404(Supplier, pk=supplier_id)
+    data = list(Product.objects.filter(
+            Q(suppliers=supplier) &
+            Q(full_description__istartswith=key) |
+            Q(barcode__istartswith=key)
+        )[:50].values())
+    return JsonResponse(data, safe=False)

@@ -46,35 +46,38 @@
                     <th>Action</th>
                     <th class="text-left">PO Number</th>
                     <th class="text-left">PO Date</th>
+                    <th>Category</th>
                     <th># of Items</th>
                     <th>Total Amount</th>
                     <th class="text-center">Status</th>
                 </tr>
             </thead>
             <tbody>
-                
+
                 {% if not po %}
                     <tr><td colspan="7" style="text-align: center;">No data found.</td></tr>
                 {% else %}
 
                 {% for item in po %}
-                    <tr class="{{ item.get_status_css_class }}">
+                    <tr>
                         <td class="text-center">
-                            {% if item.is_edittable and user.userdetail.userType == 'Purchaser' %}
-                                <a href="{% url 'po_products' supplier.pk item.pk %}" title="Edit"><i class="far fa-edit"></i></a> |
-                            {% endif %}
-                            
-                            {% if item.is_checkable and item.get_user_step == user.userdetail.get_user_type %}
-                                <a href="#" title="Check"><i class="far fa-check-circle"></i></a> | 
-                            {% endif %}
-                                
-                            <a href="#" title="View PO"><i class="far fa-eye"></i></a>
+                            <a href="{% url 'po_products' item.pk %}" title="View PO"><i class="far fa-eye"></i></a>
                         </td>
                         <td>{{ item.sequence_number|seq_num }}</td>
                         <td>{{ item.po_date|date:"F d, Y" }}</td>
+                        <td>{{ item.category }}</td>
                         <td class="text-center">{{ item.get_item_count }}</td>
-                        <td class="text-right">{{ item.po_total|peso }}</td>
-                        <td class="text-center">{{ item.is_open|yesno:'Open,Close' }}</td>
+                        <td class="text-right">
+                            
+                            {% if item.is_open %}
+                                {{ item.get_total_po_amount|peso }}
+                            {% else %}
+                                {{ item.get_total_po_amount|peso }}
+                            {% endif %}
+                                
+
+                        </td>
+                        <td class="text-center {{ item.get_status_css_class}}">{{ item.is_open|yesno:'Open,Close' }}</td>
                     </tr>
                 {% endfor %}
 

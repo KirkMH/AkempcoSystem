@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'multiselectfield', # to store multiple values in a field
     'widget_tweaks',
     'crispy_forms',
+    'bootstrap_modal_forms',
 
     # internally-created apps
     'admin_area',

@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
 from django.db.models.functions import Coalesce
-from django.db.models import F
+from django.db.models import Sum, F
 
 from admin_area.models import UserType
 
@@ -192,7 +192,10 @@ class PurchaseOrder(models.Model):
         return PO_Product.objects.filter(purchase_order=self).count()
 
     def get_total_po_amount(self):
-        return PO_Product.objects.filter(purchase_order=self).aggregate(Sum('unit_price'))['unit_price__sum']
+        return PO_Product.objects.filter(purchase_order=self).aggregate(total=Sum( F('unit_price') * F('ordered_quantity')))['total']
+
+    def get_total_received_amount(self):
+        return PO_Product.objects.filter(purchase_order=self).aggregate(total=Sum( F('unit_price') * F('received_quantity')))['total']
 
     def is_checkable(self):
         return (self.process_step > 1 and self.process_step < 5)
@@ -205,15 +208,13 @@ class PurchaseOrder(models.Model):
             # return step
             if step[0] == self.process_step:
                 if step[0] > 1 and step[0] < 5:
-                    return 'Approval: %s' % step[1]
+                    return 'Approval: ' + step[1]
                 else:
                     return step[1]
         return None
 
     def get_status_css_class(self):
-        if self.process_step == 6: # rejected
-            return 'bg-danger'
-        elif self.process_step == 5: # approved
+        if self.is_open:
             return 'bg-info'
         else:
             return ''
