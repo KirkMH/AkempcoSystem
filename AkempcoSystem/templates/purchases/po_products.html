@@ -1,0 +1,159 @@
+{% extends '../base.html' %}
+{% load static %}
+{% load humanize %}
+{% load form_tags %}
+{% load crispy_forms_tags %}
+
+{% block css %}
+  <link rel="stylesheet" href="{% static 'css/table_setup.css' %}">    
+  <link rel="stylesheet" href="{% static 'css/asterisk_on_required.css' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/css/bootstrap-select.min.css"> 
+  
+  <!-- Toastr -->
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css">
+{% endblock css %}
+
+{% block page_title %}
+{{ supplier.supplier_name }}
+<div class="text-muted"><h4>Create Purchase Order</h4></div>
+{% endblock page_title %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'purchase_suppliers' %}">Purchases</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'po_list' supplier.pk %}">Purchase Orders</a></li>
+    <li class="breadcrumb-item">Details</li>
+    <li class="breadcrumb-item active">Products</li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+
+ <!-- Messages -->
+ <div>
+    {% if messages %}
+      {% for message in messages %}
+        <div style="border-radius:0;" {% if message.tags %} class="alert alert-icon alert-{{ message.tags }} alert-dismissible fade show mb-0" role="alert" {% endif %}>
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+      {% endfor %}
+    {% endif %}
+</div>
+<!-- End Messages -->
+
+<div class="modal fade" tabindex="-1" role="dialog" id="modal">
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <input type="hidden" name="supplier_id" id="supplier_id" value="{{ received.get_supplier_id }}">
+        </div>
+        <div class="modal-content"></div>
+    </div>
+</div>
+
+<form id="create_po" method="POST">
+    {% csrf_token %}
+
+    <div class="card m-4">
+        <div class="card-header">
+            <!-- info row -->
+            <div class="row invoice-info">
+                <div class="col-lg-1 invoice-col">PO #:</div>
+                <div class="col-lg-5 invoice-col font-weight-bold">{{ po.sequence_number|seq_num }}</div>
+                <div class="col-lg-1 invoice-col">PO Date:</div>
+                <div class="col-lg-5 invoice-col font-weight-bold">{{ po.po_date|date:'F d, Y' }}</div>
+            </div>
+            <div class="row invoice-info">
+                <div class="col-lg-1 invoice-col">Category:</div>
+                <div class="col-lg-5 invoice-col font-weight-bold">{{ po.category }}</div>
+                <div class="col-lg-1 invoice-col">Notes:</div>
+                <div class="col-lg-5 invoice-col font-weight-bold">{{ po.notes }}</div>
+            </div>
+            <!-- /.info row -->
+            <div class="row mt-2">
+                <div class="col-12">
+                    <a href="{% url 'po_edit' supplier.pk po.pk %}" class="btn btn-sm btn-info float-right">Edit Details</a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <button id="add-item" class="btn btn-primary" type="button" name="button">Add Item</button>
+            </div>
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th width="10%">Action</th>
+                        <th width="15%">Barcode</th>
+                        <th width="30%">Description</th>
+                        <th width="8%">Qty</th>
+                        <th width="10%">Units</th>
+                        <th width="12%">Unit Price</th>
+                        <th width="15%">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    {% if not products %}
+                        <tr><td colspan="7" style="text-align: center;">No products added yet.</td></tr>
+                    {% else %}
+                        {% for item in products %}
+                            <tr>
+                                <td class="text-center">
+                                    
+                                    <a href="#" class="update-item" data-form-url="#">
+                                        <i class="far fa-edit"></i>
+                                    </a>| 
+                                    <a href="#" class="delete-item" data-product-name="{{ item.product.full_description }}" data-form-url="#">
+                                        <i class="far fa-trash-alt"></i>
+                                    </a>
+                                </td>
+                                <td class="text-center">{{ item.product.barcode }}</td>
+                                <td>{{ item.product.full_description }}</td>
+                                <td class="text-center">{{ item.ordered_quantity }}</td>
+                                <td class="text-center">{{ item.product.uom }}{{ item.ordered_quantity|pluralize }}</td>
+                                <td class="text-right">{{ item.unit_price|peso }}</td>
+                                <td class="text-right">{{ item.get_po_subtotal|peso }}</td>
+                            </tr>
+                        {% endfor %}
+
+                        <tr class="table-primary">
+                            <td colspan="3" class="text-left">TOTAL</td>
+                            <td class="text-center">{{ received.get_item_count }}</td>
+                            <td colspan="2" class="text-center"></td>
+                            <td class="text-right">{{ received.get_total_po_amount|peso }}</td>
+                        </tr>
+                    {% endif %}
+                        
+                </tbody>
+            </table>
+
+
+        </div>
+        <div class="card-footer">
+            <div class="row">
+                <div class="col-12">
+                    
+                    {% if products %}
+                    <button type="button" name="submit" id="submit" class="btn btn-warning card-link">Submit</button>
+                    {% endif %}
+                    <button type="button" id="cancel" class="btn btn-danger card-link">Cancel</button>
+                    <a href="{% url 'po_list' supplier.pk %}" class="btn btn-default card-link float-right">Save and back to list</a>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock main_content %}
+
+{% block js %}
+  <script src="{% static 'js/jquery.bootstrap.modal.forms.min.js' %}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/js/bootstrap-select.min.js"></script>
+  <!-- bootboxjs -->
+  <script src="{% static 'js/bootbox.all.min.js' %}"></script>
+
+
+{% endblock js %}
+    

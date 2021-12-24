@@ -61,7 +61,7 @@
                     <tr class="{{ item.get_status_css_class }}">
                         <td class="text-center">
                             {% if item.is_edittable and user.userdetail.userType == 'Purchaser' %}
-                                <a href="{% url 'po_edit' supplier.pk item.pk %}" title="Edit"><i class="far fa-edit"></i></a> |
+                                <a href="{% url 'po_products' supplier.pk item.pk %}" title="Edit"><i class="far fa-edit"></i></a> |
                             {% endif %}
                             
                             {% if item.is_checkable and item.get_user_step == user.userdetail.get_user_type %}

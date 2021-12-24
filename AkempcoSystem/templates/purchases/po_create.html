@@ -3,7 +3,7 @@
 
 {% block page_title %}
 {{ supplier.supplier_name }}
-<div class="text-muted"><h4>New Purchase Order</h4></div>
+<div class="text-muted"><h4>Create Purchase Order</h4></div>
 {% endblock page_title %}
 
 {% block css %}
@@ -14,7 +14,7 @@
     <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
     <li class="breadcrumb-item"><a href="{% url 'purchase_suppliers' %}">Purchases</a></li>
     <li class="breadcrumb-item"><a href="{% url 'po_list' supplier.pk %}">Purchase Orders</a></li>
-    <li class="breadcrumb-item active">New</li>
+    <li class="breadcrumb-item active">Details</li>
 {% endblock breadcrumb %}
 
 {% block main_content %}

@@ -10,7 +10,7 @@ from django.utils.decorators import method_decorator
 from admin_area.models import Feature
 from fm.views import get_index, add_search_key
 from fm.models import Supplier
-from .models import PurchaseOrder
+from .models import PurchaseOrder, PO_Product
 from .forms import PurchaseOrderForm
 
 
@@ -59,7 +59,7 @@ class PurchaseSupplierDetailView(DetailView):
 class POCreateView(CreateView):
     model = PurchaseOrder
     form_class = PurchaseOrderForm
-    template_name = 'purchases/po_new.html'
+    template_name = 'purchases/po_create.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -73,8 +73,7 @@ class POCreateView(CreateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        # return reverse('ro_product_list', kwargs={'pk' : self.object.pk})
-        return reverse('po_list', kwargs={'pk' : self.kwargs.get('pk')})
+        return reverse('po_products', kwargs={'pk' : self.kwargs.get('pk')})
 
         
 # Update PO details
@@ -83,7 +82,7 @@ class POCreateView(CreateView):
 class POCreateView(UpdateView):
     model = PurchaseOrder
     form_class = PurchaseOrderForm
-    template_name = 'purchases/po_new.html'
+    template_name = 'purchases/po_create.html'
     pk_url_kwarg = 'po_pk'
 
     def get_context_data(self, **kwargs):
@@ -92,5 +91,20 @@ class POCreateView(UpdateView):
         return context
 
     def get_success_url(self):
-        # return reverse('ro_product_list', kwargs={'pk' : self.object.pk})
-        return reverse('po_list', kwargs={'pk' : self.kwargs.get('pk')})
+        return reverse('po_products', kwargs={'pk' : self.kwargs.get('pk'), 'po_pk' : self.object.pk})
+
+
+# List of Products under PO
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
+class PODetailView(DetailView):
+    model = PurchaseOrder
+    context_object_name = 'po'
+    template_name = "purchases/po_products.html"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        po = PurchaseOrder.objects.get(pk=self.kwargs['po_pk'])
+        context["products"] = PO_Product.objects.filter(purchase_order=po)
+        context["supplier"] = Supplier.objects.get(pk=self.kwargs['pk'])
+        return context

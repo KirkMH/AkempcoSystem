@@ -191,6 +191,9 @@ class PurchaseOrder(models.Model):
     def get_item_count(self):
         return PO_Product.objects.filter(purchase_order=self).count()
 
+    def get_total_po_amount(self):
+        return PO_Product.objects.filter(purchase_order=self).aggregate(Sum('unit_price'))['unit_price__sum']
+
     def is_checkable(self):
         return (self.process_step > 1 and self.process_step < 5)
 
