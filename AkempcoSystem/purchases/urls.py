@@ -9,7 +9,7 @@ urlpatterns = [
     path('po/<int:pk>/edit', views.POUpdateView.as_view(), name='po_edit'),
     path('po/<int:pk>/delete', views.PODeleteView.as_view(), name='po_delete'),
     path('po/<int:pk>/products', views.PODetailView.as_view(), name='po_products'),
-
+                                                                                                                                                                                                      
     path('po/<int:pk>/products/add', views.POProductCreateView.as_view(), name='product_add'),
     path('po/<int:pk>/products/<int:item_pk>/edit', views.POProductUpdateView.as_view(), name='product_edit'),
     path('po/<int:pk>/products/<int:item_pk>/delete', views.POProductDeleteView.as_view(), name='product_delete'),

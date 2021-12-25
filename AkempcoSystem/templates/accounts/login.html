@@ -27,3 +27,29 @@
   </p>
       
 {% endblock content %}
+
+{% block js %}
+
+<script>
+  $(document).ready(function() {
+      
+      let parent1 = $("#id_username").parent();
+      add_icon(parent1, '<i class="fas fa-user"></i>')
+
+      let parent2 = $("#id_password").parent();
+      add_icon(parent2, '<i class="fas fa-lock"></i>')
+
+      function add_icon(parent, icon) {
+        parent.addClass("input-group");
+        let grp_append = $("<div></div>");
+        grp_append.addClass("input-group-append");
+        let span = $("<span></span>").html(icon);
+        span.addClass("input-group-text");
+        grp_append.append(span);
+        parent.append(grp_append);
+      }
+
+      $("label").css('width', '100%')
+  });
+</script>
+{% endblock js %}

@@ -146,13 +146,10 @@
     </div>
 </form>
 
-<form id="delete_po_form" method="POST" action="{% url 'po_delete' po.pk %}">
+<form id="delete_form" method="POST">
     {% csrf_token %}
 </form>
 
-<form id="delete_product_form" method="POST">
-    {% csrf_token %}
-</form>
 {% endblock main_content %}
 
 {% block js %}
@@ -189,8 +186,8 @@
                 bootbox.confirm("Are you sure you want to remove " + product + "?", function(result){ 
                     if (result) {
                         // location.href = url;
-                        $('#delete_product_form').attr('action', url);
-                        $('#delete_product_form').submit()
+                        $('#delete_form').attr('action', url);
+                        $('#delete_form').submit()
                     }
                 });
             });
@@ -201,7 +198,8 @@
         $('#cancel').click(function() {
             bootbox.confirm("Are you sure you want to cancel this transaction? All added information and products will be removed.", function(result){ 
                 if (result) {
-                    $('#delete_po_form').submit();
+                    $('#delete_form').attr('action', "{% url 'po_delete' po.pk %}");
+                    $('#delete_form').submit();
                 }
             });
         })
