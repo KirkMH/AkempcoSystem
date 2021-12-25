@@ -155,7 +155,7 @@ class Supplier(models.Model):
 
     def get_last_po(self):
         try:
-            return PurchaseOrder.objects.filter(supplier=self).order_by('-sequence_number')[:1].get()
+            return PurchaseOrder.objects.filter(supplier=self).order_by('-pk')[:1].get()
         except:
             return None
 

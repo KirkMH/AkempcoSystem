@@ -1,8 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
-from django.db.models.functions import Coalesce
 from django.db.models import Sum, F
+from datetime import datetime
 
 from admin_area.models import UserType
 
@@ -22,12 +22,6 @@ class PO_PROCESS:
 # PurchaseOrder model
 class PurchaseOrder(models.Model):
 
-    sequence_number = models.PositiveIntegerField(
-        _("Sequence Number"),
-        null=True,
-        blank=True,
-        default=None
-    )
     supplier = models.ForeignKey(
         'fm.Supplier',
         verbose_name=_("Supplier"), 
@@ -176,10 +170,7 @@ class PurchaseOrder(models.Model):
     )
 
     def __str__(self):
-        if self.sequence_number:
-            return "PO # {:08}".format(self.sequence_number)
-        else:
-            return "For " + self.supplier.supplier_name + " on " + self.po_date.strftime("%B %d %Y")
+        return "PO # {:08}".format(self.pk)
     
     def update_status(self):
         products = PO_Product.objects.get(purchase_order=self)
@@ -197,6 +188,40 @@ class PurchaseOrder(models.Model):
     def get_total_received_amount(self):
         return PO_Product.objects.filter(purchase_order=self).aggregate(total=Sum( F('unit_price') * F('received_quantity')))['total']
 
+    def submit(self, user):
+        self.prepared_by = user
+        self.prepared_at = datetime.now()
+        self.process_step = 2
+        self.save()
+
+    def approve(self, user):
+        # set approver and timestamp
+        userType = user.userdetail.userType
+        if userType == UserType.OIC:
+            self.oic_checker = user
+            self.oic_checked_at = datetime.now()
+
+        elif userType == UserType.AUDIT:
+            self.audit_checker = user
+            self.audit_checked_at = datetime.now()
+
+        elif userType == UserType.GM:
+            self.gm_checker = user
+            self.gm_checked_at = datetime.now()
+
+        # set next part of process
+        step = self.process_step
+        self.process_step = step + 1
+        
+        self.save()
+
+    def reject(self, user, reason):
+        self.process_step = 6
+        self.rejected_by = user
+        self.rejected_at = datetime.now()
+        self.reject_reason = reason
+        self.save()
+
     def is_checkable(self):
         return (self.process_step > 1 and self.process_step < 5)
 
@@ -207,20 +232,46 @@ class PurchaseOrder(models.Model):
         for step in PO_PROCESS.STEPS:
             # return step
             if step[0] == self.process_step:
-                if step[0] > 1 and step[0] < 5:
+                if step[0] == 1:
+                    return 'Pending'
+                elif step[0] > 1 and step[0] < 5:
                     return 'Approval: ' + step[1]
                 else:
                     return step[1]
         return None
 
+    def get_user_type(self):
+        for step in PO_PROCESS.STEPS:
+            # return step
+            if step[0] == self.process_step:
+                return step[1]
+        return None
+
+    def is_approved(self):
+        return (self.process_step == 5)
+
+    def get_status(self):
+        if self.is_approved():
+            return 'Open' if self.is_open else 'Closed'
+        else:
+            return self.get_user_step()
+
     def get_status_css_class(self):
-        if self.is_open:
+        if self.is_approved() and self.is_open:
             return 'bg-info'
+        elif self.process_step == 1:
+            return 'text-body'
+        elif self.process_step > 1 and self.process_step < 5:
+            return 'text-success'
+        elif self.process_step == 6:
+            return 'text-muted'
+        elif self.process_step == 7:
+            return 'text-danger'
         else:
             return ''
 
     class Meta:
-        ordering = [F('sequence_number').desc(nulls_first=True)]
+        ordering = [F('pk').desc(nulls_first=True)]
 
 
 # PO_Product with One-To-Many relationship with PurchaseOrder

@@ -13,6 +13,9 @@ urlpatterns = [
     path('po/<int:pk>/products/add', views.POProductCreateView.as_view(), name='product_add'),
     path('po/<int:pk>/products/<int:item_pk>/edit', views.POProductUpdateView.as_view(), name='product_edit'),
     path('po/<int:pk>/products/<int:item_pk>/delete', views.POProductDeleteView.as_view(), name='product_delete'),
+    path('po/<int:pk>/submit', views.submit_po, name='submit_po'),
+    path('po/<int:pk>/approve', views.approve_po, name='approve_po'),
+    path('po/<int:pk>/reject', views.reject_po, name='reject_po'),
 
     path('ajax/select_product', views.select_product, name='select_product'),
     path('ajax/load_data', views.load_data, name='load_data'),

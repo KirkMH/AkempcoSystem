@@ -1,9 +1,10 @@
-from django.shortcuts import render, reverse, get_object_or_404
+from django.shortcuts import render, redirect, reverse, get_object_or_404
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.db.models import Q
 from django.core.paginator import Paginator
 from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView, BSModalDeleteView
 from django.http import JsonResponse
+from datetime import datetime
 
 from AkempcoSystem.decorators import user_is_allowed
 from django.contrib.auth.decorators import login_required
@@ -188,6 +189,40 @@ class POProductDeleteView(BSModalDeleteView):
     def get_success_url(self):
         return reverse('po_products', 
                         kwargs={'pk' : self.kwargs['pk']})
+
+
+@login_required
+@user_is_allowed(Feature.TR_PURCHASES)
+def submit_po(request, pk):
+    this_po = get_object_or_404(PurchaseOrder, pk=pk)
+
+    if request.method == 'POST':
+        this_po.submit(request.user)
+
+    return redirect('po_list', pk=this_po.supplier.pk)
+
+
+@login_required
+@user_is_allowed(Feature.TR_PURCHASES)
+def approve_po(request, pk):
+    this_po = get_object_or_404(PurchaseOrder, pk=pk)
+
+    if request.method == 'POST':
+        this_po.approve(request.user)
+
+    return redirect('po_list', pk=this_po.supplier.pk)
+
+
+@login_required
+@user_is_allowed(Feature.TR_PURCHASES)
+def reject_po(request, pk):
+    this_po = get_object_or_404(PurchaseOrder, pk=pk)
+
+    if request.method == 'POST':
+        reason = request.POST.get('reject_reason', None)
+        this_po.reject(request.user, reason)
+
+    return redirect('po_list', pk=this_po.supplier.pk)
 
 
 @login_required()

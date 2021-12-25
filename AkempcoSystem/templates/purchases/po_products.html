@@ -51,99 +51,125 @@
     </div>
 </div>
 
-<form id="create_po" method="POST">
-    {% csrf_token %}
-
-    <div class="card m-4">
-        <div class="card-header">
-            <!-- info row -->
-            <div class="row invoice-info">
-                <div class="col-lg-1 invoice-col">PO #:</div>
-                <div class="col-lg-5 invoice-col font-weight-bold">{{ po.sequence_number|seq_num }}</div>
-                <div class="col-lg-1 invoice-col">PO Date:</div>
-                <div class="col-lg-5 invoice-col font-weight-bold">{{ po.po_date|date:'F d, Y' }}</div>
-            </div>
-            <div class="row invoice-info">
-                <div class="col-lg-1 invoice-col">Category:</div>
-                <div class="col-lg-5 invoice-col font-weight-bold">{{ po.category }}</div>
-                <div class="col-lg-1 invoice-col">Notes:</div>
-                <div class="col-lg-5 invoice-col font-weight-bold">{{ po.notes }}</div>
-            </div>
-            <!-- /.info row -->
-            <div class="row mt-2">
-                <div class="col-12">
-                    <a href="{% url 'po_edit' po.pk %}" class="btn btn-sm btn-info float-right">Edit Details</a>
-                </div>
-            </div>
+<form id="submit_po_form" method="POST">
+{% csrf_token %}
+<div class="card m-4">
+    <div class="card-header">
+        <!-- info row -->
+        <div class="row invoice-info">
+            <div class="col-lg-1 invoice-col">PO #:</div>
+            <div class="col-lg-5 invoice-col font-weight-bold">{{ po.pk|seq_num }}</div>
+            <div class="col-lg-1 invoice-col">PO Date:</div>
+            <div class="col-lg-5 invoice-col font-weight-bold">{{ po.po_date|date:'F d, Y' }}</div>
         </div>
-        <div class="card-body">
-            <div class="row mb-4">
-                <button id="add-item" class="btn btn-primary" type="button" name="button">Add Item</button>
-            </div>
-            <table class="table table-sm table-hover">
-                <thead>
-                    <tr>
-                        <th width="10%">Action</th>
-                        <th width="15%">Barcode</th>
-                        <th width="30%">Description</th>
-                        <th width="8%">Qty</th>
-                        <th width="10%">Units</th>
-                        <th width="12%">Unit Price</th>
-                        <th width="15%">Subtotal</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    
-                    {% if not products %}
-                        <tr><td colspan="7" style="text-align: center;">No products added yet.</td></tr>
-                    {% else %}
-                        {% for item in products %}
-                            <tr>
-                                <td class="text-center">
-                                    
-                                    <a href="#" class="update-item" data-form-url="{% url 'product_edit' po.pk item.pk %}">
-                                        <i class="far fa-edit"></i>
-                                    </a>| 
-                                    <a href="#" class="delete-item" data-product-name="{{ item.product.full_description }}" data-form-url="{% url 'product_delete' po.pk item.pk %}">
-                                        <i class="far fa-trash-alt"></i>
-                                    </a>
-                                </td>
-                                <td class="text-center">{{ item.product.barcode }}</td>
-                                <td>{{ item.product.full_description }}</td>
-                                <td class="text-center">{{ item.ordered_quantity }}</td>
-                                <td class="text-center">{{ item.product.uom }}{{ item.ordered_quantity|pluralize }}</td>
-                                <td class="text-right">{{ item.unit_price|peso }}</td>
-                                <td class="text-right">{{ item.get_po_subtotal|peso }}</td>
-                            </tr>
-                        {% endfor %}
-
-                        <tr class="table-primary">
-                            <td colspan="2" class="text-left">TOTAL</td>
-                            <td>{{ po.get_item_count }} item{{ po.get_item_count|pluralize }}</td>
-                            <td colspan="3" class="text-center"></td>
-                            <td class="text-right">{{ po.get_total_po_amount|peso }}</td>
-                        </tr>
-                    {% endif %}
-                        
-                </tbody>
-            </table>
-
-
+        <div class="row invoice-info">
+            <div class="col-lg-1 invoice-col">Category:</div>
+            <div class="col-lg-5 invoice-col font-weight-bold">{{ po.category }}</div>
+            <div class="col-lg-1 invoice-col">Notes:</div>
+            <div class="col-lg-5 invoice-col font-weight-bold">{{ po.notes }}</div>
         </div>
-        <div class="card-footer">
-            <div class="row">
-                <div class="col-12">
-                    
-                    {% if products %}
-                    <button type="button" name="submit" id="submit" class="btn btn-warning card-link">Submit</button>
-                    {% endif %}
-                    <button type="button" id="cancel" class="btn btn-danger card-link">Cancel</button>
-                    <a href="{% url 'po_list' supplier.pk %}" class="btn btn-default card-link float-right">Save and back to list</a>
-                    
-                </div>
+        <!-- /.info row -->
+        <div class="row mt-2">
+            <div class="col-12">
+                {% if po.process_step < 3 and user.userdetail.userType == 'Purchaser' %}
+                <a href="{% url 'po_edit' po.pk %}" class="btn btn-sm btn-info float-right">Edit Details</a>
+                {% endif %}
             </div>
         </div>
     </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-4">
+                {% if po.process_step < 3 and user.userdetail.userType == 'Purchaser' %}
+                    <button id="add-item" class="btn btn-primary" type="button" name="add-item">Add Item</button>
+                {% else %}
+                    
+                {% endif %}
+            </div>
+            <div class="col-8">
+                <span class="float-right">
+                    <button id="print_po" class="btn btn-dark" type="button" name="print_po">Print PO</button>
+                </span>
+            </div>
+        </div>
+        <table class="table table-sm table-hover">
+            <thead>
+                <tr>
+                    {% if po.process_step < 3 and user.userdetail.userType == 'Purchaser' %}
+                    <th width="10%">Action</th>
+                    {% endif %}
+                    <th width="15%">Barcode</th>
+                    <th width="30%">Description</th>
+                    <th width="8%">Qty</th>
+                    <th width="10%">Units</th>
+                    <th width="12%">Unit Price</th>
+                    <th width="15%">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+                {% if not products %}
+                    <tr><td colspan="7" style="text-align: center;">No products added yet.</td></tr>
+                {% else %}
+                    {% for item in products %}
+                        <tr>
+                            {% if po.process_step < 3 and user.userdetail.userType == 'Purchaser' %}
+                            <td class="text-center">
+                                
+                                <a href="#" class="update-item" data-form-url="{% url 'product_edit' po.pk item.pk %}">
+                                    <i class="far fa-edit"></i>
+                                </a>| 
+                                <a href="#" class="delete-item" data-product-name="{{ item.product.full_description }}" data-form-url="{% url 'product_delete' po.pk item.pk %}">
+                                    <i class="far fa-trash-alt"></i>
+                                </a>
+                            </td>
+                            {% endif %}
+                            <td class="text-center">{{ item.product.barcode }}</td>
+                            <td>{{ item.product.full_description }}</td>
+                            <td class="text-center">{{ item.ordered_quantity }}</td>
+                            <td class="text-center">{{ item.product.uom }}{{ item.ordered_quantity|pluralize }}</td>
+                            <td class="text-right">{{ item.unit_price|peso }}</td>
+                            <td class="text-right">{{ item.get_po_subtotal|peso }}</td>
+                        </tr>
+                    {% endfor %}
+
+                    <tr class="table-primary">
+                        {% if po.process_step < 3 and user.userdetail.userType == 'Purchaser' %}
+                        <td colspan="2" class="text-left">TOTAL</td>
+                        {% else %}
+                        <td class="text-left">TOTAL</td>
+                        {% endif %}
+                        <td>{{ po.get_item_count }} item{{ po.get_item_count|pluralize }}</td>
+                        <td colspan="3" class="text-center"></td>
+                        <td class="text-right">{{ po.get_total_po_amount|peso }}</td>
+                    </tr>
+                {% endif %}
+                    
+            </tbody>
+        </table>
+
+
+    </div>
+    <div class="card-footer">
+        <div class="row">
+            <div class="col-12">
+                {% if user.userdetail.userType == 'Purchaser' %}
+                
+                    {% if products %}
+                    <button type="button" name="submit_btn" id="submit_btn" class="btn btn-warning card-link">Submit</button>
+                    {% endif %}
+                    
+                    <button type="button" id="cancel" class="btn btn-danger card-link">Cancel</button>
+                    <a href="{% url 'po_list' supplier.pk %}" class="btn btn-default card-link float-right">Save and back to list</a>
+                {% elif user.userdetail.userType == po.get_user_type and user.userdetail.userType != 'Officer-In-Charge' or user.userdetail.userType == 'Officer-In-Charge' and user.userdetail.oic_for == po.category %}
+                    <input type="hidden" name="reject_reason" id="reject_reason" >
+                    <button type="button" name="approve_btn" id="approve_btn" class="btn btn-warning card-link">Approve</button>
+                    <button type="button" name="reject_btn" id="reject_btn" class="btn btn-danger card-link">Reject</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
 </form>
 
 <form id="delete_form" method="POST">
@@ -195,11 +221,45 @@
         }
         deleteItemModalForm();
 
+        $('#submit_btn').click(function() {
+            bootbox.confirm("Are you sure you want to submit this purchase order for approval?", function(result){ 
+                if (result) {
+                    $('#submit_po_form').attr('action', "{% url 'submit_po' po.pk %}");
+                    $('#submit_po_form').submit();
+                }
+            });
+        })
+
         $('#cancel').click(function() {
             bootbox.confirm("Are you sure you want to cancel this transaction? All added information and products will be removed.", function(result){ 
                 if (result) {
                     $('#delete_form').attr('action', "{% url 'po_delete' po.pk %}");
                     $('#delete_form').submit();
+                }
+            });
+        })
+
+        $('#approve_btn').click(function() {
+            bootbox.confirm("Are you sure you want to approve this purchase order?", function(result){ 
+                if (result) {
+                    $('#submit_po_form').attr('action', "{% url 'approve_po' po.pk %}");
+                    $('#submit_po_form').submit();
+                }
+            });
+        })
+
+        $('#reject_btn').click(function() {
+            bootbox.confirm("Are you sure you want to reject this purchase order?", function(result){ 
+                if (result) {
+                    bootbox.prompt("Please enter the reason for rejecting this purchase order.", function(result){ 
+                        if (result != null) {
+                            console.log(result);
+                            $('#reject_reason').val(result);
+                            $('#submit_po_form').attr('action', "{% url 'reject_po' po.pk %}");
+                            $('#submit_po_form').submit();
+                        }
+                        console.log(result); 
+                    });
                 }
             });
         })

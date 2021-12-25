@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from django.contrib.auth.models import User
 from multiselectfield import MultiSelectField
+from django.contrib.auth.models import User
 
 # Feature is used to load in the side menu under the specified group
 class Feature:
@@ -56,6 +56,14 @@ class UserDetail(models.Model):
         choices=UserType.LIST,
         max_length=20
     )
+    oic_for = models.ForeignKey(
+        "fm.Category",
+        verbose_name=_("If OIC, select category"),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        default=True
+    )
     features = MultiSelectField(choices=Feature.LIST)
     activated_at = models.DateTimeField(
         _("Activated at"),
@@ -76,11 +84,7 @@ class UserDetail(models.Model):
     )
 
     def __str__(self):
-        # TODO: Return full name if available
-        # if self.user.firstname:
-        #     pass
-        # else:
-        return "%s" % self.user.username
+        return self.user.get_full_name()
 
     def get_permissions(self):
         list = []
