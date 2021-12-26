@@ -91,3 +91,60 @@ class UserDetail(models.Model):
         for f in self.features:
             list.append(int(f))
         return list
+
+
+class Store(models.Model):
+    name = models.CharField(
+        _("Store Name"), 
+        max_length=100
+    )
+    address = models.CharField(
+        _("Address"), 
+        max_length=250
+    )
+    registration_number = models.CharField(
+        _("Registration Number"),
+        max_length=50,
+        help_text=_("Please include the registration type."),
+        null=True,
+        blank=True
+    )
+    contact_numbers = models.CharField(
+        _("Contact Numbers"), 
+        max_length=100,
+        help_text=_("Please indicate the type. Separate different contact numbers by comma. E.g., Telephone number: 111-2222"),
+        null=True,
+        blank=True
+    )
+    email = models.EmailField(
+        _("Email Address"), 
+        max_length=100,
+        null=True,
+        blank=True
+    )
+    # VAT details -- to date, AKEMPCO is VAT exempt
+    vatable = models.BooleanField(
+        _("Is the store VATable?"),
+        default=False
+    )
+    vat_percent = models.PositiveSmallIntegerField(
+        _("VAT Percentage"),
+        null=True,
+        blank=True,
+        default=None
+    )
+    # markup details
+    retail_markup = models.DecimalField(
+        _("Retail Markup"), 
+        max_digits=5, 
+        decimal_places=2
+    )
+    wholesale_markup = models.DecimalField(
+        _("Wholesale Markup"), 
+        max_digits=5, 
+        decimal_places=2
+    )
+    
+    def __str__(self):
+        return self.name
+    

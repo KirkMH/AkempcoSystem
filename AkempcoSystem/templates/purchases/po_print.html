@@ -1,0 +1,152 @@
+{% extends '../base.html' %}
+{% load static form_tags %}
+
+
+{% block css %}
+    <link rel="stylesheet" href="{% static 'css/table_setup.css' %}">
+{% endblock css %}
+    
+{% block page_title %}Print Purchase Order{% endblock page_title %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'purchase_suppliers' %}">Purchases</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'po_list' supplier.pk %}">Purchase Orders</a></li>
+    <li class="breadcrumb-item active">Print</li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+<div class="container">
+    <!-- Main content -->
+    <div class="invoice p-3 mb-3">
+        <!-- title row -->
+        <div class="row mb-4">
+            <div class="col-12 text-center">
+                <img src="{% static 'img/logo.png' %}" alt="AKEMPCO Logo" width="100px" style="z-index: 999;" class="float-left">
+                <h4 class="txet-uppercase">{{ store.name }}</h4>
+                <div>{{ store.address }}</div>
+                
+                {% if store.registration_number %}
+                <div>{{ store.registration_number }}</div>
+                {% endif %}
+                
+                {% if store.contact_number %}
+                <div>{{ store.contact_number }}</div>
+                {% endif %}
+                
+                {% if store.email %}
+                <div>{{ store.email }}</div>
+                {% endif %}
+                    
+                    
+            </div>
+            <!-- /.col -->
+        </div>
+        <!-- info row -->
+        <div class="row invoice-info">
+            <div class="col-sm-1 invoice-col">Supplier:</div>
+            <div class="col-sm-7 invoice-col">{{ po.supplier.supplier_name }}</div>
+            <div class="col-sm-1 invoice-col">No.:</div>
+            <div class="col-sm-3 invoice-col">
+                {{ po.sequence_number|seq_num }}
+                
+                {% if po.status == 0 %}
+                    <span style="color: red; text-transform: uppercase;">- {{ po.get_status_display }}</span> 
+                {% endif %}
+                    
+            </div>
+        </div>
+        <div class="row invoice-info">
+            <div class="col-sm-1 invoice-col">Address:</div>
+            <div class="col-sm-7 invoice-col"><address>{{ po.supplier.address }}</address></div>
+            <div class="col-sm-1 invoice-col">Date:</div>
+            <div class="col-sm-3 invoice-col">{{ po.po_date|date:'F d, Y' }}</div>
+        </div>
+        <!-- /.row -->
+
+        <!-- Table row -->
+        <div class="row mt-4">
+            <div class="col-12 table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th width="15%">Barcode</th>
+                        <th width="30%">Description</th>
+                        <th width="12%">Qty</th>
+                        <th width="13%">Units</th>
+                        <th width="15%">Unit Price</th>
+                        <th width="15%">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for item in po_list %}
+                    <tr>
+                        <td class="text-center">{{ item.product.barcode }}</td>
+                        <td>{{ item.product.full_description }}</td>
+                        <td class="text-center">{{ item.quantity }}</td>
+                        <td class="text-center">{{ item.product.order_uom.uom_description }}</td>
+                        <td class="text-right">{{ item.unit_price|peso }}</td>
+                        <td class="text-right">{{ item.subtotal|peso }}</td>
+                    </tr>
+                {% endfor %}
+
+                    <tr class="table-primary">
+                        <td colspan="2" class="text-left">TOTAL</td>
+                        <td class="text-center">{{ total_qty }}</td>
+                        <td colspan="2" class="text-center"></td>
+                        <td class="text-right">{{ total_price|peso }}</td>
+                </tbody>
+            </table>
+            </div>
+            <!-- /.col -->
+        </div>
+        <!-- /.row -->
+
+        <div class="row mt-4">
+            <div class="col-6">
+                <p>Prepared by:</p>
+                <div class="text-center font-weight-bold mt-6"><u>{{ po.prepared_by.get_full_name }}</u></div>
+                <div class="text-center font-weight-light">{{ po.prepared_by.userdetail.get_userType_display }}</div>
+            </div>
+            <div class="col-6">
+                <p>Approved by:</p>
+                <div class="text-center font-weight-bold mt-6"><u>{{ po.gm_checker.get_full_name }}</u></div>
+                <div class="text-center font-weight-light">{{ po.gm_checker.userdetail.get_userType_display }}</div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-6">
+                <p>Checked by:</p>
+                <div class="text-center font-weight-bold mt-6"><u>{{ po.oic_checker.get_full_name }}</u></div>
+                <div class="text-center font-weight-light">{{ po.oic_checker.userdetail.get_userType_display }}</div>
+            </div>
+            <div class="col-6">
+                <p>Checked by:</p>
+                <div class="text-center font-weight-bold mt-6"><u>{{ po.audit_checker.get_full_name }}</u></div>
+                <div class="text-center font-weight-light">{{ po.audit_checker.userdetail.get_userType_display }}</div>
+            </div>
+        </div>
+        <!-- /.row -->
+
+        <!-- this row will not appear when printing -->
+        <div class="row no-print mt-4">
+            <div class="col-12">
+            <button type="button" class="btn btn-primary" onclick="window.print();">
+                <i class="fas fa-print"></i> Print
+            </button>
+            </div>
+        </div>
+    </div>
+    <!-- /.invoice -->
+</div>
+{% endblock main_content %}
+
+
+{% block js %}
+    <script>
+        $(document).ready(function() {
+            $("#menu_trans").addClass("menu-open")
+            $("#menu_trans_po").addClass("active")
+        })
+    </script>
+{% endblock js %}
