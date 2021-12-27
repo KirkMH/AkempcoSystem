@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 
 from django.contrib.auth.models import User
 from admin_area.models import UserDetail
-from purchases.models import PurchaseOrder
+from purchases.models import PurchaseOrder, WarehouseStock, StoreStock
 
 # will be used for the status of different models
 ACTIVE = 'ACTIVE'
@@ -318,6 +318,15 @@ class Product(models.Model):
 
     def is_buyer_info_required(self):
         return 'Yes' if self.is_buyer_info_needed else 'No'
+
+    def get_store_stock_count(self):
+        return StoreStock.availableStocks.filter(product=self).aggregate(total=Sum('remaining_stocks'))['total']
+
+    def get_warehouse_stock_count(self):
+        return WarehouseStock.availableStocks.filter(product=self).aggregate(total=Sum('remaining_stocks'))['total']
+
+    def get_total_stock_count(self):
+        return self.get_store_stock_count() + self.get_warehouse_stock_count()
 
     class Meta:
         ordering = ['full_description']

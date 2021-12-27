@@ -15,7 +15,7 @@
 
 {% block page_title %}
 {{ supplier.supplier_name }}
-<div class="text-muted"><h4>Create Purchase Order</h4></div>
+<div class="text-muted"><h4>{% if po.is_approved %}Manage{% else %}Create{% endif %} Purchase Order</h4></div>
 {% endblock page_title %}
 
 {% block breadcrumb %}
@@ -70,7 +70,12 @@
         </div>
         <div class="row invoice-info">
             <div class="col-lg-1 invoice-col">Status:</div>
-            <div class="col-lg-11 invoice-col font-weight-bold">{{ po.get_status }}</div>
+            <div class="col-lg-5 invoice-col font-weight-bold">{{ po.get_status }}</div>
+            
+            {% if po.get_received_items_count > 0 %}
+            <div class="col-lg-1 invoice-col"><abbr title="Receiving Reference Number">Ref. No.:</abbr></div>
+            <div class="col-lg-5 invoice-col font-weight-bold">{{ po.reference_number }}</div>
+            {% endif %}
         </div>
         <!-- /.info row -->
         <div class="row mt-2">
@@ -93,17 +98,19 @@
             <div class="col-8">
                 <span class="float-right">
                     {% if po.get_status == 'Open' %}
-                    <a href="#" class="btn btn-dark" role="button">Receive Inventory</a>
+                    <button type="button" class="btn btn-dark mb-2" id="receive_inv" name="receive_inv">Receive Inventory</button>
                     
                     {% if po.get_received_items_count > 0 %}
-                    <button id="split-backorder" class="btn btn-dark" type="button" name="split-backorder">Split Backorder</button>
-                    <button id="cancel-undelivered" class="btn btn-dark" type="button" name="cancel-undelivered">Cancel Undelivered</button>
-                    <a href="#" class="btn btn-dark" role="button">Print Receiving Report</a>
+                    <button id="split-backorder" class="btn btn-dark mb-2" type="button" name="split-backorder">Split Backorder</button>
+                    <button id="cancel-undelivered" class="btn btn-dark mb-2" type="button" name="cancel-undelivered">Cancel Undelivered</button>
+                    <br>
                     <a href="#" class="btn btn-dark" role="button">Print Variance Report</a>
                     {% endif %}
                         
                     {% endif %}
-
+                    {% if po.get_received_items_count > 0 %}
+                    <a href="#" class="btn btn-dark" role="button">Print Receiving Report</a>
+                    {% endif %}
                     <a href="{% url 'print_po' po.pk %}" class="btn btn-dark" role="button">Print PO</a>
                 </span>
             </div>
@@ -111,12 +118,15 @@
         <table class="table table-sm table-hover">
             <thead>
                 <tr>
-                    {% if po.process_step < 3 and user.userdetail.userType == 'Purchaser' %}
-                    <th width="10%">Action</th>
+                    {% if po.process_step < 3 and user.userdetail.userType == 'Purchaser' and po.get_received_items_count < 0 %}
+                    <th width="9%">Action</th>
                     {% endif %}
                     <th width="15%">Barcode</th>
                     <th width="30%">Description</th>
-                    <th width="8%">Qty</th>
+                    <th width="9%">Ordered Qty</th>
+                    {% if po.get_received_items_count > 0 %}
+                    <th width="9%">Received Qty</th>
+                    {% endif %}
                     <th width="10%">Units</th>
                     <th width="12%">Unit Price</th>
                     <th width="15%">Subtotal</th>
@@ -143,6 +153,9 @@
                             <td class="text-center">{{ item.product.barcode }}</td>
                             <td>{{ item.product.full_description }}</td>
                             <td class="text-center">{{ item.ordered_quantity }}</td>
+                            {% if po.get_received_items_count > 0 %}
+                            <td class="text-center">{{ item.received_qty }}</td>
+                            {% endif %}
                             <td class="text-center">{{ item.product.uom }}{{ item.ordered_quantity|pluralize }}</td>
                             <td class="text-right">{{ item.unit_price|peso }}</td>
                             <td class="text-right">{{ item.get_po_subtotal|peso }}</td>
@@ -156,7 +169,7 @@
                         <td class="text-left">TOTAL</td>
                         {% endif %}
                         <td>{{ po.get_item_count }} item{{ po.get_item_count|pluralize }}</td>
-                        <td colspan="3" class="text-center"></td>
+                        <td colspan="{% if po.get_received_items_count > 0 %}4{% else %}3{% endif %}" class="text-center"></td>
                         <td class="text-right">{{ po.get_total_po_amount|peso }}</td>
                     </tr>
                 {% endif %}
@@ -278,6 +291,28 @@
                     });
                 }
             });
+        })
+
+        $('#receive_inv').click(function() {
+            bootbox.prompt({
+                    title: "Reference Number:",
+                    'value': "{{ po.reference_number }}",
+                    callback: function (result) {
+                        if (result != null)
+                            $.ajax({
+                                url: "{% url 'update_ref_no' po.pk %}",
+                                type: 'POST',
+                                data: {
+                                    'csrfmiddlewaretoken': "{{ csrf_token }}",
+                                    'value': result, 
+                                },
+                                dataType: 'json',
+                                success: function(data) {
+                                    location.href = data;
+                                }
+                            })
+                    }
+                });
         })
     
     });

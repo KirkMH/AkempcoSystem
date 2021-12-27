@@ -61,7 +61,13 @@
                 {% for item in po %}
                     <tr>
                         <td class="text-center">
-                            <a href="{% url 'po_products' item.pk %}" title="{% if item.get_status == 'Open' %}Manage{% else %}View{% endif %} PO"><i class="far fa-eye"></i></a>
+                            
+                            {% if item.get_status == 'Open' %}
+                            <a href="{% url 'po_products' item.pk %}" title="Manage PO"><i class="fas fa-check-double"></i></a>                                
+                            {% else %}
+                            <a href="{% url 'po_products' item.pk %}" title="View PO"><i class="far fa-eye"></i></a>
+                            {% endif %}
+                                
                         </td>
                         <td>{{ item.pk|seq_num }}</td>
                         <td>{{ item.po_date|date:"F d, Y" }}</td>

@@ -168,16 +168,23 @@ class PurchaseOrder(models.Model):
         verbose_name=_('Is open?'),
         default=True
     )
+    is_receiving_now = models.BooleanField(
+        verbose_name=_('Is the user receiving stocks now?'),
+        default=False
+    )
 
     def __str__(self):
         return "PO # {:08}".format(self.pk)
     
     def update_status(self):
-        products = PO_Product.objects.get(purchase_order=self)
+        products = PO_Product.objects.filter(purchase_order=self)
+        self.is_open = False
         for prod in products:
+            print(prod.is_closed())
             if not prod.is_closed():
-                self.is_open = False
-                return None
+                self.is_open = True
+                break
+        self.save()
 
     def get_item_count(self):
         return PO_Product.objects.filter(purchase_order=self).count()
@@ -189,7 +196,7 @@ class PurchaseOrder(models.Model):
         return PO_Product.objects.filter(purchase_order=self).aggregate(total=Sum( F('unit_price') * F('received_quantity')))['total']
 
     def get_received_items_count(self):
-        products = PO_Product.objects.get(purchase_order=self)
+        products = PO_Product.objects.filter(purchase_order=self)
         count = 0
         for prod in products:
             if prod.has_received():
@@ -278,6 +285,32 @@ class PurchaseOrder(models.Model):
         else:
             return ''
 
+    def prepare_for_receiving(self):
+        products = PO_Product.objects.filter(purchase_order=self)
+        for prod in products:
+            prod.receive_now = prod.ordered_quantity - prod.received_qty
+            prod.save()
+
+    def receive_stocks(self, user):
+        products = PO_Product.objects.filter(purchase_order=self)
+        for prod in products:
+            # save to warehouse stocks
+            print(f"prod.receive_now: {prod.receive_now}")
+            if prod.receive_now > 0:
+                ws = WarehouseStock()
+                ws.product = prod.product
+                ws.received_by = user
+                ws.remaining_stocks = ws.quantity = prod.receive_now
+                ws.supplier_price = prod.unit_price
+                ws.save()
+                # update received_qty and clear receive_now
+                prod.received_qty = prod.received_qty + prod.receive_now
+                prod.receive_now = 0
+                prod.save()
+        self.is_receiving_now = False
+        self.save()
+        self.update_status()
+
     class Meta:
         ordering = [F('pk').desc(nulls_first=True)]
 
@@ -307,15 +340,22 @@ class PO_Product(models.Model):
         _("Received Quantity"),
         default=0
     )
+    receive_now = models.PositiveIntegerField(
+        _("Receive Now"),
+        default=0
+    )
 
     def __str__(self):
         return self.product.full_description + ": " + str(self.ordered_quantity) + " " + self.product.uom.uom_description
 
     def is_closed(self):
-        return (self.quantity == self.received_qty)
+        return (self.ordered_quantity == self.received_qty)
 
     def has_received(self):
         return (self.received_qty > 0)
+
+    def get_unreceived_qty(self):
+        return (self.quantity - self.received_qty)
 
     def get_po_subtotal(self):
         return self.unit_price * self.ordered_quantity
@@ -323,6 +363,122 @@ class PO_Product(models.Model):
     def get_received_subtotal(self):
         return self.unit_price * self.received_quantity
 
+    def set_for_price_review(self):
+        self.product.for_price_review = True
+
     class Meta:
         ordering = ['product']
 
+
+############################################
+### For Warehouse Stocks Monitoring
+############################################
+
+class AvailableWarehouseStockManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(remaining_stocks__gt=0)
+
+class WarehouseStock(models.Model):
+    product = models.ForeignKey(
+        "fm.Product", 
+        verbose_name=_("Product"), 
+        on_delete=models.CASCADE)
+    date_received = models.DateField(
+        _("Date Received"), 
+        auto_now_add=True
+    )
+    received_by = models.ForeignKey(
+        User, 
+        verbose_name=_("Received By"), 
+        on_delete=models.CASCADE
+    )
+    supplier_price = models.DecimalField(
+        _("Supplier's Price"),
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+    quantity = models.PositiveIntegerField(
+        _("Quantity Received"),
+        default=0
+    )
+    remaining_stocks = models.PositiveIntegerField(
+        _("Remaining Stocks"),
+        default=0
+    )
+    objects = models.Manager()
+    availableStocks = AvailableWarehouseStockManager()
+
+    def __str__(self):
+        return self.product.full_description + ": " + str(self.remaining_stocks) + " item(s) left in warehouse."
+    
+
+############################################
+### For Store Stocks Monitoring
+############################################
+
+class AvailableStoreStockManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(remaining_stocks__gt=0)
+
+class StoreStock(models.Model):
+    product = models.ForeignKey(
+        "fm.Product", 
+        verbose_name=_("Product"), 
+        on_delete=models.CASCADE)
+    date_received = models.DateField(
+        _("Date Received"), 
+        auto_now_add=True
+    )
+    received_by = models.ForeignKey(
+        User, 
+        verbose_name=_("Received By"), 
+        on_delete=models.CASCADE
+    )
+    supplier_price = models.DecimalField(
+        _("Supplier's Price"),
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+    quantity = models.PositiveIntegerField(
+        _("Quantity Received"),
+        default=0
+    )
+    remaining_stocks = models.PositiveIntegerField(
+        _("Remaining Stocks"),
+        default=0
+    )
+    objects = models.Manager()
+    availableStocks = AvailableStoreStockManager()
+
+    def __str__(self):
+        return self.product.full_description + ": " + str(self.remaining_stocks) + " item(s) left in store."
+    
+
+class ProductHistory(models.Model):
+    product = models.ForeignKey(
+        "fm.Product", 
+        verbose_name=_("Product"), 
+        on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(
+        _("Quantity Received"),
+        default=0
+    )
+    remarks = models.CharField(
+        _("Remarks"), 
+        max_length=250
+    )
+    performed_on = models.DateField(
+        _("Performed on"), 
+        auto_now_add=True
+    )
+    performed_by = models.ForeignKey(
+        User, 
+        verbose_name=_("Performed By"), 
+        on_delete=models.CASCADE
+    )
+
+    def __str__(self):
+        return self.product.full_description + ": " + str(self.quantity) + " items"
+    

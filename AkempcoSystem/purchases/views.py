@@ -105,6 +105,7 @@ class PODetailView(DetailView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        self.object.is_receiving_now = False
         context["products"] = PO_Product.objects.filter(purchase_order=self.object)
         context["supplier"] = self.object.supplier
         return context
@@ -279,3 +280,88 @@ def load_data(request):
             Q(barcode__istartswith=key)
         )[:50].values())
     return JsonResponse(data, safe=False)
+
+
+##################################################
+#### FOR RECEIVING OF STOCKS
+##################################################
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
+class PODetailViewReceiveStocks(DetailView):
+    model = PurchaseOrder
+    context_object_name = 'po'
+    template_name = "purchases/receive_products.html"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if not self.object.is_receiving_now:
+            self.object.prepare_for_receiving()
+        context["products"] = PO_Product.objects.filter(purchase_order=self.object)
+        context["supplier"] = self.object.supplier
+        return context
+
+
+@login_required()
+@user_is_allowed(Feature.TR_PURCHASES)
+def update_receive_now(request, pk):
+    item_pk = int(request.POST.get('item_pk', '0'))
+    receive_now = int(request.POST.get('value', '0'))
+    success = True
+    try:
+        po = PurchaseOrder.objects.get(pk=pk)
+        po.is_receiving_now = True
+        po.save()
+
+        prod = PO_Product.objects.get(pk=item_pk)
+        prod.receive_now = receive_now
+        prod.save()
+        print(prod.receive_now)
+    except:
+        success = False
+    return JsonResponse(success, safe=False)
+
+
+@login_required()
+@user_is_allowed(Feature.TR_PURCHASES)
+def update_unit_price(request, pk):
+    item_pk = int(request.POST.get('item_pk', '0'))
+    unit_price = float(request.POST.get('value', '0'))
+    success = True
+    try:
+        prod = PO_Product.objects.get(pk=item_pk)
+        prod.unit_price = unit_price
+        prod.set_for_price_review()
+        prod.save()
+    except:
+        success = False
+    return JsonResponse(success, safe=False)
+
+
+@login_required()
+@user_is_allowed(Feature.TR_PURCHASES)
+def update_ref_no(request, pk):
+    ref_no = request.POST.get('value', '')
+    next_url = reverse('receive_stocks', kwargs={'pk' : pk})
+    try:
+        po = PurchaseOrder.objects.get(pk=pk)
+        po.reference_number = ref_no
+        po.save()
+    except:
+        next_url = reverse('po_products', kwargs={'pk' : pk})
+    return JsonResponse(next_url, safe=False)
+
+
+@login_required()
+@user_is_allowed(Feature.TR_PURCHASES)
+def receive_stocks_save(request, pk):
+    next_url = reverse('po_products', kwargs={'pk' : pk})
+
+    try:
+        po = PurchaseOrder.objects.get(pk=pk)
+        po.receive_stocks(request.user)
+    except:
+        next_url = reverse('receive_stocks', kwargs={'pk' : pk})
+
+    print(next_url)
+    return JsonResponse(next_url, safe=False)
