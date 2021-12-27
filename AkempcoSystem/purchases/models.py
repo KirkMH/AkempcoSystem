@@ -188,6 +188,14 @@ class PurchaseOrder(models.Model):
     def get_total_received_amount(self):
         return PO_Product.objects.filter(purchase_order=self).aggregate(total=Sum( F('unit_price') * F('received_quantity')))['total']
 
+    def get_received_items_count(self):
+        products = PO_Product.objects.get(purchase_order=self)
+        count = 0
+        for prod in products:
+            if prod.has_received():
+                count = count + 1
+        return count
+
     def submit(self, user):
         self.prepared_by = user
         self.prepared_at = datetime.now()
@@ -305,6 +313,9 @@ class PO_Product(models.Model):
 
     def is_closed(self):
         return (self.quantity == self.received_qty)
+
+    def has_received(self):
+        return (self.received_qty > 0)
 
     def get_po_subtotal(self):
         return self.unit_price * self.ordered_quantity

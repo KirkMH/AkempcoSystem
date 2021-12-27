@@ -92,6 +92,18 @@
             </div>
             <div class="col-8">
                 <span class="float-right">
+                    {% if po.get_status == 'Open' %}
+                    <a href="#" class="btn btn-dark" role="button">Receive Inventory</a>
+                    
+                    {% if po.get_received_items_count > 0 %}
+                    <button id="split-backorder" class="btn btn-dark" type="button" name="split-backorder">Split Backorder</button>
+                    <button id="cancel-undelivered" class="btn btn-dark" type="button" name="cancel-undelivered">Cancel Undelivered</button>
+                    <a href="#" class="btn btn-dark" role="button">Print Receiving Report</a>
+                    <a href="#" class="btn btn-dark" role="button">Print Variance Report</a>
+                    {% endif %}
+                        
+                    {% endif %}
+
                     <a href="{% url 'print_po' po.pk %}" class="btn btn-dark" role="button">Print PO</a>
                 </span>
             </div>
@@ -157,19 +169,19 @@
     <div class="card-footer">
         <div class="row">
             <div class="col-12">
-                {% if user.userdetail.userType == 'Purchaser' %}
+                {% if user.userdetail.userType == 'Purchaser' and po.process_step < 5 %}
                 
                     {% if products %}
                     <button type="button" name="submit_btn" id="submit_btn" class="btn btn-warning card-link">Submit</button>
                     {% endif %}
                     
                     <button type="button" id="cancel" class="btn btn-danger card-link">Cancel</button>
-                    <a href="{% url 'po_list' supplier.pk %}" class="btn btn-default card-link float-right">Save and back to list</a>
                 {% elif user.userdetail.userType == po.get_user_type and user.userdetail.userType != 'Officer-In-Charge' or user.userdetail.userType == 'Officer-In-Charge' and user.userdetail.oic_for == po.category %}
                     <input type="hidden" name="reject_reason" id="reject_reason" >
                     <button type="button" name="approve_btn" id="approve_btn" class="btn btn-warning card-link">Approve</button>
                     <button type="button" name="reject_btn" id="reject_btn" class="btn btn-danger card-link">Reject</button>
                 {% endif %}
+                <a href="{% url 'po_list' supplier.pk %}" class="btn btn-default card-link float-right">Back to list</a>
             </div>
         </div>
     </div>
