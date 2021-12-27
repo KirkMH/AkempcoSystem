@@ -10,7 +10,7 @@ from AkempcoSystem.decorators import user_is_allowed
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 
-from admin_area.models import Feature
+from admin_area.models import Feature, Store
 from fm.views import get_index, add_search_key
 from fm.models import Product, Supplier
 from .models import PurchaseOrder, PO_Product
@@ -154,6 +154,7 @@ class POProductUpdateView(BSModalUpdateView):
     form_class = PO_ProductForm
 
     def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
         po = get_object_or_404(PurchaseOrder, pk=self.kwargs['pk'])
         context["form"].fields["product"].queryset = Product.objects.filter(status='ACTIVE', suppliers=po.supplier, category=po.category)
         return context
@@ -191,12 +192,28 @@ class POProductDeleteView(BSModalDeleteView):
                         kwargs={'pk' : self.kwargs['pk']})
 
 
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
+class PurchaseOrderDetailView(DetailView):
+    model = PurchaseOrder
+    context_object_name = 'po'
+    template_name = "purchases/po_print.html"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["po_list"] = PO_Product.objects.filter(purchase_order=self.object)
+        context["akempco"] = Store.objects.all().first()
+        return context
+
+
 @login_required
 @user_is_allowed(Feature.TR_PURCHASES)
 def submit_po(request, pk):
     this_po = get_object_or_404(PurchaseOrder, pk=pk)
 
     if request.method == 'POST':
+        print(request.user)
         this_po.submit(request.user)
 
     return redirect('po_list', pk=this_po.supplier.pk)

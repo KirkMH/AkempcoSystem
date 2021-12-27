@@ -301,7 +301,7 @@ class PO_Product(models.Model):
     )
 
     def __str__(self):
-        return self.product.full_description + ": " + str(self.quantity) + " " + self.product.uom.uom_description
+        return self.product.full_description + ": " + str(self.ordered_quantity) + " " + self.product.uom.uom_description
 
     def is_closed(self):
         return (self.quantity == self.received_qty)

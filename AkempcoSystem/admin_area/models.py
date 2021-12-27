@@ -134,8 +134,18 @@ class Store(models.Model):
         default=None
     )
     # markup details
+    point_of_reference = models.DecimalField(
+        _("Point of Reference"), 
+        max_digits=5, 
+        decimal_places=2
+    )
+    retail_markup_below = models.DecimalField(
+        _("Retail Markup Below Point of Reference"), 
+        max_digits=5, 
+        decimal_places=2
+    )
     retail_markup = models.DecimalField(
-        _("Retail Markup"), 
+        _("Retail Markup From Point of Reference"), 
         max_digits=5, 
         decimal_places=2
     )
@@ -148,3 +158,7 @@ class Store(models.Model):
     def __str__(self):
         return self.name
     
+    def save(self, *args, **kwargs):
+        if Store.objects.count() == 1:
+            raise ValidationError("You can only have one store record.")
+        super().save(*args, **kwargs)

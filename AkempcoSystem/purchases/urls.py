@@ -16,6 +16,7 @@ urlpatterns = [
     path('po/<int:pk>/submit', views.submit_po, name='submit_po'),
     path('po/<int:pk>/approve', views.approve_po, name='approve_po'),
     path('po/<int:pk>/reject', views.reject_po, name='reject_po'),
+    path('po/<int:pk>/print', views.PurchaseOrderDetailView.as_view(), name='print_po'),
 
     path('ajax/select_product', views.select_product, name='select_product'),
     path('ajax/load_data', views.load_data, name='load_data'),

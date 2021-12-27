@@ -68,6 +68,10 @@
             <div class="col-lg-1 invoice-col">Notes:</div>
             <div class="col-lg-5 invoice-col font-weight-bold">{{ po.notes }}</div>
         </div>
+        <div class="row invoice-info">
+            <div class="col-lg-1 invoice-col">Status:</div>
+            <div class="col-lg-11 invoice-col font-weight-bold">{{ po.get_status }}</div>
+        </div>
         <!-- /.info row -->
         <div class="row mt-2">
             <div class="col-12">
@@ -88,7 +92,7 @@
             </div>
             <div class="col-8">
                 <span class="float-right">
-                    <button id="print_po" class="btn btn-dark" type="button" name="print_po">Print PO</button>
+                    <a href="{% url 'print_po' po.pk %}" class="btn btn-dark" role="button">Print PO</a>
                 </span>
             </div>
         </div>

@@ -11,7 +11,7 @@
 {% block breadcrumb %}
     <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
     <li class="breadcrumb-item"><a href="{% url 'purchase_suppliers' %}">Purchases</a></li>
-    <li class="breadcrumb-item"><a href="{% url 'po_list' supplier.pk %}">Purchase Orders</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'po_list' po.supplier.pk %}">Purchase Orders</a></li>
     <li class="breadcrumb-item active">Print</li>
 {% endblock breadcrumb %}
 
@@ -23,19 +23,19 @@
         <div class="row mb-4">
             <div class="col-12 text-center">
                 <img src="{% static 'img/logo.png' %}" alt="AKEMPCO Logo" width="100px" style="z-index: 999;" class="float-left">
-                <h4 class="txet-uppercase">{{ store.name }}</h4>
-                <div>{{ store.address }}</div>
+                <h4 class="text-uppercase">{{ akempco.name }}</h4>
+                <div>{{ akempco.address }}</div>
                 
-                {% if store.registration_number %}
-                <div>{{ store.registration_number }}</div>
+                {% if akempco.registration_number %}
+                <div>{{ akempco.registration_number }}</div>
                 {% endif %}
                 
-                {% if store.contact_number %}
-                <div>{{ store.contact_number }}</div>
+                {% if akempco.contact_numbers %}
+                <div>{{ akempco.contact_numbers }}</div>
                 {% endif %}
                 
-                {% if store.email %}
-                <div>{{ store.email }}</div>
+                {% if akempco.email %}
+                <div>{{ akempco.email }}</div>
                 {% endif %}
                     
                     
@@ -45,22 +45,22 @@
         <!-- info row -->
         <div class="row invoice-info">
             <div class="col-sm-1 invoice-col">Supplier:</div>
-            <div class="col-sm-7 invoice-col">{{ po.supplier.supplier_name }}</div>
+            <div class="col-sm-7 invoice-col text-bold">{{ po.supplier.supplier_name }}</div>
             <div class="col-sm-1 invoice-col">No.:</div>
-            <div class="col-sm-3 invoice-col">
-                {{ po.sequence_number|seq_num }}
+            <div class="col-sm-3 invoice-col text-bold">
+                {{ po.pk|seq_num }}
                 
-                {% if po.status == 0 %}
-                    <span style="color: red; text-transform: uppercase;">- {{ po.get_status_display }}</span> 
+                {% if po.status > 5 %}
+                    <span style="color: red; text-transform: uppercase;">- {{ po.get_status }}</span> 
                 {% endif %}
                     
             </div>
         </div>
         <div class="row invoice-info">
             <div class="col-sm-1 invoice-col">Address:</div>
-            <div class="col-sm-7 invoice-col"><address>{{ po.supplier.address }}</address></div>
+            <div class="col-sm-7 invoice-col text-bold"><address>{{ po.supplier.address }}</address></div>
             <div class="col-sm-1 invoice-col">Date:</div>
-            <div class="col-sm-3 invoice-col">{{ po.po_date|date:'F d, Y' }}</div>
+            <div class="col-sm-3 invoice-col text-bold">{{ po.po_date|date:'F d, Y' }}</div>
         </div>
         <!-- /.row -->
 
@@ -83,18 +83,18 @@
                     <tr>
                         <td class="text-center">{{ item.product.barcode }}</td>
                         <td>{{ item.product.full_description }}</td>
-                        <td class="text-center">{{ item.quantity }}</td>
-                        <td class="text-center">{{ item.product.order_uom.uom_description }}</td>
+                        <td class="text-center">{{ item.ordered_quantity }}</td>
+                        <td class="text-center">{{ item.product.uom }}{{ item.ordered_quantity|pluralize }}</td>
                         <td class="text-right">{{ item.unit_price|peso }}</td>
-                        <td class="text-right">{{ item.subtotal|peso }}</td>
+                        <td class="text-right">{{ item.get_po_subtotal|peso }}</td>
                     </tr>
                 {% endfor %}
 
                     <tr class="table-primary">
-                        <td colspan="2" class="text-left">TOTAL</td>
-                        <td class="text-center">{{ total_qty }}</td>
-                        <td colspan="2" class="text-center"></td>
-                        <td class="text-right">{{ total_price|peso }}</td>
+                        <td class="text-left">TOTAL</td>
+                        <td>{{ po.get_item_count }} item{{ po.get_item_count|pluralize }}</td>
+                        <td colspan="3" class="text-center"></td>
+                        <td class="text-right">{{ po.get_total_po_amount|peso }}</td>
                 </tbody>
             </table>
             </div>
@@ -106,24 +106,24 @@
             <div class="col-6">
                 <p>Prepared by:</p>
                 <div class="text-center font-weight-bold mt-6"><u>{{ po.prepared_by.get_full_name }}</u></div>
-                <div class="text-center font-weight-light">{{ po.prepared_by.userdetail.get_userType_display }}</div>
+                <div class="text-center font-weight-light">{{ po.prepared_by.userdetail.userType }}</div>
             </div>
             <div class="col-6">
                 <p>Approved by:</p>
                 <div class="text-center font-weight-bold mt-6"><u>{{ po.gm_checker.get_full_name }}</u></div>
-                <div class="text-center font-weight-light">{{ po.gm_checker.userdetail.get_userType_display }}</div>
+                <div class="text-center font-weight-light">{{ po.gm_checker.userdetail.userType }}</div>
             </div>
         </div>
         <div class="row mt-4">
             <div class="col-6">
                 <p>Checked by:</p>
                 <div class="text-center font-weight-bold mt-6"><u>{{ po.oic_checker.get_full_name }}</u></div>
-                <div class="text-center font-weight-light">{{ po.oic_checker.userdetail.get_userType_display }}</div>
+                <div class="text-center font-weight-light">{{ po.oic_checker.userdetail.userType }}</div>
             </div>
             <div class="col-6">
                 <p>Checked by:</p>
                 <div class="text-center font-weight-bold mt-6"><u>{{ po.audit_checker.get_full_name }}</u></div>
-                <div class="text-center font-weight-light">{{ po.audit_checker.userdetail.get_userType_display }}</div>
+                <div class="text-center font-weight-light">{{ po.audit_checker.userdetail.userType }}</div>
             </div>
         </div>
         <!-- /.row -->
@@ -146,7 +146,7 @@
     <script>
         $(document).ready(function() {
             $("#menu_trans").addClass("menu-open")
-            $("#menu_trans_po").addClass("active")
+            $("#menu_trans_purchases").addClass("active")
         })
     </script>
 {% endblock js %}
