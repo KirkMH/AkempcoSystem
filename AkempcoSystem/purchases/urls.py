@@ -18,6 +18,7 @@ urlpatterns = [
     path('po/<int:pk>/reject', views.reject_po, name='reject_po'),
     path('po/<int:pk>/print', views.PurchaseOrderDetailView.as_view(), name='print_po'),
     path('po/<int:pk>/receiving/print', views.PODetailViewRR.as_view(), name='print_receiving'),
+    path('po/<int:pk>/variance/print', views.PODetailViewVR.as_view(), name='print_variance'),
 
     path('po/<int:pk>/receive', views.PODetailViewReceiveStocks.as_view(), name='receive_stocks'),
     path('po/<int:pk>/receive/<int:item_pk>/update_receive_now', views.update_receive_now, name='update_receive_now'),

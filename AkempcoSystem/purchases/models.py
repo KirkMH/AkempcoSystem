@@ -318,12 +318,11 @@ class PurchaseOrder(models.Model):
         self.update_status()
 
     def split_to_backorder(self, child_po):
-        # run over the PO Products, moving undelivered items to child_po
         products = PO_Product.objects.filter(purchase_order=self)
         for prod in products:
-            if prod.received_qty < prod.ordered_quantity:
+            if prod.undelivered_qty > 0:
                 # create new record
-                new_prod = prod
+                new_prod = PO_Product.objects.get(pk=prod.pk)
                 new_prod.pk = None
                 new_prod.purchase_order = child_po
                 new_prod.ordered_quantity = prod.undelivered_qty
@@ -335,8 +334,9 @@ class PurchaseOrder(models.Model):
                 prod.receive_now = 0
                 prod.save()
 
-        # close parent PO
+        # update status of each PO (parent closed, child open)
         self.update_status()
+        child_po.update_status()
 
     def cancel_undelivered(self):
         # run over the PO Products, cancelling undelivered items

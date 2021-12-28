@@ -6,13 +6,13 @@
     <link rel="stylesheet" href="{% static 'css/table_setup.css' %}">
 {% endblock css %}
     
-{% block page_title %}Print Receiving Report{% endblock page_title %}
+{% block page_title %}Print Variance Report{% endblock page_title %}
 
 {% block breadcrumb %}
     <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
     <li class="breadcrumb-item"><a href="{% url 'purchase_suppliers' %}">Purchases</a></li>
     <li class="breadcrumb-item"><a href="{% url 'po_list' po.supplier.pk %}">Purchase Orders</a></li>
-    <li class="breadcrumb-item active">Receiving Report</li>
+    <li class="breadcrumb-item active">Variance Report</li>
 {% endblock breadcrumb %}
 
 {% block main_content %}
@@ -39,7 +39,7 @@
                 {% endif %}
                     
                 <div class="mt-4 mb-2">
-                    <h2>RECEIVING REPORT</h2>
+                    <h2>VARIANCE REPORT</h2>
                 </div>
             </div>
             <!-- /.col -->
@@ -67,32 +67,23 @@
                     <tr>
                         <th width="15%">Barcode</th>
                         <th width="30%">Description</th>
-                        <th width="12%">Qty</th>
-                        <th width="13%">Units</th>
-                        <th width="15%">Unit Price</th>
-                        <th width="15%">Subtotal</th>
+                        <th width="15%">Ordered Qty</th>
+                        <th width="15%">Delivered Qty</th>
+                        <th width="13%">Variance</th>
+                        <th width="12%">Units</th>
                     </tr>
                 </thead>
                 <tbody>
                 {% for item in po_list %}
-                {% if item.received_qty > 0 %}
                     <tr>
                         <td class="text-center">{{ item.product.barcode }}</td>
                         <td>{{ item.product.full_description }}</td>
+                        <td class="text-center">{{ item.ordered_quantity }}</td>
                         <td class="text-center">{{ item.received_qty }}</td>
-                        <td class="text-center">{{ item.product.uom }}{{ item.received_qty|pluralize }}</td>
-                        <td class="text-right">{{ item.unit_price|peso }}</td>
-                        <td class="text-right">{{ item.get_received_subtotal|peso }}</td>
+                        <td class="text-center{% if item.undelivered_qty > 0 %} text-danger{% endif %}">{{ item.undelivered_qty }}</td>
+                        <td class="text-center">{{ item.product.uom }}{{ item.undelivered_qty|pluralize }}</td>
                     </tr>
-                {% endif %}
                 {% endfor %}
-
-                    <tr class="table-primary">
-                        <td class="text-left">TOTAL</td>
-                        <td>{{ po.get_item_count }} item{{ po.get_item_count|pluralize }}</td>
-                        <td colspan="3" class="text-center"></td>
-                        <td class="text-right">{{ po.get_total_received_amount|peso }}</td>
-                    </tr>
                 </tbody>
             </table>
             </div>

@@ -109,7 +109,6 @@
 
         function process(url, value=0) {
             let token = $("#receiving_form").find('input[name=csrfmiddlewaretoken]').val()
-            console.log(token)
             $.ajax({
                 url: url,
                 type: 'POST',
@@ -119,7 +118,6 @@
                 },
                 dataType: 'json',
                 success: function(data) {
-                    console.log(data)
                     if (data == true || data == false)
                         location.reload();
                     else
@@ -147,6 +145,7 @@
                     inputType: 'number',
                     'value': val,
                     'step': 1,
+                    'min': 0,
                     callback: function (result) {
                         process(url, result)
                     }
@@ -166,6 +165,7 @@
                     inputType: 'number',
                     'value': val,
                     'step': 0.01,
+                    'min': 0.00,
                     callback: function (result) {
                         process(url, result)
                     }

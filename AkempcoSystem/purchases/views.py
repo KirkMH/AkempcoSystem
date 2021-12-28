@@ -383,6 +383,20 @@ class PODetailViewRR(DetailView):
         return context
 
 
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
+class PODetailViewVR(DetailView):
+    model = PurchaseOrder
+    context_object_name = 'po'
+    template_name = "purchases/rpt_variance_print.html"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["po_list"] = PO_Product.objects.filter(purchase_order=self.object)
+        context["akempco"] = Store.objects.all().first()
+        return context
+
+
 ##################################################
 ### Undelivered Items: Backorder and Cancellation
 ##################################################
@@ -405,28 +419,23 @@ class POUndeliveredDetailView(DetailView):
 @login_required()
 @user_is_allowed(Feature.TR_PURCHASES)
 def split_backorder(request, pk):
-    new_po_pk = 0
-    
-    try:
-        child_po = po = PurchaseOrder.objects.get(pk=pk)
-        # clone PO details and add parent PO
-        child_po.pk = None
-        child_po.parent_po = pk
-        child_po.save()
-        new_po_pk = child_po.pk
-        # split this PO
-        po.split_to_backorder(child_po)
-        new_po_pk = child_po.pk
-
-    except:
-        pass
+    po = PurchaseOrder.objects.get(pk=pk)
+    child_po = PurchaseOrder.objects.get(pk=pk)
+    # clone PO details and add parent PO
+    child_po.pk = None
+    child_po.parent_po = pk
+    child_po.po_date = datetime.now()
+    child_po.save()
+    new_po_pk = child_po.pk
+    # split this PO
+    po.split_to_backorder(child_po)
 
     data = {
-        'success': success,
+        'success': True,
         'new_po_pk': new_po_pk,
         'next_url': 'show-modal'
     }
-    return JsonResponse(new_po_pk, safe=False)
+    return JsonResponse(data, safe=False)
         
 
 

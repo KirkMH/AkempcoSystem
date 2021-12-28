@@ -110,7 +110,6 @@
 
         function process(url) {
             let token = $("#receiving_form").find('input[name=csrfmiddlewaretoken]').val()
-            console.log(token)
             $.ajax({
                 url: url,
                 type: 'POST',
@@ -122,7 +121,7 @@
                     if (data.success) {
                         if (data.next_url == 'show-modal') {
                             // this is from split
-                            create_modal("{{ po.pk }}", data.new_po_pk)
+                            create_modal("{{ po.pk }}", data.new_po_pk);
                         }
                         else {
                             // this is from cancel
@@ -139,7 +138,7 @@
         }
 
         function create_modal(parent_po, child_po) {
-            bootbox.alert({
+            bootbox.dialog({
                 title: "Split to Back Order",
                 message: "<b>Back order successfully created.</b><br>" +
                          "Original order: " + pad(parent_po)  + "<br>" +
@@ -149,14 +148,14 @@
                         label: "Open original order",
                         className: 'btn-primary',
                         callback: function(){
-                            location.href = 'purchases/po/' + parent_po + '/products'
+                            location.href = '/purchases/po/' + parent_po + '/products'
                         }
                     },
                     ok: {
                         label: "Open new back order",
-                        className: 'btn-info',
+                        className: 'btn-success',
                         callback: function(){
-                            location.href = 'purchases/po/' + child_po + '/products'
+                            location.href = '/purchases/po/' + child_po + '/products'
                         }
                     }
                 }

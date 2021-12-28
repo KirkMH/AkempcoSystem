@@ -58,7 +58,14 @@
         <!-- info row -->
         <div class="row invoice-info">
             <div class="col-lg-1 invoice-col">PO #:</div>
-            <div class="col-lg-5 invoice-col font-weight-bold">{{ po.pk|seq_num }}</div>
+            <div class="col-lg-5 invoice-col font-weight-bold">
+                {{ po.pk|seq_num }} 
+                
+                {% if po.parent_po %}
+                    <span class="text-muted">(Parent PO#: <a href="{% url 'po_products' po.parent_po %}">{{ po.parent_po|seq_num }}</a>)</span>
+                {% endif %}
+                    
+            </div>
             <div class="col-lg-1 invoice-col">PO Date:</div>
             <div class="col-lg-5 invoice-col font-weight-bold">{{ po.po_date|date:'F d, Y' }}</div>
         </div>
@@ -102,7 +109,7 @@
                     
                     {% if po.get_received_items_count > 0 %}
                     <a href="{% url 'view_undelivered' po.pk %}" class="btn btn-dark mb-2" role="button">View Undelivered</a>
-                    <a href="#" class="btn btn-dark mb-2" role="button">Print Variance Report</a>
+                    <a href="{% url 'print_variance' po.pk %}" class="btn btn-dark mb-2" role="button">Print Variance Report</a>
                     {% endif %}
                         
                     {% endif %}
@@ -281,12 +288,10 @@
                 if (result) {
                     bootbox.prompt("Please enter the reason for rejecting this purchase order.", function(result){ 
                         if (result != null) {
-                            console.log(result);
                             $('#reject_reason').val(result);
                             $('#submit_po_form').attr('action', "{% url 'reject_po' po.pk %}");
                             $('#submit_po_form').submit();
                         }
-                        console.log(result); 
                     });
                 }
             });
