@@ -45,12 +45,6 @@ class Category(models.Model):
         help_text='Use singular form.',
         null=False
     )
-    oic = models.ForeignKey(
-        UserDetail, 
-        verbose_name=_("Officer-in-Charge"), 
-        on_delete=models.RESTRICT,
-        null=True
-    )
     status = models.CharField(
         _("Status"), 
         max_length=10,

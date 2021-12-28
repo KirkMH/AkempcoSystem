@@ -28,7 +28,6 @@
                 <tr>
                     <th class="text-center" width=10%>Action</th>
                     <th>Category</th>
-                    <th>Officer-in-Charge</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -37,7 +36,6 @@
                     <tr>
                         <td class="text-center"><a href="{% url 'edit_category' category.pk %}" title="Edit"><i class="far fa-edit"></i></a></td>
                         <td>{{ category.category_description }}</td>
-                        <td>{{ category.oic }}</td>
                         <td>{{ category.status }}</td>
                     </tr>
                 {% endfor %}
