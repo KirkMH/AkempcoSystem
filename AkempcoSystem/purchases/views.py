@@ -261,7 +261,6 @@ def select_product(request):
             'supplier_price': supplier_price,
             'inv_uom': inv_uom
         }
-
         return JsonResponse(data, safe=False)
 
     except Product.DoesNotExist:
@@ -304,8 +303,7 @@ class PODetailViewReceiveStocks(DetailView):
 
 @login_required()
 @user_is_allowed(Feature.TR_PURCHASES)
-def update_receive_now(request, pk):
-    item_pk = int(request.POST.get('item_pk', '0'))
+def update_receive_now(request, pk, item_pk):
     receive_now = int(request.POST.get('value', '0'))
     success = True
     try:
@@ -325,11 +323,11 @@ def update_receive_now(request, pk):
 @login_required()
 @user_is_allowed(Feature.TR_PURCHASES)
 def update_unit_price(request, pk):
-    item_pk = int(request.POST.get('item_pk', '0'))
     unit_price = float(request.POST.get('value', '0'))
     success = True
     try:
-        prod = PO_Product.objects.get(pk=item_pk)
+        prod = PO_Product.objects.get(pk=pk)
+        print(prod)
         prod.unit_price = unit_price
         prod.set_for_price_review()
         prod.save()
@@ -365,3 +363,88 @@ def receive_stocks_save(request, pk):
 
     print(next_url)
     return JsonResponse(next_url, safe=False)
+
+
+##################################################
+### Undelivered Items: Backorder and Cancellation
+##################################################
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
+class PODetailViewRR(DetailView):
+    model = PurchaseOrder
+    context_object_name = 'po'
+    template_name = "purchases/rpt_receiving_print.html"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["po_list"] = PO_Product.objects.filter(purchase_order=self.object)
+        context["akempco"] = Store.objects.all().first()
+        return context
+
+
+##################################################
+### Undelivered Items: Backorder and Cancellation
+##################################################
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
+class POUndeliveredDetailView(DetailView):
+    model = PurchaseOrder
+    context_object_name = 'po'
+    template_name = "purchases/undelivered_products.html"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["products"] = PO_Product.objects.filter(purchase_order=self.object)
+        context["supplier"] = self.object.supplier
+        return context
+        
+
+
+@login_required()
+@user_is_allowed(Feature.TR_PURCHASES)
+def split_backorder(request, pk):
+    new_po_pk = 0
+    
+    try:
+        child_po = po = PurchaseOrder.objects.get(pk=pk)
+        # clone PO details and add parent PO
+        child_po.pk = None
+        child_po.parent_po = pk
+        child_po.save()
+        new_po_pk = child_po.pk
+        # split this PO
+        po.split_to_backorder(child_po)
+        new_po_pk = child_po.pk
+
+    except:
+        pass
+
+    data = {
+        'success': success,
+        'new_po_pk': new_po_pk,
+        'next_url': 'show-modal'
+    }
+    return JsonResponse(new_po_pk, safe=False)
+        
+
+
+@login_required()
+@user_is_allowed(Feature.TR_PURCHASES)
+def cancel_undelivered(request, pk):
+    success = True
+    next_url = reverse('po_products', kwargs={'pk' : pk})
+    
+    try:
+        po = PurchaseOrder.objects.get(pk=pk)
+        po.cancel_undelivered()
+
+    except:
+        success = False
+
+    data = {
+        'success': success,
+        'next_url': next_url
+    }
+    return JsonResponse(data, safe=False)

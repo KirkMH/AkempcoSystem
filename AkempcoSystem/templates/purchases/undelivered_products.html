@@ -15,14 +15,14 @@
 
 {% block page_title %}
 {{ supplier.supplier_name }}
-<div class="text-muted"><h4>Receive Stocks</h4></div>
+<div class="text-muted"><h4>Undelivered Items</h4></div>
 {% endblock page_title %}
 
 {% block breadcrumb %}
     <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
     <li class="breadcrumb-item"><a href="{% url 'purchase_suppliers' %}">Purchases</a></li>
     <li class="breadcrumb-item"><a href="{% url 'po_list' supplier.pk %}">Purchase Orders</a></li>
-    <li class="breadcrumb-item active">Receive Stocks</li>
+    <li class="breadcrumb-item active">Undelivered Items</li>
 {% endblock breadcrumb %}
 
 {% block main_content %}
@@ -55,11 +55,10 @@
                 <tr>
                     <th width="15%">Barcode</th>
                     <th width="30%">Description</th>
-                    <th width="10%">Ordered Qty</th>
-                    <th width="10%">Received Qty</th>
-                    <th width="10%">Receive Now</th>
+                    <th width="15%">Ordered Qty</th>
+                    <th width="15%">Received Qty</th>
+                    <th width="15%">Undelivered</th>
                     <th width="10%">Units</th>
-                    <th width="15%">Unit Price</th>
                 </tr>
             </thead>
             <tbody>
@@ -68,15 +67,16 @@
                     <tr><td colspan="7" style="text-align: center;">No products available.</td></tr>
                 {% else %}
                     {% for item in products %}
+                    {% if item.undelivered_qty > 0 %}
                         <tr>
                             <td class="text-center">{{ item.product.barcode }}</td>
                             <td>{{ item.product.full_description }}</td>
                             <td class="text-center">{{ item.ordered_quantity }}</td>
                             <td class="text-center">{{ item.received_qty }}</td>
-                            <td class="text-center"><button type="button" class="btn btn-sm btn-outline-info set-receive-now" data-value="{{ item.receive_now }}" data-form-url="{% url 'update_receive_now' po.pk item.pk %}" >{{ item.receive_now }}</button></td>
-                            <td class="text-center">{{ item.product.uom }}{{ item.received_qty|pluralize }}</td>
-                            <td class="text-right"><button type="button" class="btn btn-sm btn-outline-info set-unit-price" data-value="{{ item.unit_price }}" data-form-url="{% url 'update_unit_price' item.pk %}" >{{ item.unit_price|peso }}</button></td>
+                            <td class="text-center">{{ item.undelivered_qty }}</td>
+                            <td class="text-center">{{ item.product.uom }}{{ item.undelivered_qty|pluralize }}</td>
                         </tr>
+                    {% endif %}
                     {% endfor %}
                 {% endif %}
                     
@@ -88,7 +88,8 @@
     <div class="card-footer">
         <div class="row">
             <div class="col-12">
-                <button type="button" name="receive_btn" id="receive_btn" class="btn btn-warning card-link">Receive Stocks</button>
+                <button type="button" name="split-backorder" id="split-backorder" class="btn btn-warning card-link">Split to Backorder</button>
+                <button type="button" name="cancel-undelivered" id="cancel-undelivered" class="btn btn-danger card-link">Cancel Undelivered</button>
                 <a href="{% url 'po_products' po.pk %}" class="btn btn-default card-link float-right">Back to Purchase Order</a>
             </div>
         </div>
@@ -107,7 +108,7 @@
   <script type="text/javascript">
     $(document).ready(function() {
 
-        function process(url, value=0) {
+        function process(url) {
             let token = $("#receiving_form").find('input[name=csrfmiddlewaretoken]').val()
             console.log(token)
             $.ajax({
@@ -115,65 +116,69 @@
                 type: 'POST',
                 data: {
                     'csrfmiddlewaretoken': token,
-                    'value': value, 
                 },
                 dataType: 'json',
                 success: function(data) {
-                    console.log(data)
-                    if (data == true || data == false)
-                        location.reload();
-                    else
-                        location.href = data;
+                    if (data.success) {
+                        if (data.next_url == 'show-modal') {
+                            // this is from split
+                            create_modal("{{ po.pk }}", data.new_po_pk)
+                        }
+                        else {
+                            // this is from cancel
+                            location.href = data.next_url;
+                        }
+                    }
+                }
+            })
+        }
+
+        function pad(num) {
+            var s = "00000000" + num;
+            return s.substr(s.length-8);
+        }
+
+        function create_modal(parent_po, child_po) {
+            bootbox.alert({
+                title: "Split to Back Order",
+                message: "<b>Back order successfully created.</b><br>" +
+                         "Original order: " + pad(parent_po)  + "<br>" +
+                         "New back order: " + pad(child_po),
+                buttons: {
+                    cancel: {
+                        label: "Open original order",
+                        className: 'btn-primary',
+                        callback: function(){
+                            location.href = 'purchases/po/' + parent_po + '/products'
+                        }
+                    },
+                    ok: {
+                        label: "Open new back order",
+                        className: 'btn-info',
+                        callback: function(){
+                            location.href = 'purchases/po/' + child_po + '/products'
+                        }
+                    }
                 }
             })
         }
 
         
-        $('#receive_btn').click(function() {
-            bootbox.confirm("Are you sure you want to receive these stocks?", function(result){ 
+        $('#split-backorder').click(function() {
+            bootbox.confirm("Are you sure you want to split this purchase order to backorder?", function(result){ 
                 if (result) {
-                    process("{% url 'receive_stocks_save' po.pk %}")
+                    process("{% url 'split_backorder' po.pk %}")
                 }
             });
         })
 
-        function setReceiveNow() {
-          $(".set-receive-now").each(function () {
-            $(this).click(function() {
-                var url = $(this).data("form-url");
-                var val = $(this).data("value");
-                bootbox.prompt({
-                    title: "Please enter the actual quantity to receive:",
-                    inputType: 'number',
-                    'value': val,
-                    'step': 1,
-                    callback: function (result) {
-                        process(url, result)
-                    }
-                });
+        $('#cancel-undelivered').click(function() {
+            bootbox.confirm("Are you sure you want to cancel the undelivered items?", function(result){ 
+                if (result) {
+                    process("{% url 'cancel_undelivered' po.pk %}")
+                }
             });
-          });
-        }
-        setReceiveNow();
-
-        function setUnitPrice() {
-          $(".set-unit-price").each(function () {
-            $(this).click(function() {
-                var url = $(this).data("form-url");
-                var val = $(this).data("value");
-                bootbox.prompt({
-                    title: "Please enter the actual supplier's unit price:",
-                    inputType: 'number',
-                    'value': val,
-                    'step': 0.01,
-                    callback: function (result) {
-                        process(url, result)
-                    }
-                });
-            });
-          });
-        }
-        setUnitPrice();
+        })
     
     });
   </script>

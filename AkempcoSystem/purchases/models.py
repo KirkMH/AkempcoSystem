@@ -172,6 +172,10 @@ class PurchaseOrder(models.Model):
         verbose_name=_('Is the user receiving stocks now?'),
         default=False
     )
+    has_cancelled_items = models.BooleanField(
+        verbose_name=_('Is this PO contains cancelled items?'),
+        default=False
+    )
 
     def __str__(self):
         return "PO # {:08}".format(self.pk)
@@ -193,7 +197,7 @@ class PurchaseOrder(models.Model):
         return PO_Product.objects.filter(purchase_order=self).aggregate(total=Sum( F('unit_price') * F('ordered_quantity')))['total']
 
     def get_total_received_amount(self):
-        return PO_Product.objects.filter(purchase_order=self).aggregate(total=Sum( F('unit_price') * F('received_quantity')))['total']
+        return PO_Product.objects.filter(purchase_order=self).aggregate(total=Sum( F('unit_price') * F('received_qty')))['total']
 
     def get_received_items_count(self):
         products = PO_Product.objects.filter(purchase_order=self)
@@ -307,9 +311,47 @@ class PurchaseOrder(models.Model):
                 prod.received_qty = prod.received_qty + prod.receive_now
                 prod.receive_now = 0
                 prod.save()
+        self.received_by = user
+        self.received_date = datetime.now()
         self.is_receiving_now = False
         self.save()
         self.update_status()
+
+    def split_to_backorder(self, child_po):
+        # run over the PO Products, moving undelivered items to child_po
+        products = PO_Product.objects.filter(purchase_order=self)
+        for prod in products:
+            if prod.received_qty < prod.ordered_quantity:
+                # create new record
+                new_prod = prod
+                new_prod.pk = None
+                new_prod.purchase_order = child_po
+                new_prod.ordered_quantity = prod.undelivered_qty
+                new_prod.received_qty = 0
+                new_prod.receive_now = 0
+                new_prod.save()
+                # adjust current record
+                prod.ordered_quantity = prod.received_qty
+                prod.receive_now = 0
+                prod.save()
+
+        # close parent PO
+        self.update_status()
+
+    def cancel_undelivered(self):
+        # run over the PO Products, cancelling undelivered items
+        products = PO_Product.objects.filter(purchase_order=self)
+        for prod in products:
+            if prod.received_qty < prod.ordered_quantity:
+                # adjust current record
+                prod.ordered_quantity = prod.received_qty
+                prod.receive_now = 0
+                prod.save()
+
+        # close parent PO
+        self.update_status()
+        self.has_cancelled_items = True
+        self.save()
 
     class Meta:
         ordering = [F('pk').desc(nulls_first=True)]
@@ -345,6 +387,10 @@ class PO_Product(models.Model):
         default=0
     )
 
+    @property
+    def undelivered_qty(self):
+        return (self.ordered_quantity - self.received_qty)
+
     def __str__(self):
         return self.product.full_description + ": " + str(self.ordered_quantity) + " " + self.product.uom.uom_description
 
@@ -354,14 +400,11 @@ class PO_Product(models.Model):
     def has_received(self):
         return (self.received_qty > 0)
 
-    def get_unreceived_qty(self):
-        return (self.quantity - self.received_qty)
-
     def get_po_subtotal(self):
         return self.unit_price * self.ordered_quantity
 
     def get_received_subtotal(self):
-        return self.unit_price * self.received_quantity
+        return self.unit_price * self.received_qty
 
     def set_for_price_review(self):
         self.product.for_price_review = True

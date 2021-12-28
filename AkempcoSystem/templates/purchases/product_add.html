@@ -89,7 +89,7 @@ $(document).ready(function() {
                 dataType: 'json',
                 success: function(data) {
                     // inventory uom, supplier price
-                    $('#id_supplier_price').val(data.supplier_price)
+                    $('#id_unit_price').val(data.supplier_price)
                     $('#uom').text(data.inv_uom.toLowerCase() + '(s)')
                 }
             })

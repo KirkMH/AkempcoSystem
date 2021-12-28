@@ -26,12 +26,18 @@ class Feature:
 
 # UserType is used to clasify users
 class UserType:
+    WH_STAFF = 'Warehouse Staff'
+    SALES = 'Sales Personnel'
+    STOREKEEPER = 'Storekeeper'
     PURCHASER = 'Purchaser'
     OIC = 'Officer-In-Charge'
     AUDIT = 'Audit Committee'
     GM = 'General Manager'
     
     LIST = (
+        (WH_STAFF, 'Warehouse Staff'),
+        (SALES, 'Sales Personnel'),
+        (STOREKEEPER, 'Storekeeper'),
         (PURCHASER, 'Purchaser'),
         (OIC, 'Officer-In-Charge'),
         (AUDIT, 'Audit Committee'),

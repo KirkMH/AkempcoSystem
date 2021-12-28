@@ -35,6 +35,6 @@ def seq_num(number):
 @register.filter
 def percentage(value):
     if value:
-        return format(value, "%")
+        return '{:.0%}'.format(value)
     else:
         return "0%"

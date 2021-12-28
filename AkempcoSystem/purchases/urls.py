@@ -17,12 +17,17 @@ urlpatterns = [
     path('po/<int:pk>/approve', views.approve_po, name='approve_po'),
     path('po/<int:pk>/reject', views.reject_po, name='reject_po'),
     path('po/<int:pk>/print', views.PurchaseOrderDetailView.as_view(), name='print_po'),
+    path('po/<int:pk>/receiving/print', views.PODetailViewRR.as_view(), name='print_receiving'),
 
     path('po/<int:pk>/receive', views.PODetailViewReceiveStocks.as_view(), name='receive_stocks'),
-    path('po/<int:pk>/receive/update_receive_now', views.update_receive_now, name='update_receive_now'),
+    path('po/<int:pk>/receive/<int:item_pk>/update_receive_now', views.update_receive_now, name='update_receive_now'),
     path('po/<int:pk>/receive/update_unit_price', views.update_unit_price, name='update_unit_price'),
     path('po/<int:pk>/receive/update_ref_no', views.update_ref_no, name='update_ref_no'),
     path('po/<int:pk>/receive/save', views.receive_stocks_save, name='receive_stocks_save'),
+
+    path('po/<int:pk>/undelivered', views.POUndeliveredDetailView.as_view(), name='view_undelivered'),
+    path('po/<int:pk>/split_backorder', views.split_backorder, name='split_backorder'),
+    path('po/<int:pk>/cancel_undelivered', views.cancel_undelivered, name='cancel_undelivered'),
 
     path('ajax/select_product', views.select_product, name='select_product'),
     path('ajax/load_data', views.load_data, name='load_data'),

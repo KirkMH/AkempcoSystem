@@ -161,20 +161,20 @@ class Supplier(models.Model):
 
     def get_number_of_open_po(self):
         try:
-            return PurchaseOrder.objects.filter(supplier=self).filter(is_open=True).count()
+            return PurchaseOrder.objects.filter(supplier=self).filter(is_open=True, process_step__lt=6).count()
         except:
             return 0
 
     def get_po_count(self):
         try:
-            return PurchaseOrder.objects.filter(supplier=self).count()
+            return PurchaseOrder.objects.filter(supplier=self, process_step__lt=6).count()
         except:
             return 0
 
     def get_completion_rate(self):
         try:
-            open_ctr = get_number_of_open_po()
-            po_ctr = get_po_count()
+            open_ctr = self.get_number_of_open_po()
+            po_ctr = self.get_po_count()
             closed_ctr = po_ctr - open_ctr
             return closed_ctr / po_ctr
         except:

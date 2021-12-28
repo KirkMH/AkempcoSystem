@@ -101,24 +101,23 @@
                     <button type="button" class="btn btn-dark mb-2" id="receive_inv" name="receive_inv">Receive Inventory</button>
                     
                     {% if po.get_received_items_count > 0 %}
-                    <button id="split-backorder" class="btn btn-dark mb-2" type="button" name="split-backorder">Split Backorder</button>
-                    <button id="cancel-undelivered" class="btn btn-dark mb-2" type="button" name="cancel-undelivered">Cancel Undelivered</button>
-                    <br>
-                    <a href="#" class="btn btn-dark" role="button">Print Variance Report</a>
+                    <a href="{% url 'view_undelivered' po.pk %}" class="btn btn-dark mb-2" role="button">View Undelivered</a>
+                    <a href="#" class="btn btn-dark mb-2" role="button">Print Variance Report</a>
                     {% endif %}
                         
                     {% endif %}
                     {% if po.get_received_items_count > 0 %}
-                    <a href="#" class="btn btn-dark" role="button">Print Receiving Report</a>
+                    <br>
+                    <a href="{% url 'print_receiving' po.pk %}" class="btn btn-dark mb-2" role="button">Print Receiving Report</a>
                     {% endif %}
-                    <a href="{% url 'print_po' po.pk %}" class="btn btn-dark" role="button">Print PO</a>
+                    <a href="{% url 'print_po' po.pk %}" class="btn btn-dark mb-2" role="button">Print PO</a>
                 </span>
             </div>
         </div>
         <table class="table table-sm table-hover">
             <thead>
                 <tr>
-                    {% if po.process_step < 3 and user.userdetail.userType == 'Purchaser' and po.get_received_items_count < 0 %}
+                    {% if po.process_step < 3 and user.userdetail.userType == 'Purchaser' and po.get_received_items_count == 0 %}
                     <th width="9%">Action</th>
                     {% endif %}
                     <th width="15%">Barcode</th>
@@ -139,7 +138,7 @@
                 {% else %}
                     {% for item in products %}
                         <tr>
-                            {% if po.process_step < 3 and user.userdetail.userType == 'Purchaser' %}
+                            {% if po.process_step < 3 and user.userdetail.userType == 'Purchaser' and po.get_received_items_count == 0 %}
                             <td class="text-center">
                                 
                                 <a href="#" class="update-item" data-form-url="{% url 'product_edit' po.pk item.pk %}">
@@ -295,24 +294,24 @@
 
         $('#receive_inv').click(function() {
             bootbox.prompt({
-                    title: "Reference Number:",
-                    'value': "{{ po.reference_number }}",
-                    callback: function (result) {
-                        if (result != null)
-                            $.ajax({
-                                url: "{% url 'update_ref_no' po.pk %}",
-                                type: 'POST',
-                                data: {
-                                    'csrfmiddlewaretoken': "{{ csrf_token }}",
-                                    'value': result, 
-                                },
-                                dataType: 'json',
-                                success: function(data) {
-                                    location.href = data;
-                                }
-                            })
-                    }
-                });
+                title: "Reference Number:",
+                'value': "{{ po.reference_number }}",
+                callback: function (result) {
+                    if (result != null)
+                        $.ajax({
+                            url: "{% url 'update_ref_no' po.pk %}",
+                            type: 'POST',
+                            data: {
+                                'csrfmiddlewaretoken': "{{ csrf_token }}",
+                                'value': result, 
+                            },
+                            dataType: 'json',
+                            success: function(data) {
+                                location.href = data;
+                            }
+                        })
+                }
+            });
         })
     
     });
