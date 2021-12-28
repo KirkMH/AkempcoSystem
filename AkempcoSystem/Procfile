@@ -1,0 +1,1 @@
+web: gunicorn AkempcoSystem.wsgi --log-file -
