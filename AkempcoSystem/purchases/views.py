@@ -3,6 +3,8 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from django.db.models import Q
 from django.core.paginator import Paginator
 from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView, BSModalDeleteView
+from django.contrib.messages.views import SuccessMessageMixin
+from django.contrib import messages
 from django.http import JsonResponse
 from datetime import datetime
 
@@ -121,6 +123,7 @@ class PODeleteView(DeleteView):
         return self.post(request, *args, **kwargs)
         
     def get_success_url(self):
+        messages.success(self.request, "Purchase Order is now deleted.")
         return reverse('po_list', kwargs={'pk' : self.object.supplier.pk})
 
 
@@ -142,8 +145,7 @@ class POProductCreateView(BSModalCreateView):
         return reverse('po_products', kwargs={'pk' : self.kwargs['pk']})
 
     def form_valid(self, form):
-        form.instance.purchase_order = get_object_or_404(PurchaseOrder, pk=self.kwargs['pk'])
-        # messages.success(self.request, form.instance.product.full_description + ' was added.')  
+        form.instance.purchase_order = get_object_or_404(PurchaseOrder, pk=self.kwargs['pk']) 
         return super().form_valid(form)
     
 
@@ -170,7 +172,6 @@ class POProductUpdateView(BSModalUpdateView):
 
     def form_valid(self, form):
         prod = self.get_object().product.full_description
-        # messages.success(self.request, prod + ' was updated.')  
         return super().form_valid(form)
     
 
@@ -179,7 +180,6 @@ class POProductUpdateView(BSModalUpdateView):
 class POProductDeleteView(BSModalDeleteView):
     model = PO_Product
     success_url = "/"
-    # success_message = "Successfully removed."
 
     def get_object(self):
         item_pk = self.kwargs['item_pk']
@@ -214,8 +214,8 @@ def submit_po(request, pk):
     this_po = get_object_or_404(PurchaseOrder, pk=pk)
 
     if request.method == 'POST':
-        print(request.user)
         this_po.submit(request.user)
+        messages.success(request, "Purchase Order was submitted successfully.")
 
     return redirect('po_list', pk=this_po.supplier.pk)
 
@@ -227,6 +227,7 @@ def approve_po(request, pk):
 
     if request.method == 'POST':
         this_po.approve(request.user)
+        messages.success(request, "Purchase Order is now approved.")
 
     return redirect('po_list', pk=this_po.supplier.pk)
 
@@ -239,6 +240,7 @@ def reject_po(request, pk):
     if request.method == 'POST':
         reason = request.POST.get('reject_reason', None)
         this_po.reject(request.user, reason)
+        messages.success(request, "Purchase Order is now rejected.")
 
     return redirect('po_list', pk=this_po.supplier.pk)
 
@@ -358,6 +360,7 @@ def receive_stocks_save(request, pk):
     try:
         po = PurchaseOrder.objects.get(pk=pk)
         po.receive_stocks(request.user)
+        messages.success(request, "Stocks was received successfully.")
     except:
         next_url = reverse('receive_stocks', kwargs={'pk' : pk})
 
@@ -448,6 +451,7 @@ def cancel_undelivered(request, pk):
     try:
         po = PurchaseOrder.objects.get(pk=pk)
         po.cancel_undelivered()
+        messages.success(request, "All undelivered items have been cancelled successfully.")
 
     except:
         success = False

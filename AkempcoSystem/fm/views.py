@@ -3,6 +3,8 @@ from django.http import HttpResponse
 from django.urls import reverse_lazy
 from django.core.paginator import Paginator
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
+from django.contrib.messages.views import SuccessMessageMixin
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.db.models import Q
@@ -76,6 +78,7 @@ class UomCreateView(CreateView):
         if form.is_valid():
             uom = form.save()
             uom.save()
+            messages.success(request, uom.uom_description + " was created successfully.")
             if "another" in request.POST:
                 return redirect('new_uom')
             else:
@@ -87,13 +90,14 @@ class UomCreateView(CreateView):
 
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.FM_UOM), name='dispatch')
-class UomUpdateView(UpdateView):
+class UomUpdateView(SuccessMessageMixin, UpdateView):
     model = UnitOfMeasure
     context_object_name = 'uom'
     form_class = UpdateUOMForm
     template_name = "fm/uom_form.html"
     pk_url_kwarg = 'pk'
     success_url = reverse_lazy('uom_list')
+    success_message = "%(uom_description)s was updated successfully."
 
 
 
@@ -135,8 +139,9 @@ class CategoryCreateView(CreateView):
     def post(self, request, *args, **kwargs):
         form = NewCategoryForm(request.POST)
         if form.is_valid():
-            uom = form.save()
-            uom.save()
+            category = form.save()
+            category.save()
+            messages.success(request, category.category_description + " was created successfully.")
             if "another" in request.POST:
                 return redirect('new_category')
             else:
@@ -148,12 +153,13 @@ class CategoryCreateView(CreateView):
 
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.FM_UOM), name='dispatch')
-class CategoryUpdateView(UpdateView):
+class CategoryUpdateView(SuccessMessageMixin, UpdateView):
     model = Category
     context_object_name = 'category'
     form_class = UpdateCategoryForm
     template_name = "fm/category_form.html"
     pk_url_kwarg = 'pk'
+    success_message = "%(category_description)s was updated successfully."
     success_url = reverse_lazy('category_list')
 
     
@@ -207,8 +213,9 @@ class SupplierCreateView(CreateView):
     def post(self, request, *args, **kwargs):
         form = NewSupplierForm(request.POST)
         if form.is_valid():
-            uom = form.save()
-            uom.save()
+            supplier = form.save()
+            supplier.save()
+            messages.success(request, supplier.supplier_name + " was created successfully.")
             if "another" in request.POST:
                 return redirect('new_supplier')
             else:
@@ -220,12 +227,13 @@ class SupplierCreateView(CreateView):
 
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.FM_SUPPLIER), name='dispatch')
-class SupplierUpdateView(UpdateView):
+class SupplierUpdateView(SuccessMessageMixin, UpdateView):
     model = Supplier
     context_object_name = 'supplier'
     form_class = NewSupplierForm
     template_name = "fm/supplier_form.html"
     pk_url_kwarg = 'pk'
+    success_message = "%(supplier_name)s was updated successfully."
     success_url = reverse_lazy('supplier_list')
 
 
@@ -287,6 +295,7 @@ class ProductCreateView(CreateView):
             for supplier in suppliers:
                 sup = Supplier.objects.get(pk=supplier)
                 product.suppliers.add(sup)
+            messages.success(request, product.full_description + " was created successfully.")
             if "another" in request.POST:
                 return redirect('new_product')
             else:
@@ -298,12 +307,13 @@ class ProductCreateView(CreateView):
 
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.FM_PRODUCT), name='dispatch')
-class ProductUpdateView(UpdateView):
+class ProductUpdateView(SuccessMessageMixin, UpdateView):
     model = Product
     form_class = UpdateProductForm
     context_object_name = 'product'
     template_name = "fm/product_form.html"
     pk_url_kwarg = 'pk'
+    success_message = "%(full_description)s was updated successfully."
 
     def get_context_data(self, **kwargs):
         product = Product.objects.get(pk=self.object.pk)

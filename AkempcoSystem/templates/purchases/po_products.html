@@ -8,9 +8,6 @@
   <link rel="stylesheet" href="{% static 'css/table_setup.css' %}">    
   <link rel="stylesheet" href="{% static 'css/asterisk_on_required.css' %}">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/css/bootstrap-select.min.css"> 
-  
-  <!-- Toastr -->
-  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css">
 {% endblock css %}
 
 {% block page_title %}
@@ -26,21 +23,6 @@
 {% endblock breadcrumb %}
 
 {% block main_content %}
-
- <!-- Messages -->
- <div>
-    {% if messages %}
-      {% for message in messages %}
-        <div style="border-radius:0;" {% if message.tags %} class="alert alert-icon alert-{{ message.tags }} alert-dismissible fade show mb-0" role="alert" {% endif %}>
-          {{ message }}
-          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-      {% endfor %}
-    {% endif %}
-</div>
-<!-- End Messages -->
 
 <div class="modal fade" tabindex="-1" role="dialog" id="modal">
     <div class="modal-dialog" role="document">

@@ -20,7 +20,9 @@
   <link rel="stylesheet" href="{% static 'dist/css/adminlte.min.css' %}">
   <!-- Daterange picker -->
   <link rel="stylesheet" href="{% static 'plugins/daterangepicker/daterangepicker.css' %}">
-  
+  <!-- Toastr -->
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css">
+
   {% block css %}{% endblock css %}
     
 </head>
@@ -165,6 +167,13 @@
     </div>
   </footer>
 </div>
+<div style="display: none;">
+  {% if messages %}
+    {% for message in messages %}
+      <input type="hidden" class="message_notif" value="{{ message.tags }}:{{ message }}" />
+    {% endfor %}
+  {% endif %}
+</div>
 <!-- ./wrapper -->
 
 <!-- jQuery -->
@@ -179,10 +188,33 @@
 <script src="{% static 'plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 <!-- AdminLTE App -->
 <script src="{% static 'dist/js/adminlte.js' %}"></script>
+<!-- Toastr -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+  
 <!-- <script src="{% static 'js/menu-selector.js' %}"></script>
 <script src="{% static 'js/component-selector.js' %}"></script> -->
 <!-- <script src="{% static 'js/notif-loader.js' %}"></script> -->
 
+<script>
+  function showMessageNotifications() {
+    $(".message_notif").each(function () {
+      let msg = $(this).val().split(":");
+      if (msg[0] == 'info') {
+        toastr.info(msg[1])
+      }
+      else if (msg[0] == 'success') {
+        toastr.success(msg[1])
+      }
+      else if (msg[0] == 'warning') {
+        toastr.warning(msg[1])
+      }
+      else if (msg[0] == 'error') {
+        toastr.error(msg[1])
+      }
+    });
+  }
+  showMessageNotifications();
+</script>
 {% block js %}
 {% endblock js %}
 
