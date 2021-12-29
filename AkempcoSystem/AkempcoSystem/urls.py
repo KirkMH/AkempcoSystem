@@ -21,4 +21,5 @@ urlpatterns = [
     path('', include('admin_area.urls')),
     path('fm/', include('fm.urls')),
     path('purchases/', include('purchases.urls')),
+    path('pricing/', include('pricing.urls')),
 ]
