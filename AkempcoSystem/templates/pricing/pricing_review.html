@@ -1,0 +1,96 @@
+{% extends '../base.html' %}
+{% load static form_tags %}
+
+{% block page_title %}Price Management
+<div class="text-muted">
+{% if type == 'selected' %}
+For Approval
+{% else %}
+All Products
+{% endif %}
+{% endblock page_title %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item active">Pricing</li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+<div class="card m-4">
+    <form method="get">
+        <div class="card-header">
+            <div class="row">
+            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                
+                {% if type == 'selected' %}
+                    <a href="{% url 'price_all' %}" class="btn btn-primary">View Prices of All Products</a>
+                {% else %}
+                    <a href="{% url 'price_review' %}" class="btn btn-primary">View Prices for Approval</a>
+                {% endif %}
+                    
+            </div>
+            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                {% include 'includes/search_tool.html' %}
+            </div>
+            </div>
+        </div>
+    </form>
+    <div class="card-body table-responsive">
+        <table class="table table-hover table-head-fixed table-sm">
+                <thead>
+                    <tr>
+                        <th class="text-center">Action</th>
+                        <th>Product</th>
+                        <th class="text-right">Latest Supplier Price</th>
+                        <th class="text-right">Retail Price</th>
+                        <th class="text-right">Wholesale Price</th>
+                        <th class="text-center">Wholesale Qty</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    {% if not products %}
+                        <tr><td colspan="5" class="text-center">It seems all product prices are up-to-date.</td></tr>
+                    {% else %}
+                        {% for item in products %}
+                        <tr>
+                            <td class="text-center">
+                                <a href="#" title="Details"><i class="fas fa-info-circle"></i></a> | 
+                                <a href="#" title="Update"><i class="far fa-edit"></i></a>
+                            </td>
+                            <td>{{ item.full_description }}</td>
+                            <td class="text-right">{{ item.get_latest_supplier_price|peso }}</td>
+                            <td class="text-right">{{ item.get_retail_price|peso }}</td>
+                            <td class="text-right">
+                                {% if item.get_wholesale_price %}
+                                    {{ item.get_wholesale_price|peso }}
+                                {% else %}
+                                    None
+                                {% endif %}
+                            </td>
+                            <td class="text-center">{{ item.wholesale_qty }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                        
+                    
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="card-footer">
+            {% include 'includes/pagination.html' %}
+        </div>
+    </div>
+    
+{% endblock main_content %}
+
+
+{% block js %}
+    <script>
+        $(document).ready(function() {
+            $("#menu_trans").addClass("menu-open")
+            $("#menu_trans_pricing").addClass("active")
+        })
+    </script>
+{% endblock js %}

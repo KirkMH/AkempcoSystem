@@ -53,13 +53,14 @@
         <table class="table table-sm table-hover">
             <thead>
                 <tr>
+                    <th width="10%">Action</th>
                     <th width="15%">Barcode</th>
-                    <th width="30%">Description</th>
+                    <th width="25%">Description</th>
                     <th width="10%">Ordered Qty</th>
                     <th width="10%">Received Qty</th>
                     <th width="10%">Receive Now</th>
                     <th width="10%">Units</th>
-                    <th width="15%">Unit Price</th>
+                    <th width="10%">Unit Price</th>
                 </tr>
             </thead>
             <tbody>
@@ -69,6 +70,7 @@
                 {% else %}
                     {% for item in products %}
                         <tr>
+                            <td class="text-center"><button type="button" class="btn btn-sm btn-outline-primary set-price-review {% if item.product.price_review %}disabled{% endif %}" data-form-url="{% url 'update_price_review' item.pk %}" {% if item.product.price_review %}disabled{% endif %}>Review Price</button></td>
                             <td class="text-center">{{ item.product.barcode }}</td>
                             <td>{{ item.product.full_description }}</td>
                             <td class="text-center">{{ item.ordered_quantity }}</td>
@@ -156,24 +158,38 @@
         setReceiveNow();
 
         function setUnitPrice() {
-          $(".set-unit-price").each(function () {
-            $(this).click(function() {
-                var url = $(this).data("form-url");
-                var val = $(this).data("value");
-                bootbox.prompt({
-                    title: "Please enter the actual supplier's unit price:",
-                    inputType: 'number',
-                    'value': val,
-                    'step': 0.01,
-                    'min': 0.00,
-                    callback: function (result) {
-                        process(url, result)
-                    }
+            $(".set-unit-price").each(function () {
+                $(this).click(function() {
+                    var url = $(this).data("form-url");
+                    var val = $(this).data("value");
+                    bootbox.prompt({
+                        title: "Please enter the actual supplier's unit price:",
+                        inputType: 'number',
+                        'value': val,
+                        'step': 0.01,
+                        'min': 0.00,
+                        callback: function (result) {
+                            process(url, result)
+                        }
+                    });
                 });
             });
-          });
         }
         setUnitPrice();
+
+        function setPriceReview() {
+            $(".set-price-review").each(function () {
+                $(this).click(function() {
+                    var url = $(this).data("form-url");
+                    bootbox.confirm("Are you sure you want to set this product for price review? You won't be able to sell this item until the price has been confirmed.", function(result){ 
+                        if (result) {
+                            process(url)
+                        }
+                    });
+                });
+            });
+        }
+        setPriceReview();
     
     });
   </script>

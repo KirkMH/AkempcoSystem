@@ -1,9 +1,8 @@
-from django.shortcuts import render, redirect, reverse, get_object_or_404
+from django.shortcuts import redirect, reverse, get_object_or_404
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.db.models import Q
-from django.core.paginator import Paginator
 from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView, BSModalDeleteView
-from django.contrib.messages.views import SuccessMessageMixin
+from django.core.paginator import Paginator
 from django.contrib import messages
 from django.http import JsonResponse
 from datetime import datetime
@@ -391,6 +390,21 @@ def update_ref_no(request, pk):
     except:
         next_url = reverse('po_products', kwargs={'pk' : pk})
     return JsonResponse(next_url, safe=False)
+
+
+@login_required()
+@user_is_allowed(Feature.TR_PURCHASES)
+def update_price_review(request, pk):
+    success = True
+    try:
+        prod = PO_Product.objects.get(pk=pk).product
+        prod.price_review = True
+        prod.save()
+        print(prod.price_review)
+    except:
+        success = False
+    print(success)
+    return JsonResponse(success, safe=False)
 
 
 @login_required()

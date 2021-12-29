@@ -2,8 +2,8 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from django.contrib.auth.models import User
-from admin_area.models import UserDetail
-from purchases.models import PurchaseOrder, WarehouseStock, StoreStock
+from admin_area.models import UserDetail, Store
+from purchases.models import PurchaseOrder, WarehouseStock, StoreStock, PO_Product
 
 # will be used for the status of different models
 ACTIVE = 'ACTIVE'
@@ -321,6 +321,35 @@ class Product(models.Model):
 
     def get_total_stock_count(self):
         return self.get_store_stock_count() + self.get_warehouse_stock_count()
+
+    def get_latest_supplier_price(self):
+        po = PO_Product.objects.filter(product=self).order_by('-pk').first()
+        return po.unit_price
+
+    def get_prices(self):
+        price = self.get_latest_supplier_price()
+        store = Store.objects.all().order_by('-pk').first()
+        point_of_reference = store.point_of_reference
+        retail_markup_below = store.retail_markup_below
+        retail_markup = store.retail_markup
+        wholesale_markup = store.wholesale_markup
+        retail = 0
+        wholesale = None
+        if price < point_of_reference:
+            retail = price * (1 + (retail_markup_below / 100))
+        else:
+            retail = price * (1 + (retail_markup / 100))
+        if self.wholesale_qty > 0:
+            wholesale = price * (1 + (wholesale_markup / 100))
+        return retail, wholesale
+
+    def get_retail_price(self):
+        retail, wholesale = self.get_prices()
+        return retail
+
+    def get_wholesale_price(self):
+        retail, wholesale = self.get_prices()
+        return wholesale
 
     class Meta:
         ordering = ['full_description']
