@@ -15,22 +15,58 @@ from django.utils.decorators import method_decorator
 from admin_area.models import Feature, Store
 from fm.views import get_index, add_search_key
 from fm.models import Product, Supplier
-from .models import PurchaseOrder, PO_Product
+from .models import PurchaseOrder, PO_Product, PO_PROCESS
 from .forms import PurchaseOrderForm, PO_ProductForm
 
 
 # for pagination
 MAX_ITEMS_PER_PAGE = 10
 
+def get_po_approval_count(user):
+    count = 0
+    step = PO_PROCESS.which_step_this_user_is_in(user)
+    if step > 0:
+        count = PurchaseOrder.objects.filter(process_step=step).count()
+    return count, step
+
+
+# Loads a list of PO for approval if necessary
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
+class PurchaseSupplierListView(ListView):
+    context_object_name = 'objects'
+    paginate_by = MAX_ITEMS_PER_PAGE
+
+    def get_queryset(self):
+        # check if the user searched for something
+        key = get_index(self.request, "table_search")
+        count, step = get_po_approval_count(self.request.user)
+        if count == 0:
+            object_list = Supplier.objects.all()
+        else:
+            object_list = PurchaseOrder.objects.filter(process_step=step)
+        if key:
+            object_list = object_list.filter(
+                Q(supplier_name__icontains=key)
+            )
+        return object_list
+
+    def get_template_names(self):
+        count, step = get_po_approval_count(self.request.user)
+        if count == 0:
+            return ["purchases/purchase_supplier.html"]
+        else:
+            return ["purchases/po_approval.html"]
+            
 
 # List of Suppliers to choose from
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
-class PurchaseSupplierListView(ListView):
+class POSupplierListView(ListView):
     model = Supplier
-    context_object_name = 'suppliers'
-    template_name = "purchases/purchase_supplier.html"
+    context_object_name = 'objects'
     paginate_by = MAX_ITEMS_PER_PAGE
+    template_name = "purchases/purchase_supplier.html"
 
     def get_queryset(self):
         # check if the user searched for something
@@ -41,6 +77,11 @@ class PurchaseSupplierListView(ListView):
                 Q(supplier_name__icontains=key)
             )
         return object_list
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["is_po_approver"] = PO_PROCESS.is_po_approver(self.request.user)
+        return context
 
 
 # PO List of selected supplier

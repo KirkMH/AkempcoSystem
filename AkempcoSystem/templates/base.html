@@ -194,27 +194,8 @@
 <!-- <script src="{% static 'js/menu-selector.js' %}"></script>
 <script src="{% static 'js/component-selector.js' %}"></script> -->
 <!-- <script src="{% static 'js/notif-loader.js' %}"></script> -->
+<script src="{% static 'js/toastr-loader.js' %}"></script>
 
-<script>
-  function showMessageNotifications() {
-    $(".message_notif").each(function () {
-      let msg = $(this).val().split(":");
-      if (msg[0] == 'info') {
-        toastr.info(msg[1])
-      }
-      else if (msg[0] == 'success') {
-        toastr.success(msg[1])
-      }
-      else if (msg[0] == 'warning') {
-        toastr.warning(msg[1])
-      }
-      else if (msg[0] == 'error') {
-        toastr.error(msg[1])
-      }
-    });
-  }
-  showMessageNotifications();
-</script>
 {% block js %}
 {% endblock js %}
 

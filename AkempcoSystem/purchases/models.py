@@ -18,6 +18,18 @@ class PO_PROCESS:
         (7, 'Cancelled')
     ]
 
+    @staticmethod
+    def which_step_this_user_is_in(user):
+        for step in PO_PROCESS.STEPS:
+            if step[1] == user.userdetail.userType:
+                return step[0]
+        return 0
+
+    @staticmethod
+    def is_po_approver(user):
+        step = PO_PROCESS.which_step_this_user_is_in(user)
+        return step > 0
+
 
 # PurchaseOrder model
 class PurchaseOrder(models.Model):

@@ -14,6 +14,10 @@
         <div class="card-header">
             <div class="row">
             <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                {% if is_po_approver %}
+                    <a href="{% url 'purchase_suppliers' %}" class="btn btn-primary">Check PO for Approval</a>
+                {% endif %}
+                    
             </div>
             <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                 {% include 'includes/search_tool.html' %}
@@ -34,7 +38,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for supplier in suppliers %}
+                    {% for supplier in objects %}
                         <tr>
                             <td class="text-center">
                                 <a href="{% url 'po_list' supplier.pk %}" title="View supplier"><i class="far fa-eye"></i></a>
