@@ -59,7 +59,7 @@ All Products
                             </td>
                             <td>{{ item.full_description }}</td>
                             <td class="text-right">{{ item.get_latest_supplier_price|peso }}</td>
-                            <td class="text-right {% if item.selling_price == 0 %}bg-danger{% endif %}">{{ item.selling_price|peso }}</td>
+                            <td class="text-right {% if item.selling_price == 0 %}bg-warning{% endif %}">{{ item.selling_price|peso }}</td>
                             <td class="text-right">{{ item.wholesale_price|peso }}</td>
                             <td class="text-center">{{ item.wholesale_qty }}</td>
                         </tr>
