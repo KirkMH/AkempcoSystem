@@ -33,14 +33,12 @@ class ProductPricingListView(ListView):
     def get_queryset(self):
         # check if the user searched for something
         key = get_index(self.request, "table_search")
-        object_list = None
+        object_list = self.model.objects.filter(
+            Q(for_price_review=True) |
+            Q(selling_price=0)
+        )
         if key:
-            object_list = self.model.objects.filter(
-                Q(full_description__icontains=key) &
-                Q(for_price_review=True)
-            )
-        else:
-            object_list = self.model.objects.filter(for_price_review=True)
+            object_list = object_list.filter(full_description__icontains=key)
 
         return object_list
 
@@ -104,6 +102,7 @@ class ProductPricingCreateView(CreateView):
         product.save()
         form.instance.product = product
         form.instance.price_tagged_by = self.request.user
+        messages.success(self.request, 'The selling price of ' + product.full_description + ' is now updated.')
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
