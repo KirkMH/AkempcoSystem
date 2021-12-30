@@ -1,0 +1,81 @@
+{% extends '../base.html' %}
+{% load static form_tags %}
+
+{% block css %}
+    <link rel="stylesheet" href="{% static 'css/table_setup.css' %}">
+{% endblock css %}
+    
+{% block page_title %}Stock Management{% endblock page_title %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item active">Stock Management</li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+<div class="card m-4">
+    <form method="get">
+        <div class="card-header">
+            <div class="row">
+            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
+                <a href="#" class="btn btn-primary">
+                    Requisition Vouchers
+                    <span class="badge badge-danger rounded-pill badge-notification">4</span>
+                </a>
+            </div>
+            
+            <div class="col-lg-8 col-md-8 col-sm-8 col-xs-8">
+                {% include 'includes/search_tool.html' %}
+            </div>
+            </div>
+        </div>
+    </form>
+    <div class="card-body table-responsive">
+        <table class="table table-hover table-head-fixed table-sm">
+            <thead>
+                <tr>
+                    <th width="10%">Action</th>
+                    <th width="15%" class="text-left">Barcode</th>
+                    <th width="30%" class="text-left">Product</th>
+                    <th width="15%" class="text-center">Warehouse Stocks</th>
+                    <th width="15%" class="text-center">Store Stocks</th>
+                    <th width="15%" class="text-center">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+
+                {% if not product %}
+                    <tr><td colspan="6" style="text-align: center;">No data found.</td></tr>
+                {% else %}
+
+                {% for item in product %}
+                    <tr>
+                        <td class="text-center"></td>
+                        <td>{{ item.barcode }}</td>
+                        <td>{{ item.full_description }}</td>
+                        <td class="text-center">{{ item.get_warehouse_stock_count }}</td>
+                        <td class="text-center">{{ item.get_store_stock_count }}</td>
+                        <td class="text-center">{{ item.get_total_stock_count }}</td>
+                    </tr>
+                {% endfor %}
+
+                {% endif %}
+                    
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer">
+        {% include 'includes/pagination.html' %}
+    </div>
+</div>
+{% endblock main_content %}
+
+
+{% block js %}
+    <script>
+        $(document).ready(function() {
+            $("#menu_trans").addClass("menu-open")
+            $("#menu_trans_stocks").addClass("active")
+        })
+    </script>
+{% endblock js %}

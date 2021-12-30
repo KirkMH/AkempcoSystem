@@ -11,6 +11,7 @@ class Feature:
     FM_PRODUCT = 4
     TR_PURCHASES = 5
     TR_PRICING = 6
+    TR_STOCKS = 7
     TR_RV = 7
 
     LIST = (
@@ -20,6 +21,7 @@ class Feature:
         (FM_PRODUCT, 'File Maintenance - Product'),
         (TR_PURCHASES, 'Transaction - Purchases'),
         (TR_PRICING, 'Transaction - Price Management'),
+        (TR_STOCKS, 'Transaction - Stock Management'),
         (TR_RV, 'Transaction - Requisition Voucher'),
     )
     

@@ -5,6 +5,7 @@ from django.db.models import Sum, F
 from datetime import datetime
 
 from admin_area.models import UserType
+from stocks.models import WarehouseStock
 
 # PO_PROCESS class to monitor the steps in processing documents
 class PO_PROCESS:

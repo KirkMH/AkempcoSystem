@@ -416,7 +416,8 @@ def receive_stocks_save(request, pk):
         po = PurchaseOrder.objects.get(pk=pk)
         po.receive_stocks(request.user)
         messages.success(request, "Stocks was received successfully.")
-    except:
+    except Exception as e:
+        messages.error(request, e.message)
         next_url = reverse('receive_stocks', kwargs={'pk' : pk})
 
     print(next_url)

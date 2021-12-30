@@ -320,13 +320,19 @@ class Product(models.Model):
         return 'Yes' if self.is_buyer_info_needed else 'No'
 
     def get_store_stock_count(self):
-        return StoreStock.availableStocks.filter(product=self).aggregate(total=Sum('remaining_stocks'))['total']
+        stocks = StoreStock.availableStocks.filter(product=self).aggregate(total=Sum('remaining_stocks'))['total']
+        if stocks is None: stocks = 0
+        return stocks
 
     def get_warehouse_stock_count(self):
-        return WarehouseStock.availableStocks.filter(product=self).aggregate(total=Sum('remaining_stocks'))['total']
+        stocks = WarehouseStock.availableStocks.filter(product=self).aggregate(total=Sum('remaining_stocks'))['total']
+        if stocks is None: stocks = 0
+        return stocks
 
     def get_total_stock_count(self):
-        return self.get_store_stock_count() + self.get_warehouse_stock_count()
+        store = self.get_store_stock_count()
+        warehouse = self.get_warehouse_stock_count()
+        return store + warehouse
 
     def get_latest_supplier_price(self):
         po = PO_Product.objects.filter(product=self).order_by('-pk').first()
