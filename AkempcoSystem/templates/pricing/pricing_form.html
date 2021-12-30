@@ -1,0 +1,102 @@
+{% extends '../base.html' %}
+{% load static form_tags %}
+
+{% block page_title %}Product Pricing{% endblock page_title %}
+
+{% block css %}
+  <link rel="stylesheet" href="{% static 'css/asterisk_on_required.css' %}">
+{% endblock css %}
+    
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'category_list' %}">Pricing</a></li>
+    <li class="breadcrumb-item active">Update</li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+
+<div class="modal fade" tabindex="-1" role="dialog" id="modal">
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <input type="hidden" name="supplier_id" id="supplier_id" value="{{ supplier.pk }}">
+        </div>
+        <div class="modal-content"></div>
+    </div>
+</div>
+
+    <div class="card m-4">
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="card-header">
+                    <h3>{{ product.full_description }}</h3>
+                    <h4 class="card-title">Please fill in all the fields marked with an <label class="required">asterisk</label>.</h4>
+            </div>
+
+            <div class="card-body">
+                <div class="col-12 mb-4">
+                    <div class="row">
+                        <div class="col-3">Avg. Supplier Price:</div>
+                        <div class="col-2 text-bold text-right">{{ product.get_avg_supplier_price|peso }}</div>
+                        <div class="col-1"></div>
+                        <div class="col-3">Max. Supplier Price:</div>
+                        <div class="col-2 text-bold text-right">{{ product.get_max_supplier_price|peso }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-3">Current Retail Price:</div>
+                        <div class="col-2 text-bold text-right">{{ product.selling_price|peso }}</div>
+                        <div class="col-1"></div>
+                        <div class="col-3">Current Wholesale Price:</div>
+                        <div class="col-2 text-bold text-right">{{ product.wholesale_price|peso }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-3">Recommended Retail Price:</div>
+                        <div class="col-2 text-bold text-right">{{ product.get_recommended_retail_price|peso }}</div>
+                        <div class="col-1"></div>
+                        <div class="col-3">Recommended Wholesale Price:</div>
+                        <div class="col-2 text-bold text-right">{{ product.get_recommended_wholesale_price|peso }}</div>
+                    </div>
+                    <div class="row mt-1">
+                        <div class="col">
+                            <button id="pricing-detail" class="btn btn-info" type="button">View Details</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+                    {% include '../includes/form.html' %}
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="submit" class="btn btn-success" name="save">Save</button>
+                <a href="{% url 'price_review' %}" class="btn btn-default">Cancel</a>
+            </div>
+        </form>
+    </div>
+{% endblock main_content %}
+
+
+{% block js %}
+    <script src="{% static 'js/jquery.bootstrap.modal.forms.min.js' %}"></script>
+    <script>
+        $(document).ready(function() {
+            
+            $("#pricing-detail").modalForm({
+                formURL: "{% url 'product_pricing_detail' product.pk %}"
+            });
+
+            function forceDecimalPlaces() {
+                $("input[type='number']").each(function () {
+                    $(this).val(parseFloat($(this).val()).toFixed(2));
+                    $(this).change(function() {
+                        $(this).val(parseFloat($(this).val()).toFixed(2));
+                    });
+                });
+            }
+            forceDecimalPlaces();
+
+            $("#menu_trans").addClass("menu-open")
+            $("#menu_trans_pricing").addClass("active")
+        })
+    </script>
+{% endblock js %}

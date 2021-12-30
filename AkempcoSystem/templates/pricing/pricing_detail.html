@@ -1,0 +1,71 @@
+{% load static %}
+{% load humanize %}
+{% load form_tags %}
+{% load crispy_forms_tags %}
+
+    <div class="modal-header">
+        <h3 class="modal-title">Product Pricing Details</h3>
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    </div>
+    <div class="modal-body">
+        <div class="row">
+            <div class="col-lg-12 col-md-12 col-sm-12">
+                <h4>Warehouse Records</h4>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date Received</th>
+                                <th width="30%">Remaining Stocks</th>
+                                <th width="30%" class="text-right">Supplier Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if not ws %}
+                                <tr><td colspan="3" style="text-align: center;">No records found.</td></tr>
+                            {% else %}
+                                {% for item in ws %}
+                                    <tr>
+                                        <td>{{ item.date_received|date:'F d, Y' }}</td>
+                                        <td class="text-center">{{ item.remaining_stocks }}</td>
+                                        <td class="text-right">{{ item.supplier_price|peso }}</td>
+                                    </tr>
+                                {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="col-lg-12 col-md-12 col-sm-12">
+                <h4>Store Records</h4>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date Received</th>
+                                <th width="30%">Remaining Stocks</th>
+                                <th width="30%" class="text-right">Supplier Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if not st %}
+                                <tr><td colspan="3" style="text-align: center;">No records found.</td></tr>
+                            {% else %}
+                                {% for item in st %}
+                                    <tr>
+                                        <td>{{ item.date_received|date:'F d, Y' }}</td>
+                                        <td class="text-center">{{ item.remaining_stocks }}</td>
+                                        <td class="text-right">{{ item.supplier_price|peso }}</td>
+                                    </tr>
+                                {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <input type="button" class="btn btn-default" data-dismiss="modal" value="Close" id="close" />
+    </div>

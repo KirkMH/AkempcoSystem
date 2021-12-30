@@ -1,5 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.db.models import Avg, Min, Max, Sum, F
+import math
 
 from django.contrib.auth.models import User
 from admin_area.models import UserDetail, Store
@@ -13,6 +15,9 @@ STATUS = [
     (CANCELLED, _('Cancelled'))
 ]
 
+# used to round the value up to the nearest 5 cents, for pricing
+def round_up(x):
+    return math.ceil(x / 0.05) * 0.05
 
 # UnitOfMeasure model
 class UnitOfMeasure(models.Model):
@@ -326,8 +331,7 @@ class Product(models.Model):
         po = PO_Product.objects.filter(product=self).order_by('-pk').first()
         return po.unit_price
 
-    def get_prices(self):
-        price = self.get_latest_supplier_price()
+    def compute_prices(self, price):
         store = Store.objects.all().order_by('-pk').first()
         point_of_reference = store.point_of_reference
         retail_markup_below = store.retail_markup_below
@@ -343,6 +347,10 @@ class Product(models.Model):
             wholesale = price * (1 + (wholesale_markup / 100))
         return retail, wholesale
 
+    def get_prices(self):
+        price = self.get_latest_supplier_price()
+        return self.compute_prices(price)
+
     def get_retail_price(self):
         retail, wholesale = self.get_prices()
         return retail
@@ -351,38 +359,52 @@ class Product(models.Model):
         retail, wholesale = self.get_prices()
         return wholesale
 
+    def get_avg_supplier_price(self):
+        avg_sprice_w = WarehouseStock.availableStocks.filter(product=self).aggregate(w_avg=Sum( F('supplier_price') * F('remaining_stocks')))['w_avg']
+        avg_sprice_s = StoreStock.availableStocks.filter(product=self).aggregate(s_avg=Sum( F('supplier_price') * F('remaining_stocks')))['s_avg']
+        count_w = WarehouseStock.availableStocks.filter(product=self).aggregate(w_count=Sum('remaining_stocks'))['w_count']
+        count_s = StoreStock.availableStocks.filter(product=self).aggregate(s_count=Sum('remaining_stocks'))['s_count']
+        if avg_sprice_w is None: avg_sprice_w = 0
+        if avg_sprice_s is None: avg_sprice_s = 0
+        if count_w is None: count_w = 0
+        else: avg_sprice_w = avg_sprice_w / count_w
+        if count_s is None: count_s = 0
+        else: avg_sprice_s = avg_sprice_s / count_s
+        if avg_sprice_w == 0:
+            return avg_sprice_s
+        elif avg_sprice_s == 0:
+            return avg_sprice_w
+        else:
+            return (avg_sprice_s + avg_sprice_w) / 2
+
+    def get_max_supplier_price(self):
+        max_sprice_w = WarehouseStock.availableStocks.filter(product=self).aggregate(Max('supplier_price'))['supplier_price__max']
+        max_sprice_s = StoreStock.availableStocks.filter(product=self).aggregate(Max('supplier_price'))['supplier_price__max']
+        if max_sprice_w is None: max_sprice_w = 0
+        if max_sprice_s is None: max_sprice_s = 0
+        return max(max_sprice_s, max_sprice_w)
+
+    def get_min_supplier_price(self):
+        min_sprice_w = WarehouseStock.availableStocks.filter(product=self).aggregate(Min('supplier_price'))['supplier_price__min']
+        min_sprice_s = StoreStock.availableStocks.filter(product=self).aggregate(Min('supplier_price'))['supplier_price__min']
+        if min_sprice_w is None: min_sprice_w = 0
+        if min_sprice_s is None: min_sprice_s = 0
+        return min(min_sprice_s, min_sprice_w)
+
+    def get_recommended_retail_price(self):
+        max_price = self.get_max_supplier_price()
+        retail, wholesale = self.compute_prices(max_price)
+        if retail is None: retail = 0
+        retail = float(int(retail*100)) / 100
+        return round_up(retail)
+
+    def get_recommended_wholesale_price(self):
+        avg_price = self.get_max_supplier_price()
+        retail, wholesale = self.compute_prices(avg_price)
+        if wholesale is None: wholesale = 0
+        wholesale = float(int(wholesale*100)) / 100
+        return round_up(wholesale)
+
     class Meta:
         ordering = ['full_description']
     
-
-# ProductPricing model, for price monitoring
-class ProductPricing(models.Model):
-    product = models.ForeignKey(
-        Product, 
-        verbose_name=_("Product"), 
-        on_delete=models.CASCADE
-    )
-    selling_price = models.DecimalField(
-        _("Selling Price"), 
-        max_digits=11, 
-        decimal_places=2,
-        null=True,
-        blank=True
-    )
-    wholesale_price = models.DecimalField(
-        _("Wholesale Price"), 
-        max_digits=11, 
-        decimal_places=2,
-        null=True,
-        blank=True
-    )
-    price_updated_on = models.DateField(
-        _("Price updated on"),
-        null=True,
-        default=None 
-    )
-    price_tagged_by = models.ForeignKey(
-        User,
-        verbose_name=_("Price tagged by"),
-        on_delete=models.RESTRICT
-    )

@@ -203,10 +203,6 @@
 
   <script type="text/javascript">
     $(document).ready(function() {
-        
-        $(".alert").fadeTo(2000, 500).slideUp(500, function(){
-            $(".alert").slideUp(500);
-        });
     
         $("#add-item").modalForm({
             formURL: "{% url 'product_add' pk=po.pk %}"

@@ -480,7 +480,8 @@ class StoreStock(models.Model):
     product = models.ForeignKey(
         "fm.Product", 
         verbose_name=_("Product"), 
-        on_delete=models.CASCADE)
+        on_delete=models.CASCADE
+    )
     date_received = models.DateField(
         _("Date Received"), 
         auto_now_add=True

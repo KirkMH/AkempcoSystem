@@ -50,13 +50,12 @@ All Products
                 <tbody>
                     
                     {% if not products %}
-                        <tr><td colspan="5" class="text-center">It seems all product prices are up-to-date.</td></tr>
+                        <tr><td colspan="6" class="text-center">It seems all product prices are up-to-date.</td></tr>
                     {% else %}
                         {% for item in products %}
                         <tr>
                             <td class="text-center">
-                                <a href="#" title="Details"><i class="fas fa-info-circle"></i></a> | 
-                                <a href="#" title="Update"><i class="far fa-edit"></i></a>
+                                <a href="{% url 'pricing_form' item.pk %}" title="Details"><i class="fas fa-info-circle"></i></a>
                             </td>
                             <td>{{ item.full_description }}</td>
                             <td class="text-right">{{ item.get_latest_supplier_price|peso }}</td>
