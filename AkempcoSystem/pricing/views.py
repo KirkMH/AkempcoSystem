@@ -11,7 +11,7 @@ from django.utils.decorators import method_decorator
 
 from fm.models import Product
 from admin_area.models import Feature
-from purchases.models import WarehouseStock, StoreStock
+from stocks.models import WarehouseStock, StoreStock
 from .models import ProductPricing
 from fm.views import get_index, add_search_key
 from .forms import NewProductPricingForm

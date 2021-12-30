@@ -5,7 +5,8 @@ import math
 
 from django.contrib.auth.models import User
 from admin_area.models import UserDetail, Store
-from purchases.models import PurchaseOrder, WarehouseStock, StoreStock, PO_Product
+from purchases.models import PurchaseOrder, PO_Product
+from stocks.models import WarehouseStock, StoreStock
 
 # will be used for the status of different models
 ACTIVE = 'ACTIVE'
