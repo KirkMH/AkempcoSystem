@@ -9,6 +9,7 @@ from django.utils.decorators import method_decorator
 from fm.models import Product
 from admin_area.models import Feature
 from fm.views import get_index, add_search_key
+from .models import RequisitionVoucher
 
 
 @method_decorator(login_required, name='dispatch')
@@ -30,4 +31,24 @@ class StockListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        return add_search_key(self.request, context)    
+        return add_search_key(self.request, context)
+
+
+class RVListView(ListView):
+    model = RequisitionVoucher
+    context_object_name = "rv"
+    template_name = "stocks/requisition_voucher.html"
+
+    def get_queryset(self):
+        # check if the user searched for something
+        key = get_index(self.request, "table_search")
+        object_list = self.model.objects.all()
+        if key:
+            object_list = object_list.filter(
+                Q(pk=key)
+            )
+        return object_list
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return add_search_key(self.request, context)

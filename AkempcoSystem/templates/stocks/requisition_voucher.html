@@ -9,7 +9,8 @@
 
 {% block breadcrumb %}
     <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-    <li class="breadcrumb-item active">Stock Management</li>
+    <li class="breadcrumb-item"><a href="{% url 'stock_list' %}">Stock Management</a></li>
+    <li class="breadcrumb-item active">Requisition Vouchers</li>
 {% endblock breadcrumb %}
 
 {% block main_content %}
@@ -18,13 +19,8 @@
         <div class="card-header">
             <div class="row">
             <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
-                <a href="{% url 'rv_list' %}" class="btn btn-primary">
-                    Requisition Vouchers
-                    <span class="badge badge-danger rounded-pill badge-notification">4</span>
-                </a>
-                <a href="#" class="btn btn-warning">
-                    Critical Levels
-                    <span class="badge badge-danger rounded-pill badge-notification">4</span>
+                <a href="#" class="btn btn-primary">
+                    New Requisition Voucher
                 </a>
             </div>
             
@@ -38,28 +34,28 @@
         <table class="table table-hover table-head-fixed table-sm">
             <thead>
                 <tr>
-                    <th width="10%">Action</th>
-                    <th width="15%" class="text-left">Barcode</th>
-                    <th width="30%" class="text-left">Product</th>
-                    <th width="15%" class="text-center">Warehouse Stocks</th>
-                    <th width="15%" class="text-center">Store Stocks</th>
-                    <th width="15%" class="text-center">Total</th>
+                    <th width="15%" class="text-center">Action</th>
+                    <th width="20%" class="text-left">RV #</th>
+                    <th width="20%" class="text-center">Number of Items</th>
+                    <th width="20%" class="text-left">Date</th>
+                    <th width="25%" class="text-left">Status</th>
                 </tr>
             </thead>
             <tbody>
 
-                {% if not product %}
+                {% if not rv %}
                     <tr><td colspan="6" style="text-align: center;">No data found.</td></tr>
                 {% else %}
 
-                {% for item in product %}
+                {% for item in rv %}
                     <tr>
-                        <td class="text-center"></td>
-                        <td>{{ item.barcode }}</td>
-                        <td>{{ item.full_description }}</td>
-                        <td class="text-center">{{ item.get_warehouse_stock_count }}</td>
-                        <td class="text-center">{{ item.get_store_stock_count }}</td>
-                        <td class="text-center">{{ item.get_total_stock_count }}</td>
+                        <td class="text-center">
+                            <a href="#" title="View RV"><i class="far fa-eye"></i></a>
+                        </td>
+                        <td>{{ item.pk|seq_num }}</td>
+                        <td class="text-center">{{ item.get_item_count }}</td>
+                        <td>{{ item.requested_at }}</td>
+                        <td>{{ item.get_status }}</td>
                     </tr>
                 {% endfor %}
 

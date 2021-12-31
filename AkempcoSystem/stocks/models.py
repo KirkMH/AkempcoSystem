@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
+from django.db.models import F
 
 
 # RV_PROCESS class to monitor the steps in processing documents
@@ -98,6 +99,23 @@ class RequisitionVoucher(models.Model):
         _("Process Step"),
         default=1 #Pending
     )
+
+    def __str__(self):
+        return 'RV# ' + str(self.pk) + ': ' + self.get_status()
+    
+    def get_item_count(self):
+        count = RV_Product.objects.filter(rv=self).count()
+        return 0 if count is None else count
+
+    def get_status(self):
+        for step in RV_PROCESS.STEPS:
+            if self.process_step == step[0]:
+                return step[1]
+        return None
+
+    class Meta:
+        ordering = [F('pk').desc(nulls_first=True)]
+
 
 
 class RV_Product(models.Model):
