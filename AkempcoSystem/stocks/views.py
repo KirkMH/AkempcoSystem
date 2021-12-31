@@ -1,5 +1,6 @@
-from django.shortcuts import render
-from django.views.generic import ListView
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.generic import ListView, DetailView, CreateView
+from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView, BSModalDeleteView
 from django.db.models import Q
 
 from AkempcoSystem.decorators import user_is_allowed
@@ -9,7 +10,8 @@ from django.utils.decorators import method_decorator
 from fm.models import Product
 from admin_area.models import Feature
 from fm.views import get_index, add_search_key
-from .models import RequisitionVoucher
+from .models import RequisitionVoucher, RV_Product
+from .forms import RV_ProductForm
 
 
 @method_decorator(login_required, name='dispatch')
@@ -52,3 +54,41 @@ class RVListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         return add_search_key(self.request, context)
+
+
+def create_new_rv(request):
+    rv = RequisitionVoucher()
+    rv.requested_by = request.user
+    rv.save()
+    return redirect('rv_products', pk=rv.pk)
+
+
+class RVDetailView(DetailView):
+    model = RequisitionVoucher
+    context_object_name = 'rv'
+    template_name = "stocks/rv_products.html"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["products"] = RV_Product.objects.filter(rv=self.object)
+        return context
+
+
+class RVProductCreateView(BSModalCreateView):
+    template_name = 'stocks/rv_product_add.html'
+    model = RV_Product
+    form_class = RV_ProductForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"].fields["product"].queryset = Product.objects.filter(status='ACTIVE')
+        return context
+
+    def get_success_url(self):
+        return reverse('rv_products', kwargs={'pk' : self.kwargs['pk']})
+
+    def form_valid(self, form):
+        form.instance.rv = get_object_or_404(RequisitionVoucher, pk=self.kwargs['pk']) 
+        form.instance.requested_by = self.request.user
+        form.save()
+        return super().form_valid(form)

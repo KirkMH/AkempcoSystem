@@ -15,21 +15,22 @@
 
 {% block main_content %}
 <div class="card m-4">
-    <form method="get">
-        <div class="card-header">
-            <div class="row">
-            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
-                <a href="#" class="btn btn-primary">
-                    New Requisition Voucher
-                </a>
-            </div>
-            
-            <div class="col-lg-8 col-md-8 col-sm-8 col-xs-8">
-                {% include 'includes/search_tool.html' %}
-            </div>
-            </div>
+    <div class="card-header">
+        <div class="row">
+        <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
+            <form method="post" action="{% url 'new_rv' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">New Requisition Voucher</button>
+            </form>
         </div>
-    </form>
+        
+        <div class="col-lg-8 col-md-8 col-sm-8 col-xs-8">
+            <form method="get">
+            {% include 'includes/search_tool.html' %}
+            </form>
+        </div>
+        </div>
+    </div>
     <div class="card-body table-responsive">
         <table class="table table-hover table-head-fixed table-sm">
             <thead>

@@ -1,0 +1,122 @@
+{% load static %}
+{% load humanize %}
+{% load form_tags %}
+{% load crispy_forms_tags %}
+
+<form id="add_product_form" method='post' class="form" role="form">
+    <div class="modal-header">
+        <h3 class="modal-title">Add Product</h3>
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    </div>
+    <div class="modal-body">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-lg-12 col-md-12 col-sm-12">
+                <h4 class="card-title">Please fill in all the fields marked with an <label class="required">asterisk</label>.</h4>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 form-group">
+                {% crispy form %}
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <input type="button" onclick="document.getElementById('add_product_form').submit();" class="btn btn-primary" value="Go" style="margin-bottom: 5px;" id="add" />
+        <input type="button" class="btn btn-default" data-dismiss="modal" value="Close" id="close" />
+    </div>
+</form>
+
+<script>
+$(document).ready(function() {
+    
+    let parent = $("#id_ordered_quantity").parent();
+    parent.addClass("input-group");
+    let grp_append = $("<div></div>");
+    grp_append.addClass("input-group-append");
+    let span = $("<span id='uom'></span>").text("piece(s)");
+    span.addClass("input-group-text");
+    grp_append.append(span);
+    parent.append(grp_append);
+
+    let product_parent = $("#id_product").parent();
+    let input_grp = $("<div></div>");
+    input_grp.addClass("input-group");
+    let content = '<input class="form-control" type="search" name="search" id="search" placeholder="Product name or barcode" autocomplete="off" autofocus>' +
+                    '<div class="input-group-append">' +
+                    '  <span class="input-group-text"><i class="fas fa-search"></i></span>' +
+                    '</div>';
+    input_grp.html(content);
+    product_parent.prepend(input_grp);
+
+        
+    function get_data() {
+        console.log("Supplier: " + $('#supplier_id').val());
+        let key = $('#search').val()
+        $.ajax({
+            url: "{% url 'load_data' %}",
+            type: 'GET',
+            data: {
+                'key': key,
+                'supplier_id': $('#supplier_id').val()
+            },
+            dataType: 'json',
+            success: function(data) {
+                console.log(data);
+                $('#id_product').empty()
+                data.forEach(e => {
+                    let id = e['id']
+                    let name = e['full_description']
+
+                    $('#id_product').append("<option value='" + id + "'>" + name + "</option")
+                });
+            }
+        })
+    }
+
+
+    function select_data() {
+        let pk = $("#id_product").find(":selected").val();
+        if (pk == undefined) {
+            $("#id_product").prop("selectedIndex", 0);
+            pk = $("#id_product").find(":selected").val();
+        }
+        if (pk !== undefined) {
+            $.ajax({
+                url: "{% url 'select_product' %}",
+                type: 'GET',
+                data: {'pk': pk},
+                dataType: 'json',
+                success: function(data) {
+                    // inventory uom, supplier price
+                    $('#id_unit_price').val(data.supplier_price)
+                    $('#uom').text(data.inv_uom.toLowerCase() + '(s)')
+                }
+            })
+        }
+    }
+
+    
+    $('#search').keyup(function(e){
+        if(e.keyCode == 13) {
+            console.log("enter");
+            select_data();
+            $('#id_ordered_quantity').focus();
+        }
+        else if (e.keyCode == 40) {
+            $('#product').focus()
+        }
+        else
+            get_data();
+    });
+
+    $('#id_product')
+        .change(function() {
+            select_data();
+        })
+        .trigger( "change" );
+
+    
+    $('#search').focus();
+});
+</script>

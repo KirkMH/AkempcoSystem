@@ -91,7 +91,13 @@ class RequisitionVoucher(models.Model):
         default=None
     )
     cancelled_at = models.DateTimeField(
-        _("Approved at"), 
+        _("Cancelled at"), 
+        null=True,
+        default=None
+    )
+    reject_reason = models.CharField(
+        _("Reject Reason"), 
+        max_length=250,
         null=True,
         default=None
     )
@@ -112,6 +118,18 @@ class RequisitionVoucher(models.Model):
             if self.process_step == step[0]:
                 return step[1]
         return None
+
+    def is_processed(self):
+        return self.process_step > 2
+
+    def is_approved(self):
+        return self.process_step == 3
+
+    def is_released(self):
+        return self.process_step == 4
+    
+    def is_closed(self):
+        return self.process_step == 5
 
     class Meta:
         ordering = [F('pk').desc(nulls_first=True)]
