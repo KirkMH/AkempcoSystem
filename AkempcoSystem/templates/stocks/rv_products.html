@@ -193,7 +193,7 @@
         $('#cancel').click(function() {
             bootbox.confirm("Are you sure you want to cancel this transaction? All added information and products will be removed.", function(result){ 
                 if (result) {
-                    $('#delete_form').attr('action', "#");
+                    $('#delete_form').attr('action', "{% url 'cancel_rv' rv.pk %}");
                     $('#delete_form').submit();
                 }
             });

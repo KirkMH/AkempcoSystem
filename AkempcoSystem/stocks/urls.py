@@ -7,4 +7,5 @@ urlpatterns = [
     path('rv/new', views.create_new_rv, name='new_rv'),
     path('rv/<int:pk>/products', views.RVDetailView.as_view(), name='rv_products'),
     path('rv/<int:pk>/products/add', views.RVProductCreateView.as_view(), name='rv_products_add'),
+    path('rv/<int:pk>/cancel', views.delete_rv, name='cancel_rv'),
 ]

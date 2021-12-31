@@ -5,7 +5,10 @@
     <link rel="stylesheet" href="{% static 'css/table_setup.css' %}">
 {% endblock css %}
     
-{% block page_title %}Stock Management{% endblock page_title %}
+{% block page_title %}
+Stock Management
+<h4 class="text-muted">Requisition Voucher</h4>
+{% endblock page_title %}
 
 {% block breadcrumb %}
     <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>

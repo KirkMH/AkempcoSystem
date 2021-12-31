@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, DetailView, CreateView
 from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView, BSModalDeleteView
+from django.contrib import messages
 from django.db.models import Q
 
 from AkempcoSystem.decorators import user_is_allowed
@@ -36,6 +37,8 @@ class StockListView(ListView):
         return add_search_key(self.request, context)
 
 
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_STOCKS), name='dispatch')
 class RVListView(ListView):
     model = RequisitionVoucher
     context_object_name = "rv"
@@ -56,6 +59,8 @@ class RVListView(ListView):
         return add_search_key(self.request, context)
 
 
+@login_required
+@user_is_allowed(Feature.TR_STOCKS)
 def create_new_rv(request):
     rv = RequisitionVoucher()
     rv.requested_by = request.user
@@ -63,6 +68,8 @@ def create_new_rv(request):
     return redirect('rv_products', pk=rv.pk)
 
 
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_STOCKS), name='dispatch')
 class RVDetailView(DetailView):
     model = RequisitionVoucher
     context_object_name = 'rv'
@@ -72,6 +79,20 @@ class RVDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         context["products"] = RV_Product.objects.filter(rv=self.object)
         return context
+
+
+
+@login_required
+@user_is_allowed(Feature.TR_STOCKS)
+def delete_rv(request, pk):
+    try:
+        rv = get_object_or_404(RequisitionVoucher, pk=pk)
+        rv.delete()
+        messages.success(request, "Requisition Voucher is now deleted.")
+        return redirect('rv_list')
+    except:
+        messages.error(request, "There was an error deleting the Requisition Voucher.")
+        return redirect('rv_products', pk=pk)
 
 
 class RVProductCreateView(BSModalCreateView):
