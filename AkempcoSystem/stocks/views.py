@@ -96,6 +96,9 @@ def delete_rv(request, pk):
         return redirect('rv_products', pk=pk)
 
 
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_STOCKS), name='dispatch')
 class RVProductCreateView(BSModalCreateView):
     template_name = 'stocks/rv_product_add.html'
     model = RV_Product
@@ -133,7 +136,7 @@ def delete_rv_product(request, pk):
     
 
 @method_decorator(login_required, name='dispatch')
-@method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_STOCKS), name='dispatch')
 class RVProductUpdateView(BSModalUpdateView):
     template_name = 'stocks/rv_product_add.html'
     model = RV_Product
@@ -162,3 +165,12 @@ class PrintRVDetailView(DetailView):
         context["products"] = RV_Product.objects.filter(rv=self.object)
         context["akempco"] = Store.objects.all().first()
         return context
+
+
+@login_required
+@user_is_allowed(Feature.TR_STOCKS)
+def submit_rv(request, pk):
+    rv = get_object_or_404(RequisitionVoucher, pk=pk)
+    rv.submit()
+    messages.success(request, "The Requisition Voucher was submitted for approval.")
+    return redirect('rv_list')

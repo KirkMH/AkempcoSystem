@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
 from django.db.models import F
+from datetime import datetime
 
 
 # RV_PROCESS class to monitor the steps in processing documents
@@ -12,6 +13,7 @@ class RV_PROCESS:
         (3, 'Approved'),
         (4, 'Released'),
         (5, 'Closed'),
+        (5, 'Rejected'),
     ]
 
 ############################################
@@ -107,15 +109,15 @@ class RequisitionVoucher(models.Model):
         null=True,
         default=None
     )
-    cancelled_by = models.ForeignKey(
+    rejected_by = models.ForeignKey(
         User, 
-        related_name='rv_canceller',
+        related_name='rv_rejecter',
         on_delete=models.RESTRICT, 
         null=True,
         default=None
     )
-    cancelled_at = models.DateTimeField(
-        _("Cancelled at"), 
+    rejected_at = models.DateTimeField(
+        _("Rejected at"), 
         null=True,
         default=None
     )
@@ -146,6 +148,9 @@ class RequisitionVoucher(models.Model):
     def is_processed(self):
         return self.process_step > 2
 
+    def is_submitted(self):
+        return self.process_step == 2
+
     def is_approved(self):
         return self.process_step == 3
 
@@ -154,6 +159,37 @@ class RequisitionVoucher(models.Model):
     
     def is_closed(self):
         return self.process_step == 5
+    
+    def is_rejected(self):
+        return self.process_step == 6
+
+    def submit(self):
+        self.process_step = 2
+        self.save()
+
+    def approve(self, user):
+        self.approved_by = user
+        self.approved_at = datetime.now()
+        self.process_step = 3
+        self.save()
+
+    def release(self, user):
+        self.released_by = user
+        self.released_at = datetime.now()
+        self.process_step = 4
+        self.save()
+
+    def receive(self, user):
+        self.received_by = user
+        self.received_at = datetime.now()
+        self.process_step = 5
+        self.save()
+
+    def reject(self, user, reason):
+        self.rejected_by = user
+        self.rejected_at = datetime.now()
+        self.process_step = 6
+        self.save()
 
     class Meta:
         ordering = [F('pk').desc(nulls_first=True)]

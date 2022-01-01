@@ -53,13 +53,13 @@
     <div class="card-body">
         <div class="row mb-4">
             <div class="col-4">
-                {% if rv.process_step < 3 and user.userdetail.userType == 'Warehouse Staff' %}
+                {% if rv.process_step < 3 and user.userdetail.userType == 'Storekeeper' %}
                     <button id="add-item" class="btn btn-primary" type="button" name="add-item">Add Item</button>
                 {% endif %}
             </div>
             <div class="col-8">
                 <span class="float-right">
-                    {% if rv.is_approved and user.userdetail.userType == 'Warehouse Staff' %}
+                    {% if rv.is_approved and user.userdetail.userType == 'Storekeeper' %}
                     <button type="button" class="btn btn-dark mb-2" id="release_inv" name="release_inv">Release Inventory</button>
                     {% elif rv.is_released and user.userdetail.userType == 'Storekeeper' %}
                     <button type="button" class="btn btn-dark mb-2" id="receive_inv" name="receive_inv">Receive Inventory</button>
@@ -71,7 +71,7 @@
         <table class="table table-sm table-hover">
             <thead>
                 <tr>
-                    {% if not rv.is_processed and user.userdetail.userType == 'Warehouse Staff' %}
+                    {% if not rv.is_processed and user.userdetail.userType == 'Storekeeper' %}
                     <th>Action</th>
                     {% endif %}
                     <th width="15%">Barcode</th>
@@ -89,7 +89,7 @@
             {% else %}
                 {% for item in products %}
                     <tr>
-                        {% if not rv.is_processed and user.userdetail.userType == 'Warehouse Staff' %}
+                        {% if not rv.is_processed and user.userdetail.userType == 'Storekeeper' %}
                         <td class="text-center">
                             <a href="#" class="update-item" data-form-url="{% url 'update_rv_product' item.pk %}">
                                 <i class="far fa-edit"></i>
@@ -117,14 +117,14 @@
     <div class="card-footer">
         <div class="row">
             <div class="col-12">
-                {% if user.userdetail.userType == 'Warehouse Staff' and rv.process_step < 3 %}
+                {% if user.userdetail.userType == 'Storekeeper' and rv.process_step < 3 %}
                 
                     {% if products %}
                     <button type="button" name="submit_btn" id="submit_btn" class="btn btn-warning card-link">Submit</button>
                     {% endif %}
                     
                     <button type="button" id="cancel" class="btn btn-danger card-link">Cancel</button>
-                {% elif user.userdetail.userType == rv.get_user_type and user.userdetail.userType != 'Officer-In-Charge' or user.userdetail.userType == 'Officer-In-Charge' and user.userdetail.oic_for == rv.category %}
+                {% elif user.userdetail.userType == 'General Manager' and rv.is_submitted %}
                     <input type="hidden" name="reject_reason" id="reject_reason" >
                     <button type="button" name="approve_btn" id="approve_btn" class="btn btn-warning card-link">Approve</button>
                     <button type="button" name="reject_btn" id="reject_btn" class="btn btn-danger card-link">Reject</button>
@@ -184,7 +184,7 @@
         $('#submit_btn').click(function() {
             bootbox.confirm("Are you sure you want to submit this requisition voucher for approval?", function(result){ 
                 if (result) {
-                    $('#submit_rv_form').attr('action', "#");
+                    $('#submit_rv_form').attr('action', "{% url 'submit_rv' rv.pk %}");
                     $('#submit_rv_form').submit();
                 }
             });
