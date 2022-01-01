@@ -35,6 +35,22 @@ class StockListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # GM
+        # - for approval
+        # Storekeeper
+        # - for receiving
+        # WH
+        # - for releasing
+        userType = self.request.user.userdetail.userType
+        count = 0
+        if userType == 'General Manager':
+            count = RequisitionVoucher.objects.filter(process_step=2).count()
+        elif userType == 'Warehouse Staff':
+            count = RequisitionVoucher.objects.filter(process_step=3).count()
+        elif userType == 'Storekeeper':
+            count = RequisitionVoucher.objects.filter(process_step=4).count()
+        if count is None: count = 0
+        context['count'] = count
         return add_search_key(self.request, context)
 
 
@@ -171,6 +187,32 @@ class PrintRVDetailView(DetailView):
 @user_is_allowed(Feature.TR_STOCKS)
 def submit_rv(request, pk):
     rv = get_object_or_404(RequisitionVoucher, pk=pk)
-    rv.submit()
-    messages.success(request, "The Requisition Voucher was submitted for approval.")
+    if request.method == 'POST':
+        rv.submit()
+        messages.success(request, "Requisition Voucher was submitted for approval.")
+    return redirect('rv_list')
+
+
+@login_required
+@user_is_allowed(Feature.TR_PURCHASES)
+def approve_rv(request, pk):
+    this_rv = get_object_or_404(RequisitionVoucher, pk=pk)
+
+    if request.method == 'POST':
+        this_rv.approve(request.user)
+        messages.success(request, "Requisition Voucher is now approved.")
+
+    return redirect('rv_list')
+
+
+@login_required
+@user_is_allowed(Feature.TR_PURCHASES)
+def reject_rv(request, pk):
+    this_rv = get_object_or_404(RequisitionVoucher, pk=pk)
+
+    if request.method == 'POST':
+        reason = request.POST.get('reject_reason', None)
+        this_rv.reject(request.user, reason)
+        messages.success(request, "Requisition Voucher is now rejected.")
+
     return redirect('rv_list')

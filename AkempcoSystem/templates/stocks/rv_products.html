@@ -202,7 +202,7 @@
         $('#approve_btn').click(function() {
             bootbox.confirm("Are you sure you want to approve this requisition voucher?", function(result){ 
                 if (result) {
-                    $('#submit_rv_form').attr('action', "#");
+                    $('#submit_rv_form').attr('action', "{% url 'approve_rv' rv.pk %}");
                     $('#submit_rv_form').submit();
                 }
             });
@@ -214,7 +214,7 @@
                     bootbox.prompt("Please enter the reason for rejecting this requisition voucher.", function(result){ 
                         if (result != null) {
                             $('#reject_reason').val(result);
-                            $('#submit_rv_form').attr('action', "#");
+                            $('#submit_rv_form').attr('action', "{% url 'reject_rv' rv.pk %}");
                             $('#submit_rv_form').submit();
                         }
                     });

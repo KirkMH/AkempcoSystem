@@ -13,7 +13,7 @@ class RV_PROCESS:
         (3, 'Approved'),
         (4, 'Released'),
         (5, 'Closed'),
-        (5, 'Rejected'),
+        (6, 'Rejected'),
     ]
 
 ############################################
@@ -183,6 +183,7 @@ class RequisitionVoucher(models.Model):
         self.received_by = user
         self.received_at = datetime.now()
         self.process_step = 5
+        # TODO: transfer stocks from WH to store
         self.save()
 
     def reject(self, user, reason):
