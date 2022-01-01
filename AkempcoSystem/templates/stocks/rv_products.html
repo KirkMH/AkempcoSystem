@@ -145,6 +145,8 @@
 
   <script type="text/javascript">
     $(document).ready(function() {
+        $("#menu_trans").addClass("menu-open")
+        $("#menu_trans_stocks").addClass("active")
     
         $("#add-item").modalForm({
             formURL: "{% url 'rv_products_add' rv.pk %}"

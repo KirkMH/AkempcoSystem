@@ -203,6 +203,8 @@
 
   <script type="text/javascript">
     $(document).ready(function() {
+        $("#menu_trans").addClass("menu-open")
+        $("#menu_trans_purchases").addClass("active")
     
         $("#add-item").modalForm({
             formURL: "{% url 'product_add' pk=po.pk %}"

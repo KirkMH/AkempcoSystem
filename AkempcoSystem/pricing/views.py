@@ -39,14 +39,12 @@ class ProductPricingListView(ListView):
         )
         if key:
             object_list = object_list.filter(full_description__icontains=key)
-
         return object_list
-
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["type"] = "selected"
-        return context
+        return add_search_key(self.request, context)
 
 
 # List of all products with their prices
@@ -74,7 +72,7 @@ class AllProductPricingListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["type"] = "all"
-        return context
+        return add_search_key(self.request, context)
 
         
 @method_decorator(login_required, name='dispatch')

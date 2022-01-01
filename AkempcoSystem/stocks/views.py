@@ -73,7 +73,7 @@ class RVListView(ListView):
         object_list = self.model.objects.all()
         if key:
             object_list = object_list.filter(
-                Q(pk=key)
+                Q(pk__icontains=key)
             )
         return object_list
 
