@@ -122,6 +122,6 @@ class PricingDetailListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         prod = get_object_or_404(Product, pk=self.kwargs['pk'])
-        context["st"] = StoreStock.availableStocks.filter(product=prod).order_by('-date_received')
+        context["st"] = StoreStock.availableStocks.filter(product=prod).order_by('-pk')
         return context
     

@@ -183,12 +183,10 @@ class RequisitionVoucher(models.Model):
         self.save()
 
     def move_to_store(self, user, whs_pk, qty):
-        print(f" method qty: {qty}")
         whs = WarehouseStock.objects.get(pk=whs_pk)
         # deduct qty from wh's remaining stocks
         whs.remaining_stocks = whs.remaining_stocks - qty
         whs.save()
-        print(f" method whs.remaining_stocks: {whs.remaining_stocks}")
         # create a new store record
         ss = StoreStock()
         ss.requisition_voucher = self
@@ -204,7 +202,6 @@ class RequisitionVoucher(models.Model):
         self.received_at = datetime.now()
         self.process_step = 5
         self.save()
-        # TODO: transfer stocks from WH to store
         # get list of requested products
         reqs = RV_Product.objects.filter(rv=self)
         for r in reqs:
@@ -213,17 +210,12 @@ class RequisitionVoucher(models.Model):
             qty = int(r.quantity)
             for wh in whs:
                 stocks = int(wh.remaining_stocks)
-                print(f"wh: {wh}")
-                print(f"qty: {qty}")
-                print(f"stocks: {stocks}")
                 if qty <= stocks:
-                    print("if")
                     # this record has sufficient stocks; transfer entire qty
                     self.move_to_store(user, wh.pk, qty)
                     qty = 0
                     break
                 else:
-                    print("else")
                     # this record has insufficient stocks
                     # compute remaining qty to transfer from the next record
                     qty = qty - stocks

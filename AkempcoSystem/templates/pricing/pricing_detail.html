@@ -54,7 +54,7 @@
                             {% else %}
                                 {% for item in st %}
                                     <tr>
-                                        <td>{{ item.date_received|date:'F d, Y' }}</td>
+                                        <td>{{ item.requisition_voucher.received_at|date:'F d, Y' }}</td>
                                         <td class="text-center">{{ item.remaining_stocks }}</td>
                                         <td class="text-right">{{ item.supplier_price|peso }}</td>
                                     </tr>
