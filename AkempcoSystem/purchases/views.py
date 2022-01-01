@@ -40,10 +40,10 @@ class PurchaseSupplierListView(ListView):
         # check if the user searched for something
         key = get_index(self.request, "table_search")
         count, step = get_po_approval_count(self.request.user)
-        if count == 0:
-            object_list = Supplier.objects.all()
-        else:
+        if count > 0 and self.request.user.userdetail.userType != 'Purchaser':
             object_list = PurchaseOrder.objects.filter(process_step=step)
+        else:
+            object_list = Supplier.objects.all()
         if key:
             object_list = object_list.filter(
                 Q(supplier_name__icontains=key)
@@ -52,10 +52,10 @@ class PurchaseSupplierListView(ListView):
 
     def get_template_names(self):
         count, step = get_po_approval_count(self.request.user)
-        if count == 0:
-            return ["purchases/purchase_supplier.html"]
-        else:
+        if count > 0 and self.request.user.userdetail.userType != 'Purchaser':
             return ["purchases/po_approval.html"]
+        else:
+            return ["purchases/purchase_supplier.html"]
             
 
 # List of Suppliers to choose from
@@ -148,8 +148,10 @@ class PODetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         self.object.is_receiving_now = False
+        self.object.save()
         context["products"] = PO_Product.objects.filter(purchase_order=self.object)
         context["supplier"] = self.object.supplier
+        context["for_approval"] = self.object.is_for_approval(self.request.user)
         return context
 
 

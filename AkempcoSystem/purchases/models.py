@@ -203,6 +203,13 @@ class PurchaseOrder(models.Model):
                 break
         self.save()
 
+    def is_for_approval(self, user):
+        if self.process_step >= 2 and self.process_step <= 4:
+            step = PO_PROCESS.which_step_this_user_is_in(user)
+            return self.process_step == step
+        else:
+            return False
+
     def get_item_count(self):
         return PO_Product.objects.filter(purchase_order=self).count()
 

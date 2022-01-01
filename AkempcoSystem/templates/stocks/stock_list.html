@@ -36,9 +36,9 @@
         <table class="table table-hover table-head-fixed table-sm">
             <thead>
                 <tr>
-                    <th width="10%">Action</th>
+                    <!-- <th width="10%">Action</th> -->
                     <th width="15%" class="text-left">Barcode</th>
-                    <th width="30%" class="text-left">Product</th>
+                    <th class="text-left">Product</th>
                     <th width="15%" class="text-center">Warehouse Stocks</th>
                     <th width="15%" class="text-center">Store Stocks</th>
                     <th width="15%" class="text-center">Total</th>
@@ -52,7 +52,7 @@
 
                 {% for item in product %}
                     <tr>
-                        <td class="text-center"></td>
+                        <!-- <td class="text-center"></td> -->
                         <td>{{ item.barcode }}</td>
                         <td>{{ item.full_description }}</td>
                         <td class="text-center">{{ item.get_warehouse_stock_count }}</td>

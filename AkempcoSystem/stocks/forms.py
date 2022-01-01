@@ -15,7 +15,7 @@ class RV_ProductForm(BSModalModelForm):
 
     class Meta:
         model = RV_Product
-        fields = ['product', 'requested_qty']
+        fields = ['product', 'quantity']
         widgets = {
             'product': forms.Select(attrs={'size': 5}),
         }
@@ -37,7 +37,7 @@ class RV_ProductForm(BSModalModelForm):
                 css_class='form-row'
             ),
             Row(
-                Column('requested_qty', css_class='form-group col-md-6'),
+                Column('quantity', css_class='form-group col-md-6'),
                 Column('uom', css_class='form-group col-md-6'),
                 css_class='form-row'
             ),

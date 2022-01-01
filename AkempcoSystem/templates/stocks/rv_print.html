@@ -84,9 +84,7 @@
                     <tr>
                         <th width="15%">Barcode</th>
                         <th width="30%">Description</th>
-                        <th class="text-center">Requested Qty</th>
-                        <th class="text-center">Released Qty</th>
-                        <th class="text-center">Received Qty</th>
+                        <th class="text-center">Quantity</th>
                         <th width="10%">Units</th>
                     </tr>
                 </thead>
@@ -96,9 +94,7 @@
                         <td>{{ item.product.barcode }}</td>
                         <td>{{ item.product.full_description }}</td>
                         <td class="text-center">{{ item.requested_qty }}</td>
-                        <td class="text-center">{% if rv.received_qty > 0 %}{{ item.received_qty }}{% endif %}</td>
-                        <td class="text-center">{% if rv.released_qty > 0 %}{{ item.released_qty }}{% endif %}</td>
-                        <td class="text-center">{{ item.product.uom }}</td>
+                        <td class="text-center">{{ item.product.uom }}{{ item.requested_qty|pluralize }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>

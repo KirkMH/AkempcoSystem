@@ -177,7 +177,7 @@
                     {% endif %}
                     
                     <button type="button" id="cancel" class="btn btn-danger card-link">Cancel</button>
-                {% elif user.userdetail.userType == po.get_user_type and user.userdetail.userType != 'Officer-In-Charge' or user.userdetail.userType == 'Officer-In-Charge' and user.userdetail.oic_for == po.category %}
+                {% elif user.userdetail.userType == po.get_user_type and for_approval %}
                     <input type="hidden" name="reject_reason" id="reject_reason" >
                     <button type="button" name="approve_btn" id="approve_btn" class="btn btn-warning card-link">Approve</button>
                     <button type="button" name="reject_btn" id="reject_btn" class="btn btn-danger card-link">Reject</button>

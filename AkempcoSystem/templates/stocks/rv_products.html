@@ -59,11 +59,6 @@
             </div>
             <div class="col-8">
                 <span class="float-right">
-                    {% if rv.is_approved and user.userdetail.userType == 'Storekeeper' %}
-                    <button type="button" class="btn btn-dark mb-2" id="release_inv" name="release_inv">Release Inventory</button>
-                    {% elif rv.is_released and user.userdetail.userType == 'Storekeeper' %}
-                    <button type="button" class="btn btn-dark mb-2" id="receive_inv" name="receive_inv">Receive Inventory</button>
-                    {% endif %}
                     <a href="{% url 'print_rv' rv.pk %}" class="btn btn-dark mb-2" role="button">Print RV</a>
                 </span>
             </div>
@@ -76,9 +71,7 @@
                     {% endif %}
                     <th width="15%">Barcode</th>
                     <th width="30%">Description</th>
-                    <th class="text-center">Requested Qty</th>
-                    <th class="text-center">Released Qty</th>
-                    <th class="text-center">Received Qty</th>
+                    <th class="text-center">Quantity</th>
                     <th width="10%">Units</th>
                 </tr>
             </thead>
@@ -101,10 +94,8 @@
                         {% endif %}
                         <td>{{ item.product.barcode }}</td>
                         <td>{{ item.product.full_description }}</td>
-                        <td class="text-center">{{ item.requested_qty }}</td>
-                        <td class="text-center">{% if rv.received_qty > 0 %}{{ item.received_qty }}{% endif %}</td>
-                        <td class="text-center">{% if rv.released_qty > 0 %}{{ item.released_qty }}{% endif %}</td>
-                        <td class="text-center">{{ item.product.uom }}</td>
+                        <td class="text-center">{{ item.quantity }}</td>
+                        <td class="text-center">{{ item.product.uom }}{{ item.quantity|pluralize }}</td>
                     </tr>
                 {% endfor %}
             {% endif %}
@@ -125,9 +116,13 @@
                     
                     <button type="button" id="cancel" class="btn btn-danger card-link">Cancel</button>
                 {% elif user.userdetail.userType == 'General Manager' and rv.is_submitted %}
-                    <input type="hidden" name="reject_reason" id="reject_reason" >
-                    <button type="button" name="approve_btn" id="approve_btn" class="btn btn-warning card-link">Approve</button>
-                    <button type="button" name="reject_btn" id="reject_btn" class="btn btn-danger card-link">Reject</button>
+                <input type="hidden" name="reject_reason" id="reject_reason" >
+                <button type="button" name="approve_btn" id="approve_btn" class="btn btn-warning card-link">Approve</button>
+                <button type="button" name="reject_btn" id="reject_btn" class="btn btn-danger card-link">Reject</button>
+                {% elif user.userdetail.userType == 'Warehouse Staff' and rv.is_approved %}
+                <button type="button" name="release_btn" id="release_btn" class="btn btn-warning card-link">Release</button>
+                {% elif user.userdetail.userType == 'Storekeeper' and rv.is_released %}
+                <button type="button" name="receive_btn" id="receive_btn" class="btn btn-warning card-link">Receive</button>
                 {% endif %}
                 <a href="{% url 'rv_list' %}" class="btn btn-default card-link float-right">Back to list</a>
             </div>
@@ -218,6 +213,24 @@
                             $('#submit_rv_form').submit();
                         }
                     });
+                }
+            });
+        })
+
+        $('#release_btn').click(function() {
+            bootbox.confirm("Are you sure you want to release the stocks in this requisition voucher?", function(result){ 
+                if (result) {
+                    $('#submit_rv_form').attr('action', "{% url 'release_rv' rv.pk %}");
+                    $('#submit_rv_form').submit();
+                }
+            });
+        })
+
+        $('#receive_btn').click(function() {
+            bootbox.confirm("Are you sure you want to receive the stocks in this requisition voucher?", function(result){ 
+                if (result) {
+                    $('#submit_rv_form').attr('action', "{% url 'receive_rv' rv.pk %}");
+                    $('#submit_rv_form').submit();
                 }
             });
         })

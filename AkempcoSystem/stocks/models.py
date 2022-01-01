@@ -162,6 +162,9 @@ class RequisitionVoucher(models.Model):
     
     def is_rejected(self):
         return self.process_step == 6
+    
+    def is_open(self):
+        return self.process_step > 1 and self.process_step < 5
 
     def submit(self):
         self.process_step = 2
@@ -179,12 +182,54 @@ class RequisitionVoucher(models.Model):
         self.process_step = 4
         self.save()
 
+    def move_to_store(self, user, whs_pk, qty):
+        print(f" method qty: {qty}")
+        whs = WarehouseStock.objects.get(pk=whs_pk)
+        # deduct qty from wh's remaining stocks
+        whs.remaining_stocks = whs.remaining_stocks - qty
+        whs.save()
+        print(f" method whs.remaining_stocks: {whs.remaining_stocks}")
+        # create a new store record
+        ss = StoreStock()
+        ss.requisition_voucher = self
+        ss.warehouse_stock = whs
+        ss.product = whs.product
+        ss.supplier_price = whs.supplier_price
+        ss.quantity = qty
+        ss.remaining_stocks = qty
+        ss.save()
+
     def receive(self, user):
         self.received_by = user
         self.received_at = datetime.now()
         self.process_step = 5
-        # TODO: transfer stocks from WH to store
         self.save()
+        # TODO: transfer stocks from WH to store
+        # get list of requested products
+        reqs = RV_Product.objects.filter(rv=self)
+        for r in reqs:
+            # get WH stocks of this product
+            whs = WarehouseStock.availableStocks.filter(product=r.product).order_by('-pk')
+            qty = int(r.quantity)
+            for wh in whs:
+                stocks = int(wh.remaining_stocks)
+                print(f"wh: {wh}")
+                print(f"qty: {qty}")
+                print(f"stocks: {stocks}")
+                if qty <= stocks:
+                    print("if")
+                    # this record has sufficient stocks; transfer entire qty
+                    self.move_to_store(user, wh.pk, qty)
+                    qty = 0
+                    break
+                else:
+                    print("else")
+                    # this record has insufficient stocks
+                    # compute remaining qty to transfer from the next record
+                    qty = qty - stocks
+                    # transfer only the remaining_stocks of this record
+                    self.move_to_store(user, wh.pk, stocks)
+
 
     def reject(self, user, reason):
         self.rejected_by = user
@@ -206,16 +251,8 @@ class RV_Product(models.Model):
         "fm.Product", 
         on_delete=models.RESTRICT
     )
-    requested_qty = models.PositiveIntegerField(
-        _("Requested Quantity"),
-        default=0
-    )
-    released_qty = models.PositiveIntegerField(
-        _("Released Quantity"),
-        default=0
-    )
-    received_qty = models.PositiveIntegerField(
-        _("Received Quantity"),
+    quantity = models.PositiveIntegerField(
+        _("Quantity"),
         default=0
     )
 
@@ -246,22 +283,6 @@ class StoreStock(models.Model):
     product = models.ForeignKey(
         "fm.Product", 
         verbose_name=_("Product"), 
-        on_delete=models.CASCADE
-    )
-    released_by = models.ForeignKey(
-        User, 
-        related_name='stock_releaser',
-        verbose_name=_("Released By"), 
-        on_delete=models.CASCADE
-    )
-    date_received = models.DateField(
-        _("Date Received"), 
-        auto_now_add=True
-    )
-    received_by = models.ForeignKey(
-        User, 
-        related_name='stock_receiver',
-        verbose_name=_("Received By"), 
         on_delete=models.CASCADE
     )
     supplier_price = models.DecimalField(

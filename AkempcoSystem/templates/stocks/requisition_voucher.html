@@ -59,7 +59,7 @@ Stock Management
                         <td>{{ item.pk|seq_num }}</td>
                         <td class="text-center">{{ item.get_item_count }}</td>
                         <td>{{ item.requested_at|date:'F d, Y' }}</td>
-                        <td class="{% if item.is_submitted %}bg-info{% elif item.is_rejected %}text-danger{% endif %}">{{ item.get_status }}</td>
+                        <td class="{% if item.is_open %}bg-info{% elif item.is_rejected %}text-danger{% endif %}">{{ item.get_status }}</td>
                     </tr>
                 {% endfor %}
 

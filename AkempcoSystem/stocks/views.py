@@ -16,12 +16,17 @@ from .models import RequisitionVoucher, RV_Product
 from .forms import RV_ProductForm
 
 
+# for pagination
+MAX_ITEMS_PER_PAGE = 10
+
+
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_STOCKS), name='dispatch')
 class StockListView(ListView):
     model = Product
     context_object_name = "product"
     template_name = "stocks/stock_list.html"
+    paginate_by = MAX_ITEMS_PER_PAGE
 
     def get_queryset(self):
         # check if the user searched for something
@@ -60,6 +65,7 @@ class RVListView(ListView):
     model = RequisitionVoucher
     context_object_name = "rv"
     template_name = "stocks/requisition_voucher.html"
+    paginate_by = MAX_ITEMS_PER_PAGE
 
     def get_queryset(self):
         # check if the user searched for something
@@ -194,7 +200,7 @@ def submit_rv(request, pk):
 
 
 @login_required
-@user_is_allowed(Feature.TR_PURCHASES)
+@user_is_allowed(Feature.TR_STOCKS)
 def approve_rv(request, pk):
     this_rv = get_object_or_404(RequisitionVoucher, pk=pk)
 
@@ -206,7 +212,7 @@ def approve_rv(request, pk):
 
 
 @login_required
-@user_is_allowed(Feature.TR_PURCHASES)
+@user_is_allowed(Feature.TR_STOCKS)
 def reject_rv(request, pk):
     this_rv = get_object_or_404(RequisitionVoucher, pk=pk)
 
@@ -214,5 +220,29 @@ def reject_rv(request, pk):
         reason = request.POST.get('reject_reason', None)
         this_rv.reject(request.user, reason)
         messages.success(request, "Requisition Voucher is now rejected.")
+
+    return redirect('rv_list')
+
+
+@login_required
+@user_is_allowed(Feature.TR_STOCKS)
+def release_rv(request, pk):
+    this_rv = get_object_or_404(RequisitionVoucher, pk=pk)
+
+    if request.method == 'POST':
+        this_rv.release(request.user)
+        messages.success(request, "Requisition Voucher is now released.")
+
+    return redirect('rv_list')
+
+
+@login_required
+@user_is_allowed(Feature.TR_STOCKS)
+def receive_rv(request, pk):
+    this_rv = get_object_or_404(RequisitionVoucher, pk=pk)
+
+    if request.method == 'POST':
+        this_rv.receive(request.user)
+        messages.success(request, "Requisition Voucher is now received.")
 
     return redirect('rv_list')
