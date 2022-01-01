@@ -6,6 +6,7 @@ urlpatterns = [
     path('rv', views.RVListView.as_view(), name='rv_list'),
     path('rv/new', views.create_new_rv, name='new_rv'),
     path('rv/<int:pk>/cancel', views.delete_rv, name='cancel_rv'),
+    path('rv/<int:pk>/print', views.PrintRVDetailView.as_view(), name='print_rv'),
     
     path('rv/<int:pk>/products', views.RVDetailView.as_view(), name='rv_products'),
     path('rv/<int:pk>/products/add', views.RVProductCreateView.as_view(), name='rv_products_add'),

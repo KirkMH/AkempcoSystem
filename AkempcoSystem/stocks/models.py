@@ -83,6 +83,30 @@ class RequisitionVoucher(models.Model):
         null=True,
         default=None
     )
+    released_by = models.ForeignKey(
+        User, 
+        related_name='rv_releaser',
+        on_delete=models.RESTRICT,
+        null=True,
+        default=None
+    )
+    released_at = models.DateTimeField(
+        _("Released at"), 
+        null=True,
+        default=None
+    )
+    received_by = models.ForeignKey(
+        User, 
+        related_name='rv_receiver',
+        on_delete=models.RESTRICT, 
+        null=True,
+        default=None
+    )
+    received_at = models.DateTimeField(
+        _("Received at"), 
+        null=True,
+        default=None
+    )
     cancelled_by = models.ForeignKey(
         User, 
         related_name='rv_canceller',

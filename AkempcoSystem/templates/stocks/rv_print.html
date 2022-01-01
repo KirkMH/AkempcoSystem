@@ -1,0 +1,135 @@
+{% extends '../base.html' %}
+{% load static form_tags %}
+
+
+{% block css %}
+    <link rel="stylesheet" href="{% static 'css/table_setup.css' %}">
+{% endblock css %}
+    
+{% block page_title %}Print Requisition Voucher{% endblock page_title %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item"><a href="{% url 'stock_list' %}">Stock Management</a></li>
+<li class="breadcrumb-item"><a href="{% url 'rv_list' %}">Requisition Vouchers</a></li>
+<li class="breadcrumb-item active">Print</li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+<div class="container">
+    <!-- Main content -->
+    <div class="invoice p-3 mb-3">
+        <!-- title row -->
+        <div class="row mb-4">
+            <div class="col-12 text-center">
+                <img src="{% static 'img/logo.png' %}" alt="AKEMPCO Logo" width="100px" style="z-index: 999;" class="float-left">
+                <h4 class="text-uppercase">{{ akempco.name }}</h4>
+                <div>{{ akempco.address }}</div>
+                
+                {% if akempco.registration_number %}
+                <div>{{ akempco.registration_number }}</div>
+                {% endif %}
+                
+                {% if akempco.contact_numbers %}
+                <div>{{ akempco.contact_numbers }}</div>
+                {% endif %}
+                
+                {% if akempco.email %}
+                <div>{{ akempco.email }}</div>
+                {% endif %}
+                    
+                <div class="mt-4 mb-2">
+                    <h2>REQUISITION VOUCHER</h2>
+                </div>
+                    
+            </div>
+            <!-- /.col -->
+        </div>
+        <!-- info row -->
+        <div class="row invoice-info">
+            <div class="col-sm-1 invoice-col">RV No.:</div>
+            <div class="col-sm-4 invoice-col text-bold">{{ rv.pk|seq_num }}</div>
+        </div>
+        <div class="row invoice-info">
+            <div class="col-sm-2 invoice-col">Requested By:</div>
+            <div class="col-sm-4 invoice-col text-bold">{{ rv.requested_by.get_full_name }}</div>
+            <div class="col-sm-2 invoice-col">Date Requested:</div>
+            <div class="col-sm-4 invoice-col text-bold">{{ rv.requested_at|date:'F d, Y' }}</div>
+        </div>
+        <div class="row invoice-info">
+            <div class="col-sm-2 invoice-col">Approved By:</div>
+            <div class="col-sm-4 invoice-col text-bold">{{ rv.approved_by.get_full_name }}</div>
+            <div class="col-sm-2 invoice-col">Date Approved:</div>
+            <div class="col-sm-4 invoice-col text-bold">{{ rv.approved_at|date:'F d, Y' }}</div>
+        </div>
+        <div class="row invoice-info">
+            <div class="col-sm-2 invoice-col">Released By:</div>
+            <div class="col-sm-4 invoice-col text-bold">{{ rv.released_by.get_full_name }}</div>
+            <div class="col-sm-2 invoice-col">Date Released:</div>
+            <div class="col-sm-4 invoice-col text-bold">{{ rv.released_at|date:'F d, Y' }}</div>
+        </div>
+        <div class="row invoice-info">
+            <div class="col-sm-2 invoice-col">Received By:</div>
+            <div class="col-sm-4 invoice-col text-bold">{{ rv.received_by.get_full_name }}</div>
+            <div class="col-sm-2 invoice-col">Date Received:</div>
+            <div class="col-sm-4 invoice-col text-bold">{{ rv.received_at|date:'F d, Y' }}</div>
+        </div>
+        <!-- /.row -->
+
+        <!-- Table row -->
+        <div class="row mt-4">
+            <div class="col-12 table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th width="15%">Barcode</th>
+                        <th width="30%">Description</th>
+                        <th class="text-center">Requested Qty</th>
+                        <th class="text-center">Released Qty</th>
+                        <th class="text-center">Received Qty</th>
+                        <th width="10%">Units</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for item in products %}
+                    <tr>
+                        <td>{{ item.product.barcode }}</td>
+                        <td>{{ item.product.full_description }}</td>
+                        <td class="text-center">{{ item.requested_qty }}</td>
+                        <td class="text-center">{% if rv.received_qty > 0 %}{{ item.received_qty }}{% endif %}</td>
+                        <td class="text-center">{% if rv.released_qty > 0 %}{{ item.released_qty }}{% endif %}</td>
+                        <td class="text-center">{{ item.product.uom }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            <!-- /.col -->
+        </div>
+        <!-- /.row -->
+
+        <!-- this row will not appear when printing -->
+        <div class="row no-print mt-4">
+            <div class="col-12">
+                <button type="button" class="btn btn-primary" onclick="window.print();">
+                    <i class="fas fa-print"></i>&nbsp;Print
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="history.back();">
+                    Back to Requisition Voucher
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- /.invoice -->
+</div>
+{% endblock main_content %}
+
+
+{% block js %}
+    <script>
+        $(document).ready(function() {
+            $("#menu_trans").addClass("menu-open")
+            $("#menu_trans_stocks").addClass("active")
+        })
+    </script>
+{% endblock js %}

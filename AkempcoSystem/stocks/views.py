@@ -10,7 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 
 from fm.models import Product
-from admin_area.models import Feature
+from admin_area.models import Feature, Store
 from fm.views import get_index, add_search_key
 from .models import RequisitionVoucher, RV_Product
 from .forms import RV_ProductForm
@@ -148,3 +148,17 @@ class RVProductUpdateView(BSModalUpdateView):
         rv_pk = self.object.rv.pk
         return reverse('rv_products', 
                         kwargs={'pk' : rv_pk})
+
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_STOCKS), name='dispatch')
+class PrintRVDetailView(DetailView):
+    model = RequisitionVoucher
+    context_object_name = 'rv'
+    template_name = "stocks/rv_print.html"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["products"] = RV_Product.objects.filter(rv=self.object)
+        context["akempco"] = Store.objects.all().first()
+        return context

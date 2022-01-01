@@ -64,7 +64,7 @@
                     {% elif rv.is_released and user.userdetail.userType == 'Storekeeper' %}
                     <button type="button" class="btn btn-dark mb-2" id="receive_inv" name="receive_inv">Receive Inventory</button>
                     {% endif %}
-                    <a href="#" class="btn btn-dark mb-2" role="button">Print RV</a>
+                    <a href="{% url 'print_rv' rv.pk %}" class="btn btn-dark mb-2" role="button">Print RV</a>
                 </span>
             </div>
         </div>
