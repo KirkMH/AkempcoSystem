@@ -12,7 +12,7 @@ class Feature:
     TR_PURCHASES = 5
     TR_PRICING = 6
     TR_STOCKS = 7
-    TR_RV = 7
+    TR_RV = 8
 
     LIST = (
         (FM_UOM, 'File Maintenance - Unit of Measure'),

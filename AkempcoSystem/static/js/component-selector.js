@@ -2,11 +2,11 @@ $.ajax({
     url: "/ajax/component_permissions", 
     dataType: 'json',
     success: function(data){
-        data.user_types.forEach(e => {
-            if (e[0] != data.type) {
-                let class_name = '.type' + e[0]
-                $(class_name).hide()
-            }
+        console.log(data)
+        data.no_permissions.forEach(e => {
+            let class_name = '.type' + e
+            console.log(class_name)
+            $(class_name).hide()
         });
     }
 });

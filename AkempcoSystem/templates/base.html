@@ -121,7 +121,7 @@
             {% else %}
               {{ user.get_username }}            
             {% endif %}
-
+            
           </a>
         </div>
       </div>
@@ -161,7 +161,7 @@
   <!-- /.content-wrapper -->
   <footer class="main-footer no-print">
     <strong>Copyright &copy; 2021 <a href="#">F-1 IT System Solutions</a>.</strong>
-    All rights reserved.
+    All rights reserved. {{ user.userdetail.features }}
     <div class="float-right d-none d-sm-inline-block">
       <b>Version</b> 1.0.0
     </div>
@@ -191,8 +191,8 @@
 <!-- Toastr -->
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
   
-<!-- <script src="{% static 'js/menu-selector.js' %}"></script>
-<script src="{% static 'js/component-selector.js' %}"></script> -->
+<!-- <script src="{% static 'js/menu-selector.js' %}"></script> -->
+<script src="{% static 'js/component-selector.js' %}"></script>
 <!-- <script src="{% static 'js/notif-loader.js' %}"></script> -->
 <script src="{% static 'js/toastr-loader.js' %}"></script>
 

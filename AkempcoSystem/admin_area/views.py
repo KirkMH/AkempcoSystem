@@ -1,18 +1,20 @@
 from django.shortcuts import render, redirect
+from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
+from .models import Feature
 
-# creating a custom permissions decorator
-# uses Feature and UserDetail.features for permissions
-def has_permission(self, perm, obj=None):
-    return True
-    # if perm in self.userdetail.get_permissions():
-    #     return True
-    # else:
-    #     return False
 
-def permission_required(perm):
-    return user_passes_test(lambda u: u.has_permission(perm), login_url='dashboard')
+def component_permissions(request):
+    perms = request.user.userdetail.get_permissions()
+    no_perms = []
+    for f in Feature.LIST:
+        if f[0] not in perms: no_perms.append(f[0])
+
+    data = {
+        'no_permissions': no_perms
+    }
+    return JsonResponse(data)
 
 
 @login_required()
