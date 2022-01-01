@@ -29,15 +29,6 @@
 
 <script>
 $(document).ready(function() {
-    
-    let parent = $("#id_ordered_quantity").parent();
-    parent.addClass("input-group");
-    let grp_append = $("<div></div>");
-    grp_append.addClass("input-group-append");
-    let span = $("<span id='uom'></span>").text("piece(s)");
-    span.addClass("input-group-text");
-    grp_append.append(span);
-    parent.append(grp_append);
 
     let product_parent = $("#id_product").parent();
     let input_grp = $("<div></div>");
@@ -51,14 +42,12 @@ $(document).ready(function() {
 
         
     function get_data() {
-        console.log("Supplier: " + $('#supplier_id').val());
         let key = $('#search').val()
         $.ajax({
             url: "{% url 'load_data' %}",
             type: 'GET',
             data: {
                 'key': key,
-                'supplier_id': $('#supplier_id').val()
             },
             dataType: 'json',
             success: function(data) {
@@ -88,9 +77,11 @@ $(document).ready(function() {
                 data: {'pk': pk},
                 dataType: 'json',
                 success: function(data) {
+                    console.log(data)
                     // inventory uom, supplier price
-                    $('#id_unit_price').val(data.supplier_price)
-                    $('#uom').text(data.inv_uom.toLowerCase() + '(s)')
+                    $('#id_uom').val(data.inv_uom.toLowerCase() + '(s)')
+                    $('#id_w_qty').val(data.w_stock)
+                    $('#id_s_qty').val(data.s_stock)
                 }
             })
         }
@@ -99,16 +90,21 @@ $(document).ready(function() {
     
     $('#search').keyup(function(e){
         if(e.keyCode == 13) {
-            console.log("enter");
             select_data();
             $('#id_ordered_quantity').focus();
         }
         else if (e.keyCode == 40) {
             $('#product').focus()
         }
-        else
+        else {
+            if (e.keyCode == undefined)
+                $('#search').val('')
             get_data();
+        }
     });
+    $('#search').click(function() {
+        $('#search').keyup();
+    })
 
     $('#id_product')
         .change(function() {

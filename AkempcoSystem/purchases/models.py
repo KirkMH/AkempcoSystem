@@ -424,3 +424,4 @@ class PO_Product(models.Model):
 
     class Meta:
         ordering = ['product']
+        unique_together = ['purchase_order', 'product']

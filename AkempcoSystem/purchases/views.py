@@ -301,7 +301,9 @@ def select_product(request):
 
         data = {
             'supplier_price': supplier_price,
-            'inv_uom': inv_uom
+            'inv_uom': inv_uom,
+            'w_stock': product.get_warehouse_stock_count(),
+            's_stock': product.get_store_stock_count()
         }
         return JsonResponse(data, safe=False)
 
@@ -313,13 +315,18 @@ def select_product(request):
 def load_data(request):
     key = request.GET['key']
     # filter to contain products under a specified supplier and category only
-    supplier_id = request.GET['supplier_id']
-    supplier = get_object_or_404(Supplier, pk=supplier_id)
-    data = list(Product.objects.filter(
-            Q(suppliers=supplier) &
+    supplier_id = request.GET.get('supplier_id', 0)
+    supplier = None
+    if supplier_id > 0:
+        supplier = get_object_or_404(Supplier, pk=supplier_id)
+    prod_list = Product.objects.filter(
             Q(full_description__istartswith=key) |
             Q(barcode__istartswith=key)
-        )[:50].values())
+        )
+    if supplier:
+        prod_list = prod_list.filter(suppliers=supplier)
+        
+    data = list(prod_list.values())
     return JsonResponse(data, safe=False)
 
 

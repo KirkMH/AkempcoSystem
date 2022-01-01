@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.views.generic import ListView, DetailView, CreateView
-from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView, BSModalDeleteView
+from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView
 from django.contrib import messages
 from django.db.models import Q
 
@@ -105,11 +106,45 @@ class RVProductCreateView(BSModalCreateView):
         context["form"].fields["product"].queryset = Product.objects.filter(status='ACTIVE')
         return context
 
-    def get_success_url(self):
-        return reverse('rv_products', kwargs={'pk' : self.kwargs['pk']})
-
     def form_valid(self, form):
         form.instance.rv = get_object_or_404(RequisitionVoucher, pk=self.kwargs['pk']) 
         form.instance.requested_by = self.request.user
         form.save()
         return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('rv_products', kwargs={'pk' : self.kwargs['pk']})
+
+
+
+@login_required
+@user_is_allowed(Feature.TR_STOCKS)
+def delete_rv_product(request, pk):
+    rv_pk = 0
+    try:
+        rv = get_object_or_404(RV_Product, pk=pk)
+        prod = rv.product.full_description
+        rv_pk = rv.rv.pk
+        rv.delete()
+        messages.success(request, prod + " was removed from the requisition voucher.")
+    except:
+        messages.error(request, "There was an error removing the product from the Requisition Voucher.")
+    return redirect('rv_products', pk=rv_pk)
+    
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
+class RVProductUpdateView(BSModalUpdateView):
+    template_name = 'stocks/rv_product_add.html'
+    model = RV_Product
+    form_class = RV_ProductForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"].fields["product"].queryset = Product.objects.filter(status='ACTIVE')
+        return context
+
+    def get_success_url(self):
+        rv_pk = self.object.rv.pk
+        return reverse('rv_products', 
+                        kwargs={'pk' : rv_pk})

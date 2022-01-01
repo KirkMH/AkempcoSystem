@@ -91,10 +91,10 @@
                     <tr>
                         {% if not rv.is_processed and user.userdetail.userType == 'Warehouse Staff' %}
                         <td class="text-center">
-                            <a href="#" class="update-item" data-form-url="#">
+                            <a href="#" class="update-item" data-form-url="{% url 'update_rv_product' item.pk %}">
                                 <i class="far fa-edit"></i>
                             </a> | 
-                            <a href="#" class="delete-item" data-product-name="{{ item.product.full_description }}" data-form-url="#">
+                            <a href="#" class="delete-item" data-product-name="{{ item.product.full_description }}" data-form-url="{% url 'delete_rv_product' item.pk %}">
                                 <i class="far fa-trash-alt"></i>
                             </a>
                         </td>
@@ -104,7 +104,7 @@
                         <td class="text-center">{{ item.requested_qty }}</td>
                         <td class="text-center">{% if rv.received_qty > 0 %}{{ item.received_qty }}{% endif %}</td>
                         <td class="text-center">{% if rv.released_qty > 0 %}{{ item.released_qty }}{% endif %}</td>
-                        <td>{{ item.product.uom }}</td>
+                        <td class="text-center">{{ item.product.uom }}</td>
                     </tr>
                 {% endfor %}
             {% endif %}

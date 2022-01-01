@@ -158,6 +158,10 @@ class RV_Product(models.Model):
         default=0
     )
 
+    class Meta:
+        ordering = ['product']
+        unique_together = ['rv', 'product']
+
 
 ############################################
 ### For Store Stocks Monitoring

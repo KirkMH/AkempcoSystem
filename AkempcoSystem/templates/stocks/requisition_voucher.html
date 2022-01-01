@@ -54,11 +54,11 @@ Stock Management
                 {% for item in rv %}
                     <tr>
                         <td class="text-center">
-                            <a href="#" title="View RV"><i class="far fa-eye"></i></a>
+                            <a href="{% url 'rv_products' item.pk %}" title="View RV"><i class="far fa-eye"></i></a>
                         </td>
                         <td>{{ item.pk|seq_num }}</td>
                         <td class="text-center">{{ item.get_item_count }}</td>
-                        <td>{{ item.requested_at }}</td>
+                        <td>{{ item.requested_at|date:'F d, Y' }}</td>
                         <td>{{ item.get_status }}</td>
                     </tr>
                 {% endfor %}
