@@ -12,6 +12,7 @@ urlpatterns = [
     path('rv/<int:pk>/reject', views.reject_rv, name='reject_rv'),
     path('rv/<int:pk>/release', views.release_rv, name='release_rv'),
     path('rv/<int:pk>/receive', views.receive_rv, name='receive_rv'),
+    path('rv/<int:pk>/clone', views.clone_rv, name='clone_rv'),
     
     path('rv/<int:pk>/products', views.RVDetailView.as_view(), name='rv_products'),
     path('rv/<int:pk>/products/add', views.RVProductCreateView.as_view(), name='rv_products_add'),

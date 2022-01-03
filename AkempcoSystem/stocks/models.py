@@ -229,6 +229,18 @@ class RequisitionVoucher(models.Model):
         self.process_step = 6
         self.save()
 
+    def clone(self, user):
+        new_rv = RequisitionVoucher.objects.create(
+            requested_by=user
+        )
+        new_rv.save()
+        products = RV_Product.objects.filter(rv=self)
+        for p in products:
+            p.pk = None
+            p.rv = new_rv
+            p.save()
+        return new_rv
+
     def get_product_requested(self, product):
         rv_prod = RV_Product.objects.filter(rv=self, product=product)
         if rv_prod:
@@ -259,7 +271,6 @@ class RV_Product(models.Model):
 
     class Meta:
         ordering = ['product']
-        unique_together = ['rv', 'product']
 
 
 ############################################

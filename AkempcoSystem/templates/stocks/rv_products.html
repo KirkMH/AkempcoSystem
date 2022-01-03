@@ -8,6 +8,11 @@
   <link rel="stylesheet" href="{% static 'css/table_setup.css' %}">    
   <link rel="stylesheet" href="{% static 'css/asterisk_on_required.css' %}">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/css/bootstrap-select.min.css"> 
+  <style>
+    .btn-menu {
+        width: 180px;
+    }
+</style>
 {% endblock css %}
 
 {% block page_title %}
@@ -59,7 +64,8 @@
             </div>
             <div class="col-8">
                 <span class="float-right">
-                    <a href="{% url 'print_rv' rv.pk %}" class="btn btn-dark mb-2" role="button">Print RV</a>
+                    <button type="button" class="btn btn-dark mb-2 btn-menu" id="clone_btn" name="clone_btn">Clone RV</button>
+                    <a href="{% url 'print_rv' rv.pk %}" class="btn btn-dark mb-2 btn-menu" role="button">Print RV</a>
                 </span>
             </div>
         </div>
@@ -215,6 +221,15 @@
                             $('#submit_rv_form').submit();
                         }
                     });
+                }
+            });
+        })
+
+        $('#clone_btn').click(function() {
+            bootbox.confirm("Are you sure you want to clone this requisition voucher?", function(result){ 
+                if (result) {
+                    $('#submit_rv_form').attr('action', "{% url 'clone_rv' rv.pk %}");
+                    $('#submit_rv_form').submit();
                 }
             });
         })

@@ -250,3 +250,11 @@ def receive_rv(request, pk):
         messages.success(request, "Requisition Voucher is now received.")
 
     return redirect('rv_list')
+
+    
+@login_required()
+@user_is_allowed(Feature.TR_STOCKS)
+def clone_rv(request, pk):
+    rv = get_object_or_404(RequisitionVoucher, pk=pk)
+    new_rv = rv.clone(request.user)
+    return redirect('rv_products', pk=new_rv.pk)
