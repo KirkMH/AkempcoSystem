@@ -270,24 +270,6 @@ class PurchaseOrder(models.Model):
         self.reject_reason = reason
         self.save()
 
-    def clone(self, user):
-        new_po = PurchaseOrder.objects.create(
-            supplier=self.supplier,
-            category=self.category,
-            po_total=self.po_total,
-            prepared_by=user,
-            po_date=datetime.now()
-        )
-        new_po.save()
-        products = PO_Product.objects.filter(purchase_order=self)
-        for p in products:
-            p.pk = None
-            p.purchase_order = new_po
-            p.received_qty = 0
-            p.receive_now = False
-            p.save()
-        return new_po
-
     def is_checkable(self):
         return (self.process_step > 1 and self.process_step < 5)
 

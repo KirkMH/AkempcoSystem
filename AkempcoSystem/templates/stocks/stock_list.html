@@ -30,6 +30,11 @@
                 {% include 'includes/search_tool.html' %}
             </div>
             </div>
+            <div class="row">
+                <div class="col-12 mt-2">
+                    <p></p>Texts in <span class="pl-2 pr-2 bg-warning">this format</span> indicates <b>critical level stocks</b>.
+                </div>
+            </div>
         </div>
     </form>
     <div class="card-body table-responsive">
@@ -57,7 +62,7 @@
                         <td>{{ item.full_description }}</td>
                         <td class="text-center">{{ item.get_warehouse_stock_count }}</td>
                         <td class="text-center">{{ item.get_store_stock_count }}</td>
-                        <td class="text-center">{{ item.get_total_stock_count }}</td>
+                        <td class="text-center{% if item.is_critical_level %} bg-warning{% endif %}">{{ item.get_total_stock_count }}</td>
                     </tr>
                 {% endfor %}
 

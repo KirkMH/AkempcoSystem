@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from django.db.models import Avg, Min, Max, Sum, F
+from django.db.models import Avg, Min, Max, Sum, F, Q
 import math
 
 from django.contrib.auth.models import User
@@ -184,6 +184,18 @@ class Supplier(models.Model):
         ordering = ['supplier_name']
 
 
+# class ProductManager(models.Manager):
+#     def critical_level(self):
+#         s_stocks = StoreStock.availableStocks.filter(product=self.product).aggregate(total=Sum('remaining_stocks'))['total']
+#         if s_stocks is None: s_stocks = 0
+
+#         w_stocks = WarehouseStock.availableStocks.filter(product=self.product).aggregate(total=Sum('remaining_stocks'))['total']
+#         if w_stocks is None: w_stocks = 0
+
+#         total_stocks = s_stocks + w_stocks
+#         return self.filter(reorder_point__gte=total_stocks)
+
+
 # Product model
 class Product(models.Model):
     # for TaxType
@@ -309,6 +321,8 @@ class Product(models.Model):
         _("For price review?"),
         default=False
     )
+    # objects = models.Manager()
+    # misc_qs = ProductManager()
 
     def __str__(self):
         return self.full_description
@@ -333,6 +347,23 @@ class Product(models.Model):
         store = self.get_store_stock_count()
         warehouse = self.get_warehouse_stock_count()
         return store + warehouse
+
+    def get_on_order_qty(self):
+        qty = PO_Product.objects.filter(
+                Q(purchase_order__is_open=True) &
+                Q(purchase_order__process_step__gt=1)
+            ).count()
+        return qty if qty else 0
+
+    def is_critical_level(self):
+        total = self.get_total_stock_count()
+        return self.reorder_point >= total
+
+    def is_overstock(self):
+        stocks = self.get_total_stock_count()
+        on_order = self.get_on_order_qty()
+        total = stocks + on_order
+        return self.ceiling_qty < total
 
     def get_latest_supplier_price(self):
         po = PO_Product.objects.filter(product=self).order_by('-pk').first()

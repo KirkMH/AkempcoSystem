@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
+from fm.models import Product
+from purchases.models import PurchaseOrder
 from .models import Feature
 
 
@@ -19,7 +21,28 @@ def component_permissions(request):
 
 @login_required()
 def dashboard_view(request):
-    return render(request, 'dashboard.html')
+    # count how many critical level products exist
+    critical_count = 0
+    prods = Product.objects.filter(status='Active')
+    for p in prods:
+        if p.is_critical_level():
+            critical_count = critical_count + 1
+
+    # compute filled PO percentage
+    open_count = PurchaseOrder.objects.filter(is_open=False).count()
+    overall_count = PurchaseOrder.objects.all().count()
+    if open_count is None: open_count = 0
+    if overall_count is None: overall_count = 0
+    filled_percent = 0
+    if overall_count > 0:
+        filled_percent = open_count / overall_count * 100
+
+    # pass to template
+    context = {
+        'critical_count': critical_count,
+        'filled_percent': int(filled_percent)
+    }
+    return render(request, 'dashboard.html', context)
 
 
 def login_check(request):
