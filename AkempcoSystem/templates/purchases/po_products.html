@@ -145,7 +145,14 @@
                             {% endif %}
                             <td class="text-center">{{ item.product.barcode }}</td>
                             <td>{{ item.product.full_description }}</td>
-                            <td class="text-center">{{ item.ordered_quantity }}</td>
+                            <td class="text-center">
+                                {{ item.ordered_quantity }}
+                                
+                                {% if item.ordered_quantity > item.product.get_qty_should_order %}
+                                <a href="#" class="badge badge-warning rounded-pill badge-notification" data-toggle="tooltip" title="This may cause overstocking. Consider ordering {{ item.product.get_qty_should_order }} only.">!</a>
+                                {% endif %}
+                                    
+                            </td>
                             {% if po.get_received_items_count > 0 %}
                             <td class="text-center">{{ item.received_qty }}</td>
                             {% endif %}

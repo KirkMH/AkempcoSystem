@@ -352,7 +352,7 @@ class Product(models.Model):
         qty = PO_Product.objects.filter(
                 Q(purchase_order__is_open=True) &
                 Q(purchase_order__process_step__gt=1)
-            ).count()
+            ).aggregate(on_order=Sum('ordered_quantity'))['on_order']
         return qty if qty else 0
 
     def is_critical_level(self):
@@ -364,6 +364,15 @@ class Product(models.Model):
         on_order = self.get_on_order_qty()
         total = stocks + on_order
         return self.ceiling_qty < total
+
+    def get_qty_should_order(self):
+        stocks = self.get_total_stock_count()
+        on_order = self.get_on_order_qty()
+        total = stocks + on_order
+        should_order = 0
+        if total < self.ceiling_qty:
+            should_order = self.ceiling_qty - total
+        return should_order
 
     def get_latest_supplier_price(self):
         po = PO_Product.objects.filter(product=self).order_by('-pk').first()

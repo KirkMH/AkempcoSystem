@@ -320,7 +320,8 @@ def select_product(request):
             'supplier_price': supplier_price,
             'inv_uom': inv_uom,
             'w_stock': product.get_warehouse_stock_count(),
-            's_stock': product.get_store_stock_count()
+            's_stock': product.get_store_stock_count(),
+            'should_order': product.get_qty_should_order()
         }
         return JsonResponse(data, safe=False)
 
