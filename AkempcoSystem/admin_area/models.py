@@ -13,6 +13,7 @@ class Feature:
     TR_PRICING = 6
     TR_STOCKS = 7
     TR_RV = 8
+    RP_PRODHIST = 9
 
     LIST = (
         (FM_UOM, 'File Maintenance - Unit of Measure'),
@@ -23,6 +24,7 @@ class Feature:
         (TR_PRICING, 'Transaction - Price Management'),
         (TR_STOCKS, 'Transaction - Stock Management'),
         (TR_RV, 'Transaction - Requisition Voucher'),
+        (RP_PRODHIST, 'Reports - Product History'),
     )
     
 

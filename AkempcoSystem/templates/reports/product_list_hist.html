@@ -1,0 +1,63 @@
+{% extends '../base.html' %}
+{% load static form_tags %}
+
+{% block page_title %}Product History{% endblock page_title %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item active">Product</li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+<div class="card m-4">
+    <form method="get">
+        <div class="card-header">
+            <div class="row">
+            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+            </div>
+            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                {% include 'includes/search_tool.html' %}
+            </div>
+            </div>
+        </div>
+    </form>
+    <div class="card-body table-responsive">
+        <table class="table table-hover table-head-fixed table-sm">
+            <thead>
+                <tr>
+                    <th class="text-center" width="10%">Action</th>
+                    <th class="text-center">Barcode</th>
+                    <th class="text-center">Product</th>
+                    <th class="text-center">Category</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                    <tr>
+                        <td class="text-center">
+                            <a href="{% url 'product_history' product.pk %}" title="View history"><i class="far fa-eye"></i></a>
+                        </td>
+                        <td>{{ product.barcode }}</td>
+                        <td>{{ product.full_description }}</td>
+                        <td>{{ product.category.category_description }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+        
+    <div class="card-footer">
+        {% include 'includes/pagination.html' %}
+    </div>
+</div>
+{% endblock main_content %}
+
+
+{% block js %}
+    <script>
+        $(document).ready(function() {
+            $("#menu_fm").addClass("menu-open")
+            $("#menu_fm_product").addClass("active")
+        })
+    </script>
+{% endblock js %}

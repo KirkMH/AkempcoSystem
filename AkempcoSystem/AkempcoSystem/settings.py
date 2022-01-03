@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'purchases',    # this includes PO and receiving
     'pricing',    # price management
     'stocks',    # stock management, inc. RV
+    'reports',
 ]
 
 # setting the default pack to be used by crispy-form

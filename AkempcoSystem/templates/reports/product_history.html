@@ -1,0 +1,136 @@
+{% extends '../base.html' %}
+{% load static form_tags %}
+
+
+{% block css %}
+    <link rel="stylesheet" href="{% static 'css/table_setup.css' %}">
+{% endblock css %}
+    
+{% block page_title %}Print Purchase Order{% endblock page_title %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'product_list_history' %}">Product</a></li>
+    <li class="breadcrumb-item active">History</li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+<div class="container">
+    <!-- Main content -->
+    <div class="invoice p-3 mb-3">
+        <!-- title row -->
+        <div class="row mb-4">
+            <div class="col-12 text-center">
+                <img src="{% static 'img/logo.png' %}" alt="AKEMPCO Logo" width="100px" style="z-index: 999;" class="float-left">
+                <h4 class="text-uppercase">{{ akempco.name }}</h4>
+                <div>{{ akempco.address }}</div>
+                
+                {% if akempco.registration_number %}
+                <div>{{ akempco.registration_number }}</div>
+                {% endif %}
+                
+                {% if akempco.contact_numbers %}
+                <div>{{ akempco.contact_numbers }}</div>
+                {% endif %}
+                
+                {% if akempco.email %}
+                <div>{{ akempco.email }}</div>
+                {% endif %}
+                    
+                <div class="mt-4 mb-2">
+                    <h2>Product History</h2>
+                </div>
+                    
+            </div>
+            <!-- /.col -->
+        </div>
+        <!-- info row -->
+        <div class="row invoice-info mb-4">
+            <div class="col-sm-1 invoice-col">Product:</div>
+            <div class="col-sm-6 invoice-col text-bold">
+                {{ product.full_description }}
+                <span class="text-muted">({{ product.barcode }})</span>
+            </div>
+            <div class="col-sm-2 invoice-col text-right">Date Generated:</div>
+            <div class="col-sm-3 invoice-col text-bold">{% now "F j, Y" %}</div>
+        </div>
+        <!-- /.row -->
+
+        <!-- Table row -->
+        <div class="row mt-4">
+            <div class="col-5 table-responsive">
+            <h5 class="text-center">Warehouse History</h5>
+            <table class="table table-striped table-sm">
+                <thead>
+                    <tr>
+                        <th width="20%">Date</th>
+                        <th width="15%">Qty</th>
+                        <th>Remarks</th>
+                        <th width="25%">By</th>
+                    </tr>
+                </thead>
+                <tbody style="font-size: 11pt;">
+                {% for item in w_history  %}
+                    <tr>
+                        <td class="text-left">{{ item.performed_on|date:'SHORT_DATE_FORMAT' }}</td>
+                        <td class="text-center">{{ item.quantity }}</td>
+                        <td class="text-left">{{ item.remarks }}</td>
+                        <td class="text-left">{{ item.performed_by.get_full_name }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            <!-- /.col -->
+
+            <div class="col-1"></div>
+            
+            <div class="col-6 table-responsive">
+                <h5 class="text-center">Store History</h5>
+                <table class="table table-striped table-sm">
+                    <thead>
+                        <tr>
+                            <th width="20%">Date</th>
+                            <th width="15%">Qty</th>
+                            <th>Remarks</th>
+                            <th width="25%">By</th>
+                        </tr>
+                    </thead>
+                    <tbody style="font-size: 11pt;">
+                    {% for item in s_history  %}
+                        <tr>
+                            <td class="text-left">{{ item.performed_on|date:'SHORT_DATE_FORMAT' }}</td>
+                            <td class="text-center">{{ item.quantity }}</td>
+                            <td class="text-left">{{ item.remarks }}</td>
+                            <td class="text-left">{{ item.performed_by.get_full_name }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- /.col -->
+        </div>
+        <!-- /.row -->
+
+        <!-- this row will not appear when printing -->
+        <div class="row no-print mt-4">
+            <div class="col-12">
+                <button type="button" class="btn btn-primary" onclick="window.print();">
+                    <i class="fas fa-print"></i>&nbsp;Print
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- /.invoice -->
+</div>
+{% endblock main_content %}
+
+
+{% block js %}
+    <script>
+        $(document).ready(function() {
+            $("#menu_rpt").addClass("menu-open")
+            $("#menu_rpt_history").addClass("active")
+        })
+    </script>
+{% endblock js %}

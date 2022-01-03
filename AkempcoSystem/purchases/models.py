@@ -336,6 +336,16 @@ class PurchaseOrder(models.Model):
                 ws.remaining_stocks = ws.quantity = prod.receive_now
                 ws.supplier_price = prod.unit_price
                 ws.save()
+                
+                # record history
+                hist = ProductHistory()
+                hist.product = prod.product
+                hist.location = 0
+                hist.quantity = 0 - qty
+                hist.remarks = 'Received delivered stocks.'
+                hist.performed_by = user
+                hist.save()
+                
                 # update received_qty and clear receive_now
                 prod.received_qty = prod.received_qty + prod.receive_now
                 prod.receive_now = 0

@@ -187,6 +187,14 @@ class RequisitionVoucher(models.Model):
         # deduct qty from wh's remaining stocks
         whs.remaining_stocks = whs.remaining_stocks - qty
         whs.save()
+        # record in history
+        hist = ProductHistory()
+        hist.product = whs.product
+        hist.location = 0
+        hist.quantity = 0 - qty
+        hist.remarks = 'Transfered to the store.'
+        hist.performed_by = user
+        hist.save()
         # create a new store record
         ss = StoreStock()
         ss.requisition_voucher = self
@@ -196,6 +204,12 @@ class RequisitionVoucher(models.Model):
         ss.quantity = qty
         ss.remaining_stocks = qty
         ss.save()
+        # record in history
+        hist.pk = None
+        hist.location = 1
+        hist.quantity = qty
+        hist.remarks = 'Received from the warehouse.'
+        hist.save()
 
     def receive(self, user):
         self.received_by = user
@@ -318,13 +332,25 @@ class StoreStock(models.Model):
         return self.product.full_description + ": " + str(self.remaining_stocks) + " item(s) left in store."
     
 
+class ProducHistoryManagerForWarehouse(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(location=0) #0=Warehouse
+
+class ProducHistoryManagerForStore(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(location=1) #1=Store
+
 class ProductHistory(models.Model):
     product = models.ForeignKey(
         "fm.Product", 
         verbose_name=_("Product"), 
-        on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField(
-        _("Quantity Received"),
+        on_delete=models.CASCADE
+    )
+    location = models.PositiveSmallIntegerField(
+        _("Location where the transaction happened. 0=Warehouse; 1=Store")
+    )
+    quantity = models.IntegerField(
+        _("Quantity"),
         default=0
     )
     remarks = models.CharField(
@@ -340,7 +366,15 @@ class ProductHistory(models.Model):
         verbose_name=_("Performed By"), 
         on_delete=models.CASCADE
     )
+    objects = models.Manager()
+    for_warehouse = ProducHistoryManagerForWarehouse()
+    for_store = ProducHistoryManagerForStore()
+
+    class Meta:
+        ordering = ['-performed_on', 'product']
 
     def __str__(self):
-        return self.product.full_description + ": " + str(self.quantity) + " items"
-    
+        return  'Product: ' + self.product.full_description + '\n' + \
+                'Location: ' + 'Warehouse' if self.location == 0 else 'Store' + '\n' + \
+                'Quantity: ' + str(self.quantity) + '\n' + \
+                'Remarks: ' + self.remarks + '\n'    
