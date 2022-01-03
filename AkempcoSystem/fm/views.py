@@ -328,13 +328,12 @@ class ProductUpdateView(SuccessMessageMixin, UpdateView):
 
     def form_valid(self, form):
         product = form.save()
-        suppliers = self.request.POST.get('suppliers')
+        suppliers = self.request.POST.getlist('suppliers')
         product.suppliers.clear()
         for supplier in suppliers:
             sup = Supplier.objects.get(pk=supplier)
             product.suppliers.add(sup)
 
-        # TODO: update logs
         return redirect('product_detail', pk=product.pk)
 
 

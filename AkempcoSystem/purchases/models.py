@@ -5,7 +5,7 @@ from django.db.models import Sum, F
 from datetime import datetime
 
 from admin_area.models import UserType
-from stocks.models import WarehouseStock
+from stocks.models import WarehouseStock, ProductHistory
 
 # PO_PROCESS class to monitor the steps in processing documents
 class PO_PROCESS:
@@ -298,6 +298,9 @@ class PurchaseOrder(models.Model):
     def is_approved(self):
         return (self.process_step == 5)
 
+    def is_rejected(self):
+        return (self.process_step == 6)
+
     def get_status(self):
         if self.is_approved():
             return 'Open' if self.is_open else 'Closed'
@@ -318,6 +321,10 @@ class PurchaseOrder(models.Model):
         else:
             return ''
 
+    def are_all_prices_nonzero(self):
+        products = PO_Product.objects.filter(purchase_order=self, unit_price=0).count()
+        return products is None or products == 0
+
     def prepare_for_receiving(self):
         products = PO_Product.objects.filter(purchase_order=self)
         for prod in products:
@@ -330,18 +337,26 @@ class PurchaseOrder(models.Model):
             # save to warehouse stocks
             print(f"prod.receive_now: {prod.receive_now}")
             if prod.receive_now > 0:
+                product = prod.product
                 ws = WarehouseStock()
-                ws.product = prod.product
+                ws.product = product
                 ws.received_by = user
                 ws.remaining_stocks = ws.quantity = prod.receive_now
                 ws.supplier_price = prod.unit_price
                 ws.save()
+
+                # check if this is the only record in WarehouseStock
+                count = WarehouseStock.objects.filter(product=product).count()
+                if count == 1:
+                    # need to trigger price review
+                    product.for_price_review = True
+                    product.save()
                 
                 # record history
                 hist = ProductHistory()
                 hist.product = prod.product
                 hist.location = 0
-                hist.quantity = 0 - qty
+                hist.quantity = prod.receive_now
                 hist.remarks = 'Received delivered stocks.'
                 hist.performed_by = user
                 hist.save()
@@ -350,6 +365,7 @@ class PurchaseOrder(models.Model):
                 prod.received_qty = prod.received_qty + prod.receive_now
                 prod.receive_now = 0
                 prod.save()
+
         self.received_by = user
         self.received_date = datetime.now()
         self.is_receiving_now = False
@@ -391,6 +407,24 @@ class PurchaseOrder(models.Model):
         self.update_status()
         self.has_cancelled_items = True
         self.save()
+
+    def clone(self, user):
+        new_po = PurchaseOrder.objects.create(
+            supplier=self.supplier,
+            category=self.category,
+            po_date=datetime.now(),
+            po_total=self.po_total,
+            prepared_by=user 
+        )
+        new_po.save()
+        products = PO_Product.objects.filter(purchase_order=self)
+        for p in products:
+            p.pk = None
+            p.purchase_order = new_po
+            p.receive_qty = 0
+            p.receive_now = False
+            p.save()
+        return new_po
 
     class Meta:
         ordering = [F('pk').desc(nulls_first=True)]
@@ -446,7 +480,10 @@ class PO_Product(models.Model):
         return self.unit_price * self.received_qty
 
     def set_for_price_review(self):
-        self.product.for_price_review = True
+        prod = self.product
+        prod.for_price_review = True
+        prod.save()
+
 
     class Meta:
         ordering = ['product']

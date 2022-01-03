@@ -70,7 +70,7 @@
                 {% else %}
                     {% for item in products %}
                         <tr>
-                            <td class="text-center"><button type="button" class="btn btn-sm btn-outline-primary set-price-review {% if item.product.price_review %}disabled{% endif %}" data-form-url="{% url 'update_price_review' item.pk %}" {% if item.product.price_review %}disabled{% endif %}>Review Price</button></td>
+                            <td class="text-center"><button type="button" class="btn btn-sm btn-outline-primary set-price-review {% if item.product.for_price_review %}disabled{% endif %}" data-form-url="{% url 'update_price_review' item.pk %}" {% if item.product.price_review %}disabled{% endif %}>Review Price</button></td>
                             <td class="text-center">{{ item.product.barcode }}</td>
                             <td>{{ item.product.full_description }}</td>
                             <td class="text-center">{{ item.ordered_quantity }}</td>

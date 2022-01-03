@@ -350,8 +350,10 @@ class Product(models.Model):
 
     def get_on_order_qty(self):
         qty = PO_Product.objects.filter(
+                Q(product=self) &
                 Q(purchase_order__is_open=True) &
-                Q(purchase_order__process_step__gt=1)
+                Q(purchase_order__process_step__gt=1) &
+                Q(purchase_order__process_step__lt=6)
             ).aggregate(on_order=Sum('ordered_quantity'))['on_order']
         return qty if qty else 0
 
@@ -363,7 +365,8 @@ class Product(models.Model):
         stocks = self.get_total_stock_count()
         on_order = self.get_on_order_qty()
         total = stocks + on_order
-        return self.ceiling_qty < total
+        print(total > self.ceiling_qty)
+        return total > self.ceiling_qty
 
     def get_qty_should_order(self):
         stocks = self.get_total_stock_count()
@@ -373,6 +376,15 @@ class Product(models.Model):
         if total < self.ceiling_qty:
             should_order = self.ceiling_qty - total
         return should_order
+
+    def get_qty_to_reduce(self):
+        stocks = self.get_total_stock_count()
+        on_order = self.get_on_order_qty()
+        total = stocks + on_order
+        reduce_by = 0
+        if total > self.ceiling_qty:
+            reduce_by = total - self.ceiling_qty
+        return reduce_by
 
     def get_latest_supplier_price(self):
         po = PO_Product.objects.filter(product=self).order_by('-pk').first()

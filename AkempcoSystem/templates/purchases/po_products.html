@@ -64,7 +64,14 @@
         </div>
         <div class="row invoice-info">
             <div class="col-lg-1 invoice-col">Status:</div>
-            <div class="col-lg-5 invoice-col font-weight-bold">{{ po.get_status }}</div>
+            <div class="col-lg-5 invoice-col font-weight-bold">
+                {{ po.get_status }}
+                
+                {% if po.is_rejected %}
+                    <p class="text-danger">{{ po.reject_reason }}</p>
+                {% endif %}
+                    
+            </div>
             
             {% if po.get_received_items_count > 0 %}
             <div class="col-lg-1 invoice-col"><abbr title="Receiving Reference Number">Ref. No.:</abbr></div>
@@ -148,7 +155,9 @@
                             <td class="text-center">
                                 {{ item.ordered_quantity }}
                                 
-                                {% if item.ordered_quantity > item.product.get_qty_should_order %}
+                                {% if po.process_step > 1 and item.product.is_overstock and po.get_received_items_count == 0 %}
+                                <a href="#" class="badge badge-warning rounded-pill badge-notification" data-toggle="tooltip" title="This may cause overstocking. Consider reducing stocks by {{ item.product.get_qty_to_reduce }} {{ item.product.uom.uom_description|lower }}{{ item.product.get_qty_to_reduce|pluralize }}.">!</a>
+                                {% elif po.process_step == 1 and item.ordered_quantity > item.product.get_qty_should_order and po.get_received_items_count == 0 %}
                                 <a href="#" class="badge badge-warning rounded-pill badge-notification" data-toggle="tooltip" title="This may cause overstocking. Consider ordering {{ item.product.get_qty_should_order }} only.">!</a>
                                 {% endif %}
                                     

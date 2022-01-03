@@ -423,9 +423,9 @@ def update_price_review(request, pk):
     success = True
     try:
         prod = PO_Product.objects.get(pk=pk).product
-        prod.price_review = True
+        prod.for_price_review = True
         prod.save()
-        print(prod.price_review)
+        print(prod.for_price_review)
     except:
         success = False
     print(success)
@@ -437,15 +437,15 @@ def update_price_review(request, pk):
 def receive_stocks_save(request, pk):
     next_url = reverse('po_products', kwargs={'pk' : pk})
 
-    try:
-        po = PurchaseOrder.objects.get(pk=pk)
+    po = PurchaseOrder.objects.get(pk=pk)
+
+    if po.are_all_prices_nonzero():
         po.receive_stocks(request.user)
         messages.success(request, "Stocks was received successfully.")
-    except Exception as e:
-        messages.error(request, e.message)
+    else:
+        messages.error(request, "Cannot receive stocks with zero prices. Please encode supplier price first.")
         next_url = reverse('receive_stocks', kwargs={'pk' : pk})
 
-    print(next_url)
     return JsonResponse(next_url, safe=False)
 
 
