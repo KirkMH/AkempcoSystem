@@ -229,6 +229,15 @@ class RequisitionVoucher(models.Model):
         self.process_step = 6
         self.save()
 
+    def get_product_requested(self, product):
+        rv_prod = RV_Product.objects.filter(rv=self, product=product)
+        if rv_prod:
+            prod = rv_prod.first()
+            rv_prod.delete()
+            return prod.quantity
+        else:
+            return 0
+
     class Meta:
         ordering = [F('pk').desc(nulls_first=True)]
 

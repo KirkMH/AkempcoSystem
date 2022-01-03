@@ -202,8 +202,6 @@ class POProductCreateView(BSModalCreateView):
         ordered_quantity = form.instance.ordered_quantity
         prod_qty = po.get_product_ordered(form.instance.product)
         form.instance.ordered_quantity = ordered_quantity + prod_qty
-        print(f"ordered: {ordered_quantity}")
-        print(f"prod_qty: {prod_qty}")
         form.instance.purchase_order = po
         return super().form_valid(form)
     

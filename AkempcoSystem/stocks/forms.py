@@ -43,13 +43,3 @@ class RV_ProductForm(BSModalModelForm):
             ),
             # Submit()
         )
-
-    def clean(self):
-        cleaned_data = self.cleaned_data
-        try:
-            rv = get_object_or_404(RequisitionVoucher, pk=self.kwargs['pk']) 
-            print(cleaned_data.get('product'))
-            RV_Product.objects.filter(rv=rv, product=cleaned_data.get('product')).delete()
-        except:
-            pass
-        return self.cleaned_data

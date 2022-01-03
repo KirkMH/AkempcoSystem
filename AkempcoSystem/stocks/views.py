@@ -132,7 +132,11 @@ class RVProductCreateView(BSModalCreateView):
         return context
 
     def form_valid(self, form):
-        form.instance.rv = get_object_or_404(RequisitionVoucher, pk=self.kwargs['pk']) 
+        rv = get_object_or_404(RequisitionVoucher, pk=self.kwargs['pk']) 
+        new_qty = form.instance.quantity
+        old_qty = rv.get_product_requested(form.instance.product)
+        form.instance.quantity = new_qty + old_qty
+        form.instance.rv = rv
         form.instance.requested_by = self.request.user
         form.save()
         return super().form_valid(form)
