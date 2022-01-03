@@ -227,6 +227,15 @@ class PurchaseOrder(models.Model):
                 count = count + 1
         return count
 
+    def get_product_ordered(self, product):
+        po_prod = PO_Product.objects.filter(purchase_order=self, product=product)
+        if po_prod:
+            prod = po_prod.first()
+            po_prod.delete()
+            return prod.ordered_quantity
+        else:
+            return 0
+
     def submit(self, user):
         self.prepared_by = user
         self.prepared_at = datetime.now()
@@ -431,4 +440,3 @@ class PO_Product(models.Model):
 
     class Meta:
         ordering = ['product']
-        unique_together = ['purchase_order', 'product']

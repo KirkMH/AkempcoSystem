@@ -198,7 +198,13 @@ class POProductCreateView(BSModalCreateView):
         return reverse('po_products', kwargs={'pk' : self.kwargs['pk']})
 
     def form_valid(self, form):
-        form.instance.purchase_order = get_object_or_404(PurchaseOrder, pk=self.kwargs['pk']) 
+        po = get_object_or_404(PurchaseOrder, pk=self.kwargs['pk']) 
+        ordered_quantity = form.instance.ordered_quantity
+        prod_qty = po.get_product_ordered(form.instance.product)
+        form.instance.ordered_quantity = ordered_quantity + prod_qty
+        print(f"ordered: {ordered_quantity}")
+        print(f"prod_qty: {prod_qty}")
+        form.instance.purchase_order = po
         return super().form_valid(form)
     
 
