@@ -28,6 +28,7 @@ urlpatterns = [
     path('po/<int:pk>/receive/update_price_review', views.update_price_review, name='update_price_review'),
     path('po/<int:pk>/receive/save', views.receive_stocks_save, name='receive_stocks_save'),
 
+    path('po/<int:pk>/clone', views.clone_po, name='clone_po'),
     path('po/<int:pk>/undelivered', views.POUndeliveredDetailView.as_view(), name='view_undelivered'),
     path('po/<int:pk>/split_backorder', views.split_backorder, name='split_backorder'),
     path('po/<int:pk>/cancel_undelivered', views.cancel_undelivered, name='cancel_undelivered'),

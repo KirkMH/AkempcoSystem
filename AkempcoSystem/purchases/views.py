@@ -541,3 +541,11 @@ def cancel_undelivered(request, pk):
         'next_url': next_url
     }
     return JsonResponse(data, safe=False)
+
+    
+@login_required()
+@user_is_allowed(Feature.TR_PURCHASES)
+def clone_po(request, pk):
+    po = get_object_or_404(PurchaseOrder, pk=pk)
+    new_po = po.clone(request.user)
+    return redirect('po_products', pk=new_po.pk)
