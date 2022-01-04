@@ -64,7 +64,9 @@
             </div>
             <div class="col-8">
                 <span class="float-right">
+                    {% if user.userdetail.userType == 'Storekeeper' %}
                     <button type="button" class="btn btn-dark mb-2 btn-menu" id="clone_btn" name="clone_btn">Clone RV</button>
+                    {% endif %}
                     <a href="{% url 'print_rv' rv.pk %}" class="btn btn-dark mb-2 btn-menu" role="button">Print RV</a>
                 </span>
             </div>

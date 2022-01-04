@@ -347,8 +347,14 @@ class PurchaseOrder(models.Model):
 
                 # check if this is the only record in WarehouseStock
                 count = WarehouseStock.objects.filter(product=product).count()
-                if count == 1:
-                    # need to trigger price review
+                # check if the last saved price is different thatn this one
+                with_new_price = False
+                if count > 0:
+                    latest = WarehouseStock.objects.filter(product=product).order_by('-pk').first()
+                    with_new_price = latest.supplier_price != prod.unit_price
+
+                # need to trigger price review if this is the first record or there is a price update
+                if count == 1 or with_new_price:
                     product.for_price_review = True
                     product.save()
                 

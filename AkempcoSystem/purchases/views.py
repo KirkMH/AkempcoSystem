@@ -333,7 +333,7 @@ def select_product(request):
 def load_data(request):
     key = request.GET['key']
     # filter to contain products under a specified supplier and category only
-    supplier_id = request.GET.get('supplier_id', 0)
+    supplier_id = int(request.GET.get('supplier_id', '0'))
     supplier = None
     if supplier_id > 0:
         supplier = get_object_or_404(Supplier, pk=supplier_id)
