@@ -79,7 +79,11 @@
                     {% endif %}
                     <th width="15%">Barcode</th>
                     <th width="30%">Description</th>
-                    <th class="text-center">Quantity</th>
+                    {% if not rv.is_closed %}
+                    <th class="text-center text-muted">Store Stocks</th>
+                    <th class="text-center text-muted">Warehouse Stocks</th>
+                    {% endif %}
+                    <th class="text-center">Requested Quantity</th>
                     <th width="10%">Units</th>
                 </tr>
             </thead>
@@ -102,6 +106,10 @@
                         {% endif %}
                         <td>{{ item.product.barcode }}</td>
                         <td>{{ item.product.full_description }}</td>
+                        {% if not rv.is_closed %}
+                        <td class="text-center text-muted">{{ item.product.get_store_stock_count }}</td>
+                        <td class="text-center text-muted">{{ item.product.get_warehouse_stock_count }}</td>
+                        {% endif %}
                         <td class="text-center">{{ item.quantity }}</td>
                         <td class="text-center">{{ item.product.uom }}{{ item.quantity|pluralize }}</td>
                     </tr>

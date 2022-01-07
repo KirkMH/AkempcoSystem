@@ -5,7 +5,7 @@
 
 {% block breadcrumb %}
     <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-    <li class="breadcrumb-item active">Product</li>
+    <li class="breadcrumb-item active">Product History</li>
 {% endblock breadcrumb %}
 
 {% block main_content %}
@@ -29,6 +29,9 @@
                     <th class="text-center">Barcode</th>
                     <th class="text-center">Product</th>
                     <th class="text-center">Category</th>
+                    <th width="10%" class="text-center">Warehouse Stocks</th>
+                    <th width="10%" class="text-center">Store Stocks</th>
+                    <th width="10%" class="text-center">Total</th>
                 </tr>
             </thead>
             <tbody>
@@ -40,6 +43,16 @@
                         <td>{{ product.barcode }}</td>
                         <td>{{ product.full_description }}</td>
                         <td>{{ product.category.category_description }}</td>
+                        <td class="text-center">{{ product.get_warehouse_stock_count }}</td>
+                        <td class="text-center">{{ product.get_store_stock_count }}</td>
+                        <td class="text-center">
+                            <span class="{% if product.is_critical_level %}text-danger{% endif %}" data-toggle="tooltip" title="This stock is in critical level. Consider reordering.">
+                                {{ product.get_total_stock_count }}
+                            </span>
+                            {% if product.is_critical_level %}
+                            <a href="#" class="badge badge-danger rounded-pill badge-notification" data-toggle="tooltip" title="This quantity is in critical level. Consider reordering.">!</a>
+                            {% endif %}
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -56,8 +69,8 @@
 {% block js %}
     <script>
         $(document).ready(function() {
-            $("#menu_fm").addClass("menu-open")
-            $("#menu_fm_product").addClass("active")
+            $("#menu_rpt").addClass("menu-open")
+            $("#menu_rpt_history").addClass("active")
         })
     </script>
 {% endblock js %}

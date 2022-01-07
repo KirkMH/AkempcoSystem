@@ -3,6 +3,8 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User, Group
 from django.utils.translation import gettext_lazy as _
 from .models import UserDetail, Store
+from purchases.models import PurchaseOrder
+from stocks.models import WarehouseStock
 
 
 admin.site.site_header = 'AKEMPCO System Admin'
@@ -45,6 +47,8 @@ class UserAdmin(BaseUserAdmin):
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 admin.site.register(Store)
+admin.site.register(WarehouseStock)
+admin.site.register(PurchaseOrder)
 
 # remove Group
 admin.site.unregister(Group)

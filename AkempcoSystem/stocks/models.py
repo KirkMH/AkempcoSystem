@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
-from django.db.models import F
+from django.db.models import F, Sum
 from datetime import datetime
 
 
@@ -145,6 +145,9 @@ class RequisitionVoucher(models.Model):
                 return step[1]
         return None
 
+    def is_pending(self):
+        return self.process_step == 1
+
     def is_processed(self):
         return self.process_step > 2
 
@@ -193,7 +196,7 @@ class RequisitionVoucher(models.Model):
         hist.location = 0
         hist.quantity = 0 - qty
         hist.remarks = 'Transfered to the store.'
-        hist.performed_by = user
+        hist.performed_by = self.released_by
         hist.save()
         # create a new store record
         ss = StoreStock()
@@ -220,7 +223,7 @@ class RequisitionVoucher(models.Model):
         reqs = RV_Product.objects.filter(rv=self)
         for r in reqs:
             # get WH stocks of this product
-            whs = WarehouseStock.availableStocks.filter(product=r.product).order_by('-pk')
+            whs = WarehouseStock.availableStocks.filter(product=r.product).order_by('pk')
             qty = int(r.quantity)
             for wh in whs:
                 stocks = int(wh.remaining_stocks)
@@ -371,10 +374,21 @@ class ProductHistory(models.Model):
     for_store = ProducHistoryManagerForStore()
 
     class Meta:
-        ordering = ['-performed_on', 'product']
+        ordering = ['-pk', 'product']
 
     def __str__(self):
         return  'Product: ' + self.product.full_description + '\n' + \
                 'Location: ' + 'Warehouse' if self.location == 0 else 'Store' + '\n' + \
                 'Quantity: ' + str(self.quantity) + '\n' + \
                 'Remarks: ' + self.remarks + '\n'    
+
+    def running_total(self):
+        print(self.location)
+        print(f"  {self.pk}")
+        ph = ProductHistory.for_warehouse.filter(pk__lte=self.pk, location=self.location, product=self.product)
+        print(f"  count: {ph.count()}")
+        return ProductHistory.for_warehouse.filter(pk__lte=self.pk, location=self.location, product=self.product).aggregate(total=Sum('quantity'))['total']
+        # if self.location == 0:
+        #     return ProductHistory.for_warehouse.filter(pk__lte=self.pk).aggregate(total=Sum('quantity'))['total']
+        # else:
+        #     return ProductHistory.for_store.filter(pk__lte=self.pk).aggregate(total=Sum('quantity'))['total']
