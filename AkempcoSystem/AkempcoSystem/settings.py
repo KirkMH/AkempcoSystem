@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'pricing',    # price management
     'stocks',    # stock management, inc. RV
     'reports',
+    'sales',    # POS
 ]
 
 # setting the default pack to be used by crispy-form
