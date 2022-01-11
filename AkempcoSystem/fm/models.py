@@ -199,9 +199,9 @@ class Supplier(models.Model):
 # Product model
 class Product(models.Model):
     # for TaxType
-    VAT = 'VAT'
-    VATEX = 'VAT Exempt'
-    ZERO = 'Zero-Rated'
+    VAT = 'V'
+    VATEX = 'X'
+    ZERO = 'Z'
     TAXTYPE = [
         (VAT, _("VAT")),
         (VATEX, _("VAT Exempt")),
