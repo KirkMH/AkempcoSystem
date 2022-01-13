@@ -67,7 +67,8 @@ class Discount(models.Model):
     )
 
     def __str__(self):
-        return self.name
+        unit = ' PhP' if self.discount_type == 'peso' else '%'
+        return self.name + ': ' + str(self.value) + unit
 
     class Meta:
         ordering = ['name']

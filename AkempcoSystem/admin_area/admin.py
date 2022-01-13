@@ -5,6 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from .models import UserDetail, Store
 from purchases.models import PurchaseOrder
 from stocks.models import WarehouseStock
+from sales.models import Discount
 
 
 admin.site.site_header = 'AKEMPCO System Admin'
@@ -49,6 +50,7 @@ admin.site.register(User, UserAdmin)
 admin.site.register(Store)
 admin.site.register(WarehouseStock)
 admin.site.register(PurchaseOrder)
+admin.site.register(Discount)
 
 # remove Group
 admin.site.unregister(Group)
