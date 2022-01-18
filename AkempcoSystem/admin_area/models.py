@@ -13,6 +13,7 @@ class Feature:
     TR_PRICING = 6
     TR_STOCKS = 7
     TR_RV = 8
+    TR_BO = 12
     RP_PRODHIST = 9
     FM_CREDITOR = 10
     MEMBER_TRANS = 11
@@ -27,6 +28,7 @@ class Feature:
         (TR_PRICING, 'Transaction - Price Management'),
         (TR_STOCKS, 'Transaction - Stock Management'),
         (TR_RV, 'Transaction - Requisition Voucher'),
+        (TR_BO, 'Transaction - Bad Orders'),
         (RP_PRODHIST, 'Reports - Product History'),
         (MEMBER_TRANS, 'Members - Transactions'),
     )

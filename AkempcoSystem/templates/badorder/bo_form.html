@@ -3,19 +3,19 @@
 
 {% block page_title %}
 
-{% if creditor %}
-Edit Creditor
+{% if badorder %}
+Edit Bad Order
 {% else %}
-New Creditor
+New Bad Order
 {% endif %}
     
 {% endblock page_title %}
 
 {% block breadcrumb %}
     <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-    <li class="breadcrumb-item"><a href="{% url 'cred_list' %}">Creditor</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'bo_list' %}">Bad Order</a></li>
     <li class="breadcrumb-item active">
-    {% if creditor %}
+    {% if badorder %}
     Edit
     {% else %}
     New
@@ -39,13 +39,9 @@ New Creditor
             </div>
             
             <div class="card-footer">
-                
-                {% if not creditor %}
-                <button type="submit" class="btn btn-primary" name="another">Save and add another</button>
-                {% endif %}
                     
-                <button type="submit" class="btn btn-success" name="save">Save</button>
-                <a href="{% url 'cred_list' %}" class="btn btn-default">Cancel</a>
+                <button type="submit" class="btn btn-success" name="save">Save and Proceed</button>
+                <a href="{% url 'bo_list' %}" class="btn btn-default">Cancel</a>
             </div>
         </form>
     </div>
@@ -55,8 +51,8 @@ New Creditor
 {% block js %}
     <script>
         $(document).ready(function() {
-            $("#menu_fm").addClass("menu-open")
-            $("#menu_fm_cred").addClass("active")
+            $("#menu_trans").addClass("menu-open")
+            $("#menu_trans_bo").addClass("active")
         })
     </script>
 {% endblock js %}
