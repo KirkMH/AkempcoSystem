@@ -32,6 +32,11 @@
                     </tr>
                 </thead>
                 <tbody>
+                    
+                    {% if not uoms %}
+                        <tr><td colspan="3" class="text-center">No data found.</td></tr>
+                    {% else %}
+                        
                     {% for uom in uoms %}
                         <tr>
                             <td class="text-center"><a href="{% url 'edit_uom' uom.pk %}" title="Edit"><i class="far fa-edit"></i></a></td>
@@ -39,6 +44,8 @@
                             <td>{{ uom.status }}</td>
                         </tr>
                     {% endfor %}
+
+                    {% endif %}
                 </tbody>
             </table>
         </div>

@@ -14,22 +14,31 @@ class Feature:
     TR_STOCKS = 7
     TR_RV = 8
     RP_PRODHIST = 9
+    FM_CREDITOR = 10
+    MEMBER_TRANS = 11
 
     LIST = (
         (FM_UOM, 'File Maintenance - Unit of Measure'),
         (FM_CATEGORY, 'File Maintenance - Category'),
         (FM_SUPPLIER, 'File Maintenance - Supplier'),
         (FM_PRODUCT, 'File Maintenance - Product'),
+        (FM_CREDITOR, 'File Maintenance - Creditors'),
         (TR_PURCHASES, 'Transaction - Purchases'),
         (TR_PRICING, 'Transaction - Price Management'),
         (TR_STOCKS, 'Transaction - Stock Management'),
         (TR_RV, 'Transaction - Requisition Voucher'),
         (RP_PRODHIST, 'Reports - Product History'),
+        (MEMBER_TRANS, 'Members - Transactions'),
     )
+
+
+class FeatureList(models.Model):
+    pass
     
 
 # UserType is used to clasify users
 class UserType:
+    CREDITOR = 'Member/Creditor'
     WH_STAFF = 'Warehouse Staff'
     SALES = 'Sales Personnel'
     STOREKEEPER = 'Storekeeper'
@@ -39,6 +48,7 @@ class UserType:
     GM = 'General Manager'
     
     LIST = (
+        (CREDITOR, 'Member/Creditor'),
         (WH_STAFF, 'Warehouse Staff'),
         (SALES, 'Sales Personnel'),
         (STOREKEEPER, 'Storekeeper'),
@@ -72,9 +82,20 @@ class UserDetail(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        default=True
+        default=None
     )
-    features = MultiSelectField(choices=Feature.LIST)
+    linked_creditor_acct = models.ForeignKey(
+        "sales.Creditor",
+        verbose_name=_("If Member/Creditor, link account to"),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        default=None
+    )
+    features = MultiSelectField(
+        choices=Feature.LIST,
+        max_length=50
+    )
     activated_at = models.DateTimeField(
         _("Activated at"),
         null=True,

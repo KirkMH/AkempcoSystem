@@ -1,3 +1,5 @@
+from django import forms
+from django.forms import inlineformset_factory
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User, Group
@@ -5,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from .models import UserDetail, Store
 from purchases.models import PurchaseOrder
 from stocks.models import WarehouseStock
-from sales.models import Discount
+from sales.models import Discount, Creditor
 
 
 admin.site.site_header = 'AKEMPCO System Admin'
@@ -15,8 +17,18 @@ admin.site.index_title  =  'AKEMPCO System Admin'
 
 # Define an inline admin descriptor for UserDetail model
 # which acts a bit like a singleton
+class UserDetailAdminForm(forms.ModelForm):
+    class Meta:
+        model = UserDetail
+        exclude = ['user']
+        widgets = {'features': forms.SelectMultiple()}
+
+    # radio_fields = {"features": admin.VERTICAL}
+UserDetailFormSet = inlineformset_factory(User, UserDetail, form=UserDetailAdminForm)
+
 class UserDetailInline(admin.StackedInline):
     model = UserDetail
+    formset = UserDetailFormSet
     can_delete = False
     verbose_name = _('Other Detail')
 
@@ -51,6 +63,7 @@ admin.site.register(Store)
 admin.site.register(WarehouseStock)
 admin.site.register(PurchaseOrder)
 admin.site.register(Discount)
+admin.site.register(Creditor)
 
 # remove Group
 admin.site.unregister(Group)

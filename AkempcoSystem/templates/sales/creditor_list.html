@@ -1,0 +1,82 @@
+{% extends '../base.html' %}
+{% load static form_tags %}
+
+{% block page_title %}List of Members and Creditors{% endblock page_title %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item active">Members and Creditors</li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+    <div class="card m-4">
+        <form method="get">
+            <div class="card-header">
+                <div class="row">
+                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                    <a href="{% url 'new_cred' %}" class="btn btn-primary">New</a>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                    {% include 'includes/search_tool.html' %}
+                </div>
+                </div>
+            </div>
+        </form>
+        <div class="card-body table-responsive">
+            <table class="table table-hover table-head-fixed table-sm">
+                <thead>
+                    <tr>
+                        <th class="text-center" width="10%">Action</th>
+                        <th>Name</th>
+                        <th>Address</th>
+                        <th class="text-center">Type</th>
+                        <th class="text-right">Credit Limit</th>
+                        <th class="text-center">Active</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    {% if not creditors %}
+                        <tr><td colspan="6" class="text-center">No data found.</td></tr>
+                    {% else %}
+                        
+                    {% for cred in creditors %}
+                        <tr>
+                            <td class="text-center"><a href="{% url 'edit_cred' cred.pk %}" title="Edit"><i class="far fa-edit"></i></a></td>
+                            <td>{{ cred.name }}</td>
+                            <td>{{ cred.address }}</td>
+                            <td class="text-center">
+                                <span class="badge {% if cred.creditor_type == 'Member' %}badge-primary{% else %}badge-dark{% endif %}">{{ cred.creditor_type }}</span>
+                            </td>
+                            <td class="text-right">{{ cred.credit_limit|peso }}</td>
+                            <td class="text-center">
+                                {% if cred.active %}
+                                    <span class="badge badge-pill badge-success">Yes</span>
+                                {% else %}
+                                    <span class="badge badge-pill badge-danger">No</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                        
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer">
+            {% include 'includes/pagination.html' %}
+        </div>
+    </div>
+
+{% endblock main_content %}
+
+
+{% block js %}
+    <script>
+        $(document).ready(function() {
+            $("#menu_fm").addClass("menu-open")
+            $("#menu_fm_cred").addClass("active")
+        })
+    </script>
+{% endblock js %}
+    

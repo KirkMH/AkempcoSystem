@@ -32,6 +32,11 @@
                 </tr>
             </thead>
             <tbody>
+                    
+                {% if not categories %}
+                    <tr><td colspan="3" class="text-center">No data found.</td></tr>
+                {% else %}
+                    
                 {% for category in categories %}
                     <tr>
                         <td class="text-center"><a href="{% url 'edit_category' category.pk %}" title="Edit"><i class="far fa-edit"></i></a></td>
@@ -39,6 +44,8 @@
                         <td>{{ category.status }}</td>
                     </tr>
                 {% endfor %}
+
+                {% endif %}
             </tbody>
         </table>
     </div>

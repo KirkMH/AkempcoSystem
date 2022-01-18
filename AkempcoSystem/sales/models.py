@@ -31,6 +31,7 @@ class Creditor(models.Model):
     )
     active = models.BooleanField(
         _("Is active?"),
+        help_text="Is this member/creditor still active?",
         default=True
     )
 

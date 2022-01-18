@@ -36,6 +36,11 @@
                 </tr>
             </thead>
             <tbody>
+                    
+                {% if not products %}
+                    <tr><td colspan="7" class="text-center">No data found.</td></tr>
+                {% else %}
+                    
                 {% for product in products %}
                     <tr>
                         <td class="text-center">
@@ -50,6 +55,8 @@
                         <td class="text-center">{{ product.status }}</td>
                     </tr>
                 {% endfor %}
+
+                {% endif %}
             </tbody>
         </table>
     </div>
