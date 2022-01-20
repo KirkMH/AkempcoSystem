@@ -27,6 +27,9 @@
                 <thead>
                     <tr>
                         <th class="text-center" width="10%">Action</th>
+                        {% if user.userdetail.userType == 'Audit Committee' %}
+                        <th>Location</th>
+                        {% endif %}
                         <th>Supplier</th>
                         <th>Date Discovered</th>
                         <th class="text-center">Item Count</th>
@@ -44,13 +47,20 @@
                     {% for bo in badorders %}
                         <tr>
                             <td class="text-center">
-                                <a href="{% url 'edit_bo' bo.pk %}" title="Edit"><i class="far fa-edit"></i></a>
-                                
-                                {% if bo.is_approved %}
-                                     | <a href="#" title="Action Taken"><i class="fas fa-fist-raised"></i></a>
+                                {% if bo.is_updatable and user.userdetail.userType == 'Warehouse Staff' %}
+                                    <a href="{% url 'bo_products' bo.pk %}" title="Edit"><i class="far fa-edit"></i></a>
+                                {% elif bo.is_for_approval and user.userdetail.userType == 'Audit Committee' %}
+                                    <a href="{% url 'bo_products' bo.pk %}" title="Manage BO"><i class="fas fa-check-double"></i></a>
+                                {% elif bo.is_approved %}
+                                     <a href="{% url 'bo_products' bo.pk %}" title="Action Taken"><i class="fas fa-fist-raised"></i></a>
+                                {% else %}
+                                     <a href="{% url 'bo_products' bo.pk %}" title="View"><i class="fas fa-eye"></i></a>
                                 {% endif %}
                                 
                             </td>
+                            {% if user.userdetail.userType == 'Audit Committee' %}
+                            <td>{{ bo.in_warehouse|yesno:'Warehouse,Store,-' }}</td>
+                            {% endif %}
                             <td>{{ bo.supplier.supplier_name }}</td>
                             <td>{{ bo.date_discovered|date:'F d, Y' }}</td>
                             <td class="text-center">{{ bo.number_of_items }}</td>

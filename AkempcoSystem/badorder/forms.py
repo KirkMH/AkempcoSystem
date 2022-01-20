@@ -1,4 +1,7 @@
 from django import forms
+from bootstrap_modal_forms.forms import BSModalModelForm
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Submit, Row, Column
 from django.utils.translation import gettext_lazy as _
 from .models import *
 
@@ -24,8 +27,34 @@ class BadOrderForm(forms.ModelForm):
 #       BadOrderItem
 ############################
 
-class BadOrderItemForm(forms.ModelForm):
+class BadOrderItemForm(BSModalModelForm):
+    uom = forms.CharField(label="Unit of Measure", required=False)
     required_css_class = 'required'
+
     class Meta:
         model = BadOrderItem
-        exclude = ['bad_order', ]
+        fields = ['product', 'quantity', 'reason']
+        widgets = {
+            'product': forms.Select(attrs={'size': 5}),
+        }
+
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['product'].empty_label = None
+        self.fields['uom'].widget.attrs['readonly'] = True
+
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            'product',
+            Row(
+                Column('quantity', css_class='form-group col-md-6'),
+                Column('uom', css_class='form-group col-md-6'),
+                css_class='form-row'
+            ),
+            Row(
+                Column('reason', css_class='form-group col-md-12'),
+                css_class='form-row'
+            ),
+            # Submit()
+        )

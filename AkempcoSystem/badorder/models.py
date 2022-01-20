@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Sum, F
 from fm.models import Supplier, Product
+from stocks.models import StoreStock, WarehouseStock, ProductHistory
 from django.contrib.auth.models import User
 from datetime import datetime
 
@@ -10,8 +11,10 @@ from datetime import datetime
 class BO_PROCESS:
     STEPS = [
         (1, 'Pending'),
-        (2, 'Approved'),
-        (3, 'Closed'),
+        (2, 'For Approval'),
+        (3, 'Open'),
+        (4, 'Closed'),
+        (5, 'Rejected'),
     ]
 
 
@@ -25,6 +28,15 @@ class BadOrder(models.Model):
         _("Date Discovered"), 
         auto_now=False,
         auto_now_add=False
+    )
+    in_warehouse = models.BooleanField(
+        _("Is this in the warehouse?"),
+        help_text="True if BO is in the warehouse, otherwise it's in the store.",
+        default=True
+    )
+    date_reported = models.DateField(
+        _("Date Reported"), 
+        auto_now=True
     )
     reported_by = models.ForeignKey(
         User, 
@@ -45,16 +57,22 @@ class BadOrder(models.Model):
         null=True,
         default=None
     )
-    date_cancelled = models.DateField(
+    date_rejected = models.DateField(
         _("Date Cancelled"), 
         null=True,
         default=None
     )
-    cancelled_by = models.ForeignKey(
+    rejected_by = models.ForeignKey(
         User, 
         verbose_name=_("Cancelled By"), 
         related_name='bo_canceller',
         on_delete=models.RESTRICT,
+        null=True,
+        default=None
+    )
+    reject_reason = models.CharField(
+        _("Reject reason"), 
+        max_length=250,
         null=True,
         default=None
     )
@@ -83,8 +101,23 @@ class BadOrder(models.Model):
     def grand_total(self):
         return self.bo_items.all().aggregate(grand=Sum(F('quantity') * F('unit_price')))['grand']
 
-    def is_approved(self):
+    def is_pending(self):
+        return self.process_step == 1
+
+    def is_for_approval(self):
         return self.process_step == 2
+
+    def is_approved(self):
+        return self.process_step == 3
+
+    def is_closed(self):
+        return self.process_step == 4
+        
+    def is_rejected(self):
+        return self.process_step == 5
+
+    def is_updatable(self):
+        return self.process_step < 3 # not yet approved
 
     def get_status(self):
         for step in BO_PROCESS.STEPS:
@@ -93,19 +126,37 @@ class BadOrder(models.Model):
                 return step[1]
         return None
 
-    def approve(self, user):
-        self.approved_by = user
-        self.date_approved = datetime.now()
-        self.process_step = 2 # Approved
+    def get_product_qty(self, product):
+        boi = BadOrderItem.objects.filter(bad_order=self, product=product)
+        if boi:
+            qty = boi.first().quantity
+            boi.delete()
+            return qty
+        else:
+            return 0
+
+    def submit(self, user):
+        self.reported_by = user
+        self.in_warehouse = True if user.userdetail.userType == 'Warehouse Staff' else False
+        self.process_step = 2 # For Approval
         self.save()
+
+    def approve(self, user):
         # deduct all items in BadOrderItem from product warehouse stocks
         items = BadOrderItem.objects.filter(bad_order=self)
+        total_price = 0
+        price_count = 0
         for item in items:
             qty = item.quantity
             # deduct using FIFO
             while qty > 0:
-                whs = WarehouseStock.availableStocks.filter(product=item.product).order_by('pk').first()
-                rem = whs.remaining_stocks
+                stock = None
+                if self.in_warehouse:
+                    stock = WarehouseStock.availableStocks.filter(product=item.product).order_by('pk').first()
+                else:
+                    stock = StoreStock.availableStocks.filter(product=item.product).order_by('pk').first()
+
+                rem = stock.remaining_stocks
                 deduct = 0 # how many items will be deducted in this record
                 if rem >= qty:
                     deduct = qty
@@ -115,23 +166,47 @@ class BadOrder(models.Model):
                     qty = qty - rem
 
                 # deduct qty from wh's remaining stocks
-                whs.remaining_stocks = deduct
-                whs.save()
+                stock.remaining_stocks = deduct
+                stock.save()
+
+                # update price info
+                total_price = total_price + stock.supplier_price
+                price_count = price_count + 1
+
+            # update unit price
+            item.unit_price = total_price / price_count
+            item.save()
 
             # record in history
             hist = ProductHistory()
             hist.product = item.product
-            hist.location = 0
+            hist.location = 0 if self.in_warehouse else 1
             hist.quantity = 0 - deduct
-            hist.remarks = 'Bad order.'
+            hist.remarks = 'Bad order: ' + item.reason
             hist.performed_by = self.reported_by
             hist.save()
+            
+        # update fields of this record
+        self.approved_by = user
+        self.date_approved = datetime.now()
+        self.process_step = 3 # Open (Approved)
+        self.save()
+
+    def reject(self, user, reason):
+        self.rejected_by = user
+        self.date_rejected = datetime.now()
+        self.reject_reason = reason
+        self.process_step = 5 # Rejected
+        self.save()
 
     def close(self):
-        self.process_step = 3 # Closed
+        self.process_step = 4 # Closed
         self.save()
 
     def save_action_taken(self, action, shouldClose = False):
+        # if action is "Replaced by the supplier.", should increment the stocks back
+        if action == 'Replaced by the supplier.':
+            pass
         self.action_taken = action
         self.save()
         if shouldClose:
@@ -152,9 +227,11 @@ class BadOrderItem(models.Model):
     )
     quantity = models.PositiveSmallIntegerField(_("Quantity"))
     unit_price = models.DecimalField(
-        _("Unit Price"), 
+        _("Average Unit Price"), 
         max_digits=8, 
-        decimal_places=2
+        decimal_places=2,
+        null=True,
+        default=None
     )
     reason = models.CharField(
         _("Reason"), 

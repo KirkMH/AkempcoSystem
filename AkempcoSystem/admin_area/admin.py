@@ -6,14 +6,13 @@ from django.contrib.auth.models import User, Group
 from django.utils.translation import gettext_lazy as _
 from .models import UserDetail, Store
 from purchases.models import PurchaseOrder
-from stocks.models import WarehouseStock
+from stocks.models import WarehouseStock, StoreStock
 from sales.models import Discount, Creditor
 
 
 admin.site.site_header = 'AKEMPCO System Admin'
 admin.site.site_title  =  'AKEMPCO System Admin Area'
 admin.site.index_title  =  'AKEMPCO System Admin'
-
 
 # Define an inline admin descriptor for UserDetail model
 # which acts a bit like a singleton
@@ -61,6 +60,7 @@ admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 admin.site.register(Store)
 admin.site.register(WarehouseStock)
+admin.site.register(StoreStock)
 admin.site.register(PurchaseOrder)
 admin.site.register(Discount)
 admin.site.register(Creditor)

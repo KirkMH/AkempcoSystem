@@ -1,0 +1,311 @@
+{% extends '../base.html' %}
+{% load static %}
+{% load humanize %}
+{% load form_tags %}
+{% load crispy_forms_tags %}
+
+{% block css %}
+  <link rel="stylesheet" href="{% static 'css/table_setup.css' %}">    
+  <link rel="stylesheet" href="{% static 'css/asterisk_on_required.css' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/css/bootstrap-select.min.css"> 
+  <style>
+      .btn-menu {
+        width: 180px;
+      }
+  </style>
+{% endblock css %}
+
+{% block page_title %}
+{% if badorder.is_processed %}Manage{% else %}Create{% endif %} Bad Order
+{% endblock page_title %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'bo_list' %}">Bad Orders</a></li>
+    <li class="breadcrumb-item active">{% if badorder.is_processed %}Manage{% else %}Create{% endif %}</li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+
+<div class="modal fade" tabindex="-1" role="dialog" id="modal">
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <input type="hidden" name="badorder_pk" id="badorder_pk" value="{{ badorder.pk }}">
+        </div>
+        <div class="modal-content"></div>
+    </div>
+</div>
+
+<form id="submit_bo_form" method="POST">
+{% csrf_token %}
+<div class="card m-4">
+    <div class="card-header">
+        <!-- info row -->
+        <div class="row invoice-info">
+            <div class="col-lg-2 invoice-col">BO #:</div>
+            <div class="col-lg-4 invoice-col font-weight-bold">
+                {{ badorder.pk|seq_num }}
+            </div>
+            <div class="col-lg-2 invoice-col">Date Discovered:</div>
+            <div class="col-lg-4 invoice-col font-weight-bold">{{ badorder.date_discovered|date:'F d, Y' }}</div>
+        </div>
+        <div class="row invoice-info">
+            <div class="col-lg-2 invoice-col">Supplier:</div>
+            <div class="col-lg-4 invoice-col font-weight-bold">{{ badorder.supplier.supplier_name }}</div>
+            <div class="col-lg-2 invoice-col">Status:</div>
+            <div class="col-lg-4 invoice-col font-weight-bold">
+                {{ badorder.get_status }}
+                
+                {% if badorder.is_rejected %}
+                    :<span class="text-danger"> {{ badorder.reject_reason }}</span>
+                {% endif %}
+                    
+            </div>
+        </div>
+        <div class="row invoice-info">
+            <div class="col-lg-2 invoice-col">Action Taken:</div>
+            <div class="col-lg-10 invoice-col font-weight-bold">{{ badorder.action_taken }}</div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-4">
+                {% if badorder.is_updatable and user.userdetail.userType == 'Warehouse Staff' or user.userdetail.userType == 'Storekeeper' %}
+                    <button id="add-item" class="btn btn-primary" type="button" name="add-item">Add Item</button>
+                {% endif %}
+            </div>
+            <div class="col-8">
+                <span class="float-right">
+                    
+                    {% if badorder.is_updatable %}
+                    <a href="{% url 'edit_bo' badorder.pk %}" class="btn btn-dark mb-2 btn-menu" role="button">Edit BO Details</a>
+                    {% elif badorder.is_approved %}
+                    <button type="button" id="set_action_taken" class="btn btn-dark mb-2 btn-menu">Set Action Taken</button>
+                    {% endif %}
+                        
+                    <a href="{% url 'print_bo' badorder.pk %}" class="btn btn-dark mb-2 btn-menu" role="button">Print BO</a>
+                </span>
+            </div>
+        </div>
+        <table class="table table-sm table-hover">
+            <thead>
+                <tr>
+                    {% if badorder.is_updatable and user.userdetail.userType == 'Warehouse Staff' or user.userdetail.userType == 'Storekeeper' %}
+                    <th>Action</th>
+                    {% endif %}
+                    <th width="15%">Barcode</th>
+                    <th width="30%">Description</th>
+                    <th class="text-center">Quantity</th>
+                    <th width="10%">Units</th>
+                    <th>Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+            {% if not products %}
+                <tr><td colspan="7" style="text-align: center;">No products added yet.</td></tr>
+            {% else %}
+                {% for item in products %}
+                    <tr>
+                        {% if badorder.is_updatable and user.userdetail.userType == 'Warehouse Staff' or user.userdetail.userType == 'Storekeeper' %}
+                        <td class="text-center">
+                            <a href="#" class="update-item" data-form-url="{% url 'update_bo_product' item.pk %}">
+                                <i class="far fa-edit"></i>
+                            </a> | 
+                            <a href="#" class="delete-item" data-product-name="{{ item.product.full_description }}" data-form-url="{% url 'delete_bo_product' item.pk %}">
+                                <i class="far fa-trash-alt"></i>
+                            </a>
+                        </td>
+                        {% endif %}
+                        <td>{{ item.product.barcode }}</td>
+                        <td>{{ item.product.full_description }}</td>
+                        <td class="text-center">{{ item.quantity }}</td>
+                        <td class="text-center">{{ item.product.uom }}{{ item.quantity|pluralize }}</td>
+                        <td>{{ item.reason }}</td>
+                    </tr>
+                {% endfor %}
+            {% endif %}
+                    
+            </tbody>
+        </table>
+
+
+    </div>
+    <div class="card-footer">
+        <div class="row">
+            <div class="col-12">
+                {% if badorder.is_updatable and user.userdetail.userType == 'Warehouse Staff' or user.userdetail.userType == 'Storekeeper' %}
+                
+                    {% if products %}
+                    <button type="button" name="submit_btn" id="submit_btn" class="btn btn-warning card-link">Submit</button>
+                    {% endif %}
+                    
+                    <button type="button" id="cancel" class="btn btn-danger card-link">Cancel</button>
+                {% elif user.userdetail.userType == 'Audit Committee' and badorder.is_updatable %}
+                <button type="button" name="approve_btn" id="approve_btn" class="btn btn-warning card-link">Approve</button>
+                <button type="button" name="reject_btn" id="reject_btn" class="btn btn-danger card-link">Reject</button>
+                {% endif %}
+                <a href="{% url 'bo_list' %}" class="btn btn-default card-link float-right">Back to list</a>
+            </div>
+        </div>
+    </div>
+</div>
+<input type="hidden" name="other_info" id="other_info" >
+</form>
+
+<form id="delete_form" method="POST">
+    {% csrf_token %}
+</form>
+
+{% endblock main_content %}
+
+{% block js %}
+  <script src="{% static 'js/jquery.bootstrap.modal.forms.min.js' %}"></script>
+  <!-- bootboxjs -->
+  <script src="{% static 'js/bootbox.all.min.js' %}"></script>
+
+
+  <script type="text/javascript">
+    $(document).ready(function() {
+        $("#menu_trans").addClass("menu-open")
+        $("#menu_trans_bo").addClass("active")
+    
+        $("#add-item").modalForm({
+            formURL: "{% url 'bo_products_add' badorder.pk %}"
+        });
+        
+        function updateItemModalForm() {
+          $(".update-item").each(function () {
+            $(this).modalForm({
+              formURL: $(this).data("form-url")
+            });
+          });
+        }
+        updateItemModalForm();
+        
+        function deleteItemModalForm() {
+          $(".delete-item").each(function () {
+            $(this).click(function() {
+                var url = $(this).data("form-url");
+                var product = $(this).data("product-name");
+                bootbox.confirm("Are you sure you want to remove " + product + "?", function(result){ 
+                    if (result) {
+                        // location.href = url;
+                        $('#delete_form').attr('action', url);
+                        $('#delete_form').submit()
+                    }
+                });
+            });
+          });
+        }
+        deleteItemModalForm();
+
+        $('#submit_btn').click(function() {
+            bootbox.confirm("Are you sure you want to submit this bad order record for approval?", function(result){ 
+                if (result) {
+                    $('#submit_bo_form').attr('action', "{% url 'submit_bo' badorder.pk %}");
+                    $('#submit_bo_form').submit();
+                }
+            });
+        })
+
+        $('#cancel').click(function() {
+            bootbox.confirm("Are you sure you want to cancel this transaction? All added information and products will be removed.", function(result){ 
+                if (result) {
+                    $('#delete_form').attr('action', "{% url 'delete_bo' badorder.pk %}");
+                    $('#delete_form').submit();
+                }
+            });
+        })
+
+        $('#approve_btn').click(function() {
+            bootbox.confirm("Are you sure you want to approve this bad order record?", function(result){ 
+                if (result) {
+                    $('#submit_bo_form').attr('action', "{% url 'approve_bo' badorder.pk %}");
+                    $('#submit_bo_form').submit();
+                }
+            });
+        })
+
+        $('#reject_btn').click(function() {
+            bootbox.confirm("Are you sure you want to reject this bad order record?", function(result){ 
+                if (result) {
+                    bootbox.prompt("Please enter the reason for rejecting this bad order record.", function(result){ 
+                        if (result != null) {
+                            $('#other_info').val(result);
+                            $('#submit_bo_form').attr('action', "{% url 'reject_bo' badorder.pk %}");
+                            $('#submit_bo_form').submit();
+                        }
+                    });
+                }
+            });
+        })
+        
+        $('#set_action_taken').click(function() {
+            bootbox.prompt({
+                title: "Please choose the action taken to this bad order record.",
+                inputType: 'select',
+                inputOptions: [
+                {
+                    text: 'Choose one...',
+                    value: '',
+                },
+                {
+                    text: 'Replaced by the supplier.',
+                    value: '1',
+                },
+                {
+                    text: 'For credit memo.',
+                    value: '2',
+                },
+                {
+                    text: 'Charged to the store.',
+                    value: '3',
+                },
+                {
+                    text: 'Others (you will be prompted to specify).',
+                    value: '4',
+                }
+                ],
+                callback: function (result) {
+                    console.log(result);
+                    var action = "";
+                    if (result !== null) {
+                        switch (result) {
+                            case '1':
+                                action = "Replaced by the supplier.";
+                                break;
+                            case '2':
+                                action = "For credit memo.";
+                                break;
+                            case '3':
+                                action = "Charged to the store.";
+                                break;
+                            case '4':
+                                bootbox.prompt("Please specify the action taken to this bad order record.", function(result){
+                                    console.log(result)
+                                    if (result === null) {
+                                        return;
+                                    }
+                                    action = result;
+                                    console.log("action: " + action);
+                                    $('#other_info').val(action);
+                                    $('#submit_bo_form').attr('action', "{% url 'set_action_taken' badorder.pk %}");
+                                    $('#submit_bo_form').submit();
+                                });
+                        }
+                        console.log(action);
+                        $('#other_info').val(action);
+                        console.log($('#other_info'));
+                        $('#submit_bo_form').attr('action', "{% url 'set_action_taken' badorder.pk %}");
+                        $('#submit_bo_form').submit();
+                    }
+                }
+            });
+        })
+    
+    });
+  </script>
+
+{% endblock js %}
+    
