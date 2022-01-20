@@ -1,0 +1,14 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+ {% block extrastyle %}
+ <link rel="icon" href="{% static 'img/logo.png' %}">
+ {% endblock %}
+
+ {% block pretitle %}
+     <div id="b_first"><img src="{% static 'img/logo.png' %}" height="100px" alt="logo"></div>
+ {% endblock %}
+
+ {% block content_title %}
+ <h1>AKEMPCO Sales and Inventory System - Administrator's Area</h1>
+ {% endblock %}

@@ -10,9 +10,9 @@ from stocks.models import WarehouseStock, StoreStock
 from sales.models import Discount, Creditor
 
 
-admin.site.site_header = 'AKEMPCO System Admin'
-admin.site.site_title  =  'AKEMPCO System Admin Area'
-admin.site.index_title  =  'AKEMPCO System Admin'
+admin.site.site_header = 'AKEMPCO System Administrator'
+admin.site.site_title  =  'System Admin Area'
+admin.site.index_title  =  'AKEMPCO'
 
 # Define an inline admin descriptor for UserDetail model
 # which acts a bit like a singleton
