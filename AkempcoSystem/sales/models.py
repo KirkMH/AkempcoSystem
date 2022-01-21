@@ -66,6 +66,11 @@ class Discount(models.Model):
         max_digits=5, 
         decimal_places=2
     )
+    active = models.BooleanField(
+        _("Is active?"),
+        help_text="Is this discount type still active?",
+        default=True
+    )
 
     def __str__(self):
         unit = ' PhP' if self.discount_type == 'peso' else '%'

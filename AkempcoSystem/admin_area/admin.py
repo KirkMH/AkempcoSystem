@@ -55,14 +55,22 @@ class UserAdmin(BaseUserAdmin):
          form = super(UserAdmin, self).get_form(request, obj, **kwargs)
          return form
 
+class StoreAdmin(admin.ModelAdmin):
+     def has_delete_permission(self, request, obj=None):
+        return False
+
+class DiscountAdmin(admin.ModelAdmin):
+     def has_delete_permission(self, request, obj=None):
+        return False
+
 # Re-register UserAdmin
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
-admin.site.register(Store)
+admin.site.register(Store, StoreAdmin)
 admin.site.register(WarehouseStock)
 admin.site.register(StoreStock)
 admin.site.register(PurchaseOrder)
-admin.site.register(Discount)
+admin.site.register(Discount, DiscountAdmin)
 admin.site.register(Creditor)
 
 # remove Group
