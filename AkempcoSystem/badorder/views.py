@@ -150,6 +150,8 @@ class BOProductCreateView(BSModalCreateView):
         form.save()
         return super().form_valid(form)
 
+    
+
     def get_success_url(self):
         return reverse('bo_products', kwargs={'pk' : self.kwargs['pk']})
 
@@ -207,8 +209,10 @@ class PrintBODetailView(DetailView):
 def submit_bo(request, pk):
     bo = get_object_or_404(BadOrder, pk=pk)
     if request.method == 'POST':
-        bo.submit(request.user)
-        messages.success(request, "Bad order record was submitted for approval.")
+        if bo.submit(request.user):
+            messages.success(request, "Bad order record was submitted for approval.")
+        else:
+            messages.error(request, "There was an error submitting your bad order record.")
     return redirect('bo_list')
 
 

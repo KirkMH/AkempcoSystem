@@ -29,6 +29,7 @@ class BadOrderForm(forms.ModelForm):
 
 class BadOrderItemForm(BSModalModelForm):
     uom = forms.CharField(label="Unit of Measure", required=False)
+    stocks = forms.IntegerField(label='Remaining Stocks', required=False)
     required_css_class = 'required'
 
     class Meta:
@@ -43,13 +44,15 @@ class BadOrderItemForm(BSModalModelForm):
         super().__init__(*args, **kwargs)
         self.fields['product'].empty_label = None
         self.fields['uom'].widget.attrs['readonly'] = True
+        self.fields['stocks'].widget.attrs['readonly'] = True
 
         self.helper = FormHelper()
         self.helper.layout = Layout(
             'product',
             Row(
-                Column('quantity', css_class='form-group col-md-6'),
-                Column('uom', css_class='form-group col-md-6'),
+                Column('stocks', css_class='form-group col-md-4'),
+                Column('quantity', css_class='form-group col-md-4'),
+                Column('uom', css_class='form-group col-md-4'),
                 css_class='form-row'
             ),
             Row(

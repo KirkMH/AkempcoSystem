@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from fm.models import Product
 from purchases.models import PurchaseOrder
+from sales.models import Creditor
 from .models import Feature
 
 
@@ -37,10 +38,14 @@ def dashboard_view(request):
     if overall_count > 0:
         filled_percent = open_count / overall_count * 100
 
+    # number of members
+    member_count = Creditor.objects.filter(creditor_type='Member', active=True).count()
+
     # pass to template
     context = {
         'critical_count': critical_count,
-        'filled_percent': int(filled_percent)
+        'filled_percent': int(filled_percent),
+        'member_count': member_count
     }
     return render(request, 'dashboard.html', context)
 

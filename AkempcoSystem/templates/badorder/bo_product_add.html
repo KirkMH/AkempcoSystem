@@ -22,7 +22,7 @@
         </div>
     </div>
     <div class="modal-footer">
-        <input type="button" onclick="document.getElementById('add_product_form').submit();" class="btn btn-primary" value="Go" style="margin-bottom: 5px;" id="add" />
+        <input type="button" class="btn btn-primary" value="Go" style="margin-bottom: 5px;" id="go" />
         <input type="button" class="btn btn-default" data-dismiss="modal" value="Close" id="close" />
     </div>
 </form>
@@ -77,9 +77,18 @@ $(document).ready(function() {
                 data: {'pk': pk},
                 dataType: 'json',
                 success: function(data) {
-                    console.log(data)
+                    type = "{{ user.userdetail.userType }}";
+                    console.log(type);
+                    console.log(data);
+                    if (type === 'Storekeeper') 
+                        $('#id_stocks').val(data.s_stock)
+                    else if (type === 'Warehouse Staff')
+                        $('#id_stocks').val(data.w_stock)
+
                     // inventory uom
                     $('#id_uom').val(data.inv_uom.toLowerCase() + '(s)')
+
+                    $('#id_quantity').focus()
                 }
             })
         }
@@ -109,6 +118,16 @@ $(document).ready(function() {
             select_data();
         })
         .trigger( "change" );
+
+    $('#go').click(function () {
+        let stocks = parseInt($('#id_stocks').val())
+        let quantity = parseInt($('#id_quantity').val())
+
+        if (stocks >= quantity)
+            $('#add_product_form').submit();
+        else
+            toastr.warning("The bad order quantity is more than the remaining stocks.");
+    })
 
     
     $('#search').focus();

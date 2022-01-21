@@ -155,8 +155,11 @@ class BadOrder(models.Model):
                     stock = WarehouseStock.availableStocks.filter(product=item.product).order_by('pk').first()
                 else:
                     stock = StoreStock.availableStocks.filter(product=item.product).order_by('pk').first()
+                if stock:
+                    rem = stock.remaining_stocks
+                else:
+                    return False
 
-                rem = stock.remaining_stocks
                 deduct = 0 # how many items will be deducted in this record
                 if rem >= qty:
                     deduct = qty
@@ -191,6 +194,8 @@ class BadOrder(models.Model):
         self.date_approved = datetime.now()
         self.process_step = 3 # Open (Approved)
         self.save()
+
+        return True
 
     def reject(self, user, reason):
         self.rejected_by = user
