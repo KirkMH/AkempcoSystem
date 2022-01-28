@@ -40,9 +40,13 @@ class PurchaseSupplierListView(ListView):
         # check if the user searched for something
         key = get_index(self.request, "table_search")
         count, step = get_po_approval_count(self.request.user)
-        if count > 0 and self.request.user.userdetail.userType != 'Purchaser':
-            object_list = PurchaseOrder.objects.filter(process_step=step)
-        else:
+        object_list = None
+        if count > 0:
+            if self.request.user.userdetail.userType == 'Officer-In-Charge':
+                object_list = PurchaseOrder.objects.filter(process_step=step, category=self.request.user.userdetail.oic_for)
+            elif self.request.user.userdetail.userType != 'Purchaser':
+                object_list = PurchaseOrder.objects.filter(process_step=step)
+        if object_list == None:
             object_list = Supplier.objects.all()
         if key:
             object_list = object_list.filter(
@@ -52,7 +56,7 @@ class PurchaseSupplierListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        return add_search_key(self.request, context)    
+        return add_search_key(self.request, context)   
 
     def get_template_names(self):
         count, step = get_po_approval_count(self.request.user)
@@ -162,7 +166,15 @@ class PODetailView(DetailView):
         self.object.save()
         context["products"] = PO_Product.objects.filter(purchase_order=self.object)
         context["supplier"] = self.object.supplier
-        context["for_approval"] = self.object.is_for_approval(self.request.user)
+        context['for_approval'] = False
+        userType = self.request.user.userdetail.userType
+        # check if this user can approve this PO
+        if (userType == self.object.get_user_type() and userType == 'Officer-In-Charge' and \
+                self.object.category == self.request.user.userdetail.oic_for) or \
+                (userType != 'Officer-In-Charge' and userType != 'Purchaser' and \
+                userType == self.object.get_user_type()):
+            context['for_approval'] = True
+            
         return context
 
 
@@ -194,16 +206,25 @@ class POProductCreateView(BSModalCreateView):
         context["form"].fields["product"].queryset = Product.objects.filter(status='ACTIVE', suppliers=po.supplier, category=po.category)
         return context
 
+    def post(self, request, *args, **kwargs):
+        my_form = self.form_class(self.request.POST)
+
+        if my_form.is_valid():
+            po_prod = my_form.save(commit=False)
+            po = get_object_or_404(PurchaseOrder, pk=self.kwargs['pk']) 
+            ordered_quantity = my_form.instance.ordered_quantity
+            prod_qty = po.get_product_ordered(my_form.instance.product)
+            po_prod.ordered_quantity = ordered_quantity + prod_qty
+            po_prod.purchase_order = po
+            po_prod.save()
+
+        else:
+            messages.error(self.request, 'Please fill-in all the required fields.')
+            
+        return redirect('po_products', pk=self.kwargs['pk'])
+
     def get_success_url(self):
         return reverse('po_products', kwargs={'pk' : self.kwargs['pk']})
-
-    def form_valid(self, form):
-        po = get_object_or_404(PurchaseOrder, pk=self.kwargs['pk']) 
-        ordered_quantity = form.instance.ordered_quantity
-        prod_qty = po.get_product_ordered(form.instance.product)
-        form.instance.ordered_quantity = ordered_quantity + prod_qty
-        form.instance.purchase_order = po
-        return super().form_valid(form)
     
 
 @method_decorator(login_required, name='dispatch')

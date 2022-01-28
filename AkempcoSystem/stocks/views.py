@@ -131,19 +131,23 @@ class RVProductCreateView(BSModalCreateView):
         context["form"].fields["product"].queryset = Product.objects.filter(status='ACTIVE')
         return context
 
-    def form_valid(self, form):
-        rv = get_object_or_404(RequisitionVoucher, pk=self.kwargs['pk']) 
-        new_qty = form.instance.quantity
-        old_qty = rv.get_product_requested(form.instance.product)
-        form.instance.quantity = new_qty + old_qty
-        form.instance.rv = rv
-        form.instance.requested_by = self.request.user
-        form.save()
-        return super().form_valid(form)
+    def post(self, request, *args, **kwargs):
+        my_form = self.form_class(self.request.POST)
 
-    def get_success_url(self):
-        return reverse('rv_products', kwargs={'pk' : self.kwargs['pk']})
+        if my_form.is_valid():
+            rv_prod = my_form.save(commit=False)
+            rv = get_object_or_404(RequisitionVoucher, pk=self.kwargs['pk']) 
+            new_qty = my_form.instance.quantity
+            old_qty = rv.get_product_requested(my_form.instance.product)
+            rv_prod.quantity = new_qty + old_qty
+            rv_prod.rv = rv
+            rv_prod.requested_by = self.request.user
+            rv_prod.save()
 
+        else:
+            messages.error(self.request, 'Please fill-in all the required fields.')
+        
+        return redirect('rv_products', pk=self.kwargs['pk'])
 
 
 @login_required

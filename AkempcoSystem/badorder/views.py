@@ -141,7 +141,7 @@ class BOProductCreateView(BSModalCreateView):
         return context
 
     def post(self, request, *args, **kwargs):
-        form = self.form_class(self.request.POST)
+        form = self.form_class(request.POST)
 
         if form.is_valid():
             bo = get_object_or_404(BadOrder, pk=self.kwargs['pk']) 

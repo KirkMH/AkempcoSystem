@@ -283,7 +283,10 @@ class PurchaseOrder(models.Model):
                 if step[0] == 1:
                     return 'Pending'
                 elif step[0] > 1 and step[0] < 5:
-                    return 'Approval: ' + step[1]
+                    who = ""
+                    if step[1] == 'Officer-In-Charge':
+                        who = " (" + self.category.category_description + ")"
+                    return 'Approval: ' + step[1] + who
                 else:
                     return step[1]
         return None

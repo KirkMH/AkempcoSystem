@@ -193,14 +193,14 @@
     <div class="card-footer">
         <div class="row">
             <div class="col-12">
-                {% if user.userdetail.userType == 'Purchaser' and po.process_step < 5 %}
+                {% if user.userdetail.userType == 'Purchaser' and po.process_step < 3 %}
                 
                     {% if products %}
                     <button type="button" name="submit_btn" id="submit_btn" class="btn btn-warning card-link">Submit</button>
                     {% endif %}
                     
                     <button type="button" id="cancel" class="btn btn-danger card-link">Cancel</button>
-                {% elif user.userdetail.userType == po.get_user_type and for_approval %}
+                {% elif for_approval == True %}
                     <input type="hidden" name="reject_reason" id="reject_reason" >
                     <button type="button" name="approve_btn" id="approve_btn" class="btn btn-warning card-link">Approve</button>
                     <button type="button" name="reject_btn" id="reject_btn" class="btn btn-danger card-link">Reject</button>
