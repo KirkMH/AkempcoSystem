@@ -140,20 +140,22 @@ class BOProductCreateView(BSModalCreateView):
         context["form"].fields["product"].queryset = Product.objects.filter(suppliers=bo.supplier, status='ACTIVE')
         return context
 
-    def form_valid(self, form):
-        bo = get_object_or_404(BadOrder, pk=self.kwargs['pk']) 
-        new_qty = form.instance.quantity
-        old_qty = bo.get_product_qty(form.instance.product)
-        form.instance.quantity = new_qty + old_qty
-        form.instance.bad_order = bo
-        form.instance.requested_by = self.request.user
-        form.save()
-        return super().form_valid(form)
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(self.request.POST)
 
-    
+        if form.is_valid():
+            bo = get_object_or_404(BadOrder, pk=self.kwargs['pk']) 
+            new_qty = form.instance.quantity
+            old_qty = bo.get_product_qty(form.instance.product)
+            form.instance.quantity = new_qty + old_qty
+            form.instance.bad_order = bo
+            form.instance.requested_by = self.request.user
+            form.save()
 
-    def get_success_url(self):
-        return reverse('bo_products', kwargs={'pk' : self.kwargs['pk']})
+        else:
+            messages.error(self.request, 'Please fill-in all the required fields.')
+            
+        return redirect('bo_products', pk=self.kwargs['pk'])
 
 
 
