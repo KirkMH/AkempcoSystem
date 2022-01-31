@@ -1,0 +1,167 @@
+{% extends '../base.html' %}
+{% load static form_tags %}
+
+{% block page_title %}Point-of-Sale{% endblock page_title %}
+
+
+{% block css %}
+    <style>
+        .btn-menu1 {
+            width: 120pt;
+        }
+        .btn-menu {
+            width: 100pt;
+            margin-left: 10pt;
+        }
+        .text-large {
+            font-size: larger;
+        }
+    </style>
+{% endblock css %}
+    
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item active">Point-of-Sale</a></li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+    <div class="card m-4">
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <button class="btn btn-outline-dark btn-menu1" type="button">
+                            <i class="fas fa-receipt"></i><br>
+                            Re-print Receipt
+                        </button>
+                        <button class="btn btn-outline-dark btn-menu1" type="button">
+                            <i class="fas fa-window-close"></i><br>
+                            Cancel Receipt
+                        </button>
+                        <button class="btn btn-outline-dark btn-menu1" type="button">
+                            <i class="fas fa-file-alt"></i><br>
+                            X-Reading
+                        </button>
+                        <button class="btn btn-outline-dark btn-menu1" type="button">
+                            <i class="fas fa-file-invoice"></i><br>
+                            Z-Reading
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-lg-5 col-md-12">
+                        <div class="row mb-1">
+                            <div class="col-lg-3 col-md-6 text-large">SI #</div>
+                            <div class="col-lg-9 col-md-6 text-large">
+                                <input id="txtSI" type="text" class="form-control" value="01234567" disabled>
+                            </div>
+                        </div>
+                        <div class="row mb-1">
+                            <div class="col-lg-3 col-md-6 text-large">Customer</div>
+                            <div class="col-lg-9 col-md-6">
+                                <div class="input-group">
+                                    <input id="txtCustomer" type="text" class="form-control" value="Juan dela Cruz" disabled>
+                                    <div class="input-group-append">
+                                        <button class="btn btn-outline-primary" type="button"><i class="fas fa-search"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-1">
+                            <div class="col-lg-3 col-md-6 text-large">Product</div>
+                            <div class="col-lg-9 col-md-6">
+                                <div class="input-group">
+                                    <input id="txtScan" type="text" class="form-control" placeholder="Scan barcode">
+                                    <div class="input-group-append">
+                                    <button class="btn btn-outline-primary" type="button"><i class="fas fa-search"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-2"></div>
+
+                    <div class="col-lg-5 col-md-12">
+                        <div class="row">
+                            <div class="col-lg-3 col-md-6 text-large">TOTAL</div>
+                            <div class="col-lg-9 col-md-6 text-large text-right"><h3>{{ 123456.78|peso }}</h3></div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-3 col-md-6 text-large"><a href="#">DISCOUNT</a></div>
+                            <div class="col-lg-9 col-md-6 text-large text-right text-danger">{{ 123.45|peso }}</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-3 col-md-6 text-large">PAYABLE</div>
+                            <div class="col-lg-9 col-md-6 text-large text-right"><h1>{{ 123333.33|peso }}</h1></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <button class="btn btn-sm btn-menu btn-info" type="button" id="btn_hold"><i class="far fa-hand-paper"></i><br>Put On-Hold</button>
+                        <button class="btn btn-sm btn-menu btn-info" type="button" id="btn_load"><i class="fas fa-arrow-down"></i><br>Load On-Hold</button>
+                    </div>
+                    <div class="col-md-6 text-right">
+                        <button class="btn btn-sm btn-menu btn-warning" type="button" id="btn_reset"><i class="fas fa-eraser"></i><br>Reset</button>
+                        <button class="btn btn-sm btn-menu btn-success" type="button" id="btn_checkout"><i class="far fa-share-square"></i><br>Checkout</button>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <td>Description</td>
+                                    <td class="text-center">Qty</td>
+                                    <td class="text-right">Price</td>
+                                    <td class="text-right">Subtotal</td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <a href="#"><i class="far fa-minus-square text-danger" title="Remove"></i></a> 
+                                        Product Description 1
+                                    </td>
+                                    <td class="text-center">3r</td>
+                                    <td class="text-right">{{ 10|peso }}</td>
+                                    <td class="text-right">{{ 30|peso }}</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <a href="#"><i class="far fa-minus-square text-danger" title="Remove"></i></a> 
+                                        Another product for sale
+                                    </td>
+                                    <td class="text-center">2w</td>
+                                    <td class="text-right">{{ 110|peso }}</td>
+                                    <td class="text-right">{{ 220|peso }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock main_content %}
+
+
+{% block js %}
+    <script>
+        $(document).ready(function() {
+            $("#menu_trans").addClass("menu-open")
+            $("#menu_trans_pos").addClass("active")
+
+            $('#txtScan').focus();
+        })
+    </script>
+{% endblock js %}

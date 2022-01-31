@@ -82,3 +82,10 @@ class CreditorUpdateView(SuccessMessageMixin, UpdateView):
     pk_url_kwarg = 'pk'
     success_url = reverse_lazy('cred_list')
     success_message = "%(name)s was updated successfully."
+        
+
+@login_required
+@user_is_allowed(Feature.TR_POS)
+def pos_view(request):
+    context = {}
+    return render(request, 'sales/pos.html', context)
