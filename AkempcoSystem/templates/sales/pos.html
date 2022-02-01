@@ -16,6 +16,52 @@
         .text-large {
             font-size: larger;
         }
+        .fixedButton{
+            position: fixed;
+            bottom: 50px;
+            right: 0px; 
+            padding: 20px;
+        }
+        .roundedFixedBtn{
+            height: 50px;
+            line-height: 35px;  
+            width: 50px;  
+            font-size: 2em;
+            font-weight: bold;
+            vertical-align: baseline;
+            border-radius: 50%;
+            text-align: center;
+            cursor: pointer;
+        }
+        /* Dropup content (Hidden by Default) */
+        .dropup-content {
+            display: none;
+            position: absolute;
+            bottom: 80px;
+            min-width: 50px;
+            z-index: 1;
+        }
+
+        /* Links inside the dropup */
+        .dropup-content a {
+            border-radius: 50%;
+            height: 50px;
+            font-size: 1.2em;
+            text-decoration: none;
+            display: block;
+            padding-top: 10px;
+            margin-bottom: 5px;
+        }
+
+        /* Show the dropup menu on hover */
+        .fixedButton:hover .dropup-content {
+        display: block;
+        }
+
+        /* Change the background color of the dropup button when the dropup content is shown */
+        .dropup:hover .dropbtn {
+        background-color: #2980B9;
+        }
     </style>
 {% endblock css %}
     
@@ -26,33 +72,12 @@
 {% endblock breadcrumb %}
 
 {% block main_content %}
-    <div class="card m-4">
+    <div class="card col-11 m-4">
         <form method="post" novalidate>
             {% csrf_token %}
 
             <div class="card-header">
                 <div class="row">
-                    <div class="col-12 text-center">
-                        <button class="btn btn-outline-dark btn-menu1" type="button">
-                            <i class="fas fa-receipt"></i><br>
-                            Re-print Receipt
-                        </button>
-                        <button class="btn btn-outline-dark btn-menu1" type="button">
-                            <i class="fas fa-window-close"></i><br>
-                            Cancel Receipt
-                        </button>
-                        <button class="btn btn-outline-dark btn-menu1" type="button">
-                            <i class="fas fa-file-alt"></i><br>
-                            X-Reading
-                        </button>
-                        <button class="btn btn-outline-dark btn-menu1" type="button">
-                            <i class="fas fa-file-invoice"></i><br>
-                            Z-Reading
-                        </button>
-                    </div>
-                </div>
-
-                <div class="row mt-4">
                     <div class="col-lg-5 col-md-12">
                         <div class="row mb-1">
                             <div class="col-lg-3 col-md-6 text-large">SI #</div>
@@ -105,18 +130,7 @@
 
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-6">
-                        <button class="btn btn-sm btn-menu btn-info" type="button" id="btn_hold"><i class="far fa-hand-paper"></i><br>Put On-Hold</button>
-                        <button class="btn btn-sm btn-menu btn-info" type="button" id="btn_load"><i class="fas fa-arrow-down"></i><br>Load On-Hold</button>
-                    </div>
-                    <div class="col-md-6 text-right">
-                        <button class="btn btn-sm btn-menu btn-warning" type="button" id="btn_reset"><i class="fas fa-eraser"></i><br>Reset</button>
-                        <button class="btn btn-sm btn-menu btn-success" type="button" id="btn_checkout"><i class="far fa-share-square"></i><br>Checkout</button>
-                    </div>
-                </div>
-
-                <div class="mt-4">
-                    <div class="table-responsive">
+                    <div class="col-12 table-responsive">
                         <table class="table table-sm table-striped">
                             <thead class="thead-dark">
                                 <tr>
@@ -151,6 +165,20 @@
                 </div>
             </div>
         </form>
+    </div>
+
+    <div class="fixedButton">
+        <button class="btn btn-primary roundedFixedBtn">+</button>
+        <div class="dropup-content">
+            <a class="btn btn-info" title="Put On-hold" href="#"><i class="far fa-hand-paper"></i></a>
+            <a class="btn btn-info" title="Load On-hold" href="#"><i class="fas fa-arrow-down"></i></a>
+            <a class="btn btn-info" title="Reset" href="#"><i class="fas fa-eraser"></i></a>
+            <a class="btn btn-info" title="Checkout" href="#"><i class="far fa-share-square"></i></a>
+            <a class="btn btn-info" title="Reprint Receipt" href="#"><i class="fas fa-receipt"></i></a>
+            <a class="btn btn-info" title="Cancel Receipt" href="#"><i class="fas fa-window-close"></i></a>
+            <a class="btn btn-info" title="X-Reading" href="#"><i class="fas fa-file-alt"></i></a>
+            <a class="btn btn-info" title="Z-Reading" href="#"><i class="fas fa-file-invoice"></i></a>
+        </div>
     </div>
 {% endblock main_content %}
 
