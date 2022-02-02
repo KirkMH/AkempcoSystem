@@ -82,7 +82,7 @@
                         <div class="row mb-1">
                             <div class="col-lg-3 col-md-6 text-large">SI #</div>
                             <div class="col-lg-9 col-md-6 text-large">
-                                <input id="txtSI" type="text" class="form-control" value="01234567" disabled>
+                                <input id="txtSI" type="text" class="form-control" value="{{ transaction.get_next_si|seq_num }}" disabled>
                             </div>
                         </div>
                         <div class="row mb-1">
@@ -114,15 +114,15 @@
                     <div class="col-lg-5 col-md-12">
                         <div class="row">
                             <div class="col-lg-3 col-md-6 text-large">TOTAL</div>
-                            <div class="col-lg-9 col-md-6 text-large text-right"><h3>{{ 123456.78|peso }}</h3></div>
+                            <div class="col-lg-9 col-md-6 text-large text-right"><h3>{{ transaction.total|peso }}</h3></div>
                         </div>
                         <div class="row">
                             <div class="col-lg-3 col-md-6 text-large"><a href="#">DISCOUNT</a></div>
-                            <div class="col-lg-9 col-md-6 text-large text-right text-danger">{{ 123.45|peso }}</div>
+                            <div class="col-lg-9 col-md-6 text-large text-right text-danger">{{ transaction.discount|peso }}</div>
                         </div>
                         <div class="row">
                             <div class="col-lg-3 col-md-6 text-large">PAYABLE</div>
-                            <div class="col-lg-9 col-md-6 text-large text-right"><h1>{{ 123333.33|peso }}</h1></div>
+                            <div class="col-lg-9 col-md-6 text-large text-right"><h1>{{ transaction.payable|peso }}</h1></div>
                         </div>
                     </div>
                 </div>
@@ -141,24 +141,26 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td>
-                                        <a href="#"><i class="far fa-minus-square text-danger" title="Remove"></i></a> 
-                                        Product Description 1
-                                    </td>
-                                    <td class="text-center">3r</td>
-                                    <td class="text-right">{{ 10|peso }}</td>
-                                    <td class="text-right">{{ 30|peso }}</td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <a href="#"><i class="far fa-minus-square text-danger" title="Remove"></i></a> 
-                                        Another product for sale
-                                    </td>
-                                    <td class="text-center">2w</td>
-                                    <td class="text-right">{{ 110|peso }}</td>
-                                    <td class="text-right">{{ 220|peso }}</td>
-                                </tr>
+
+                                
+                                {% if items %}
+                                    
+                                    {% for item in items %}
+                                    <tr>
+                                        <td>
+                                            <a href="#"><i class="far fa-minus-square text-danger" title="Remove"></i></a> 
+                                            {{ item.product.full_description }}
+                                        </td>
+                                        <td class="text-center"> {{ item.quantity }}{{ item.product.tax_type }}</td>
+                                        <td class="text-right">{{ item.unit_price|peso }}</td>
+                                        <td class="text-right">{{ item.subtotal|peso }}</td>
+                                    </tr>
+                                    {% endfor %}
+
+                                {% else %}
+                                    <tr><td colspan="4" class="text-center">Scan or search product to add.</td></tr>
+                                {% endif %}
+                                    
                             </tbody>
                         </table>
                     </div>

@@ -4,6 +4,15 @@ from django.core.exceptions import ValidationError
 from multiselectfield import MultiSelectField
 from django.contrib.auth.models import User
 
+
+def get_vatable_percentage():
+    store = Store.objects.all()[:1]
+    if store and store.vat_percentage:
+        return store.vat_percentage
+    else:
+        return 0
+        
+
 # Feature is used to load in the side menu under the specified group
 class Feature:
     FM_UOM = 1

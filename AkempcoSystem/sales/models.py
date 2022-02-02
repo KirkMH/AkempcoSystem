@@ -1,8 +1,10 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+import decimal
 
 from django.contrib.auth.models import User
 from fm.models import Product
+from admin_area.models import get_vatable_percentage
 
 
 class Creditor(models.Model):
@@ -81,40 +83,18 @@ class Discount(models.Model):
 
 
 class Sales(models.Model):
-    total = models.DecimalField(
-        _("Total"), 
-        max_digits=10, 
-        decimal_places=2
-    )
-    vatable = models.DecimalField(
-        _("Vatable Amount"), 
-        max_digits=10, 
-        decimal_places=2
-    )
-    vat = models.DecimalField(
-        _("VAT Amount"), 
-        max_digits=10, 
-        decimal_places=2
-    )
-    zero_rated = models.DecimalField(
-        _("Zero-rated Sales"), 
-        max_digits=10, 
-        decimal_places=2
-    )
-    vat_exempt = models.DecimalField(
-        _("VAT-exempt Sales"), 
-        max_digits=10, 
-        decimal_places=2
-    )
+    STATUS_LIST = [
+        ('WIP', _('Work-in-Progress')),
+        ('On-Hold', _('On-Hold')),
+        ('Completed', _('Completed')),
+        ('Cancelled', _('Cancelled')),
+    ]
+
     discount = models.DecimalField(
         _("Discount"), 
         max_digits=10, 
-        decimal_places=2
-    )
-    payable = models.DecimalField(
-        _("Payable Amount"), 
-        max_digits=10, 
-        decimal_places=2
+        decimal_places=2,
+        default=0
     )
     discount_type = models.ForeignKey(
         Discount, 
@@ -134,6 +114,122 @@ class Sales(models.Model):
     )
     transaction_datetime = models.DateTimeField(
         _("Transaction Date/Time"), 
+        auto_now_add=True
+    )
+    status = models.CharField(
+        _("Status"), 
+        max_length=10,
+        choices=STATUS_LIST,
+        default='WIP'
+    )
+    
+    def __str__(self):
+        return str(self.pk) + ": PhP " + str(self.payable)
+
+    # helper method to compute total of items
+    def compute_total(self, items):
+        total = 0.0
+        if items:
+            for item in items:
+                total = total + item.total
+        return total
+
+    @property
+    def total(self):
+        items = SalesItem.objects.filter(sales=self)
+        return self.compute_total(items)
+
+    @property
+    def vatable(self):
+        items = SalesItem.objects.filter(sales=self, product__tax_type='V')
+        # this is the total with VAT
+        total = self.compute_total(items)
+        # less the VAT
+        vat_p = 1 + get_vatable_percentage()
+        return total / vat_p
+       
+    @property
+    def vat(self):
+        items = SalesItem.objects.filter(sales=self, product__tax_type='V')
+        # this is the total with VAT
+        total = self.compute_total(items)
+        # less the VAT
+        vat_p = 1 + get_vatable_percentage()
+        return total - total / vat_p
+
+    @property
+    def zero_rated(self):
+        items = SalesItem.objects.filter(sales=self, product__tax_type='Z')
+        total = self.compute_total(items)
+        return total
+
+    @property
+    def vat_exempt(self):
+        items = SalesItem.objects.filter(sales=self, product__tax_type='X')
+        total = self.compute_total(items)
+        return total
+
+    @property
+    def payable(self):
+        return decimal.Decimal(self.total) - self.discount
+
+    def get_next_si(self):
+        si = SalesInvoice.objects.all()[:1]
+        if si:
+            return si.pk + 1
+        else:
+            return 1
+
+    class Meta:
+        ordering = ['-pk']
+
+
+class SalesItem(models.Model):
+    sales = models.ForeignKey(
+        Sales, 
+        verbose_name=_("Sales"), 
+        on_delete=models.CASCADE,
+    )
+    product = models.ForeignKey(
+        Product, 
+        verbose_name=_("Product"), 
+        on_delete=models.CASCADE,
+    )
+    unit_price = models.DecimalField(
+        _("Unit Price"), 
+        max_digits=10, 
+        decimal_places=2
+    )
+    quantity = models.PositiveIntegerField(_("Quantity"))
+    supplier_price = models.DecimalField(
+        _("Supplier Price"), 
+        max_digits=10, 
+        decimal_places=2
+    )
+    is_wholesale = models.BooleanField(
+        _("Is wholesale?"),
+        default=False
+    )
+
+    def __str__(self):
+        return self.product.full_description + ": " + str(self.quantity)
+
+    @property
+    def subtotal(self):
+        return self.unit_price * self.quantity
+
+    class Meta:
+        ordering = ['product']
+
+
+class SalesInvoice(models.Model):
+    sales = models.OneToOneField(
+        Sales, 
+        verbose_name=_("Sales Record"), 
+        on_delete=models.CASCADE,
+    )
+    sales_datetime = models.DateTimeField(
+        _("SI Date/Time"), 
         auto_now_add=True
     )
     last_reprint = models.DateTimeField(
@@ -166,58 +262,6 @@ class Sales(models.Model):
         blank=True,
         default=None
     )
-    
-    def __str__(self):
-        return str(self.pk) + ": PhP " + str(self.payable)
 
     class Meta:
         ordering = ['-pk']
-
-
-class SalesItem(models.Model):
-    sales = models.ForeignKey(
-        Sales, 
-        verbose_name=_("Sales"), 
-        on_delete=models.CASCADE,
-    )
-    product = models.ForeignKey(
-        Product, 
-        verbose_name=_("Product"), 
-        on_delete=models.CASCADE,
-    )
-    unit_price = models.DecimalField(
-        _("Unit Price"), 
-        max_digits=10, 
-        decimal_places=2
-    )
-    quantity = models.PositiveIntegerField(_("Quantity"))
-    subtotal = models.DecimalField(
-        _("Subtotal"), 
-        max_digits=10, 
-        decimal_places=2
-    )
-    discount = models.DecimalField(
-        _("Discount"), 
-        max_digits=10, 
-        decimal_places=2
-    )
-    total = models.DecimalField(
-        _("Total"), 
-        max_digits=10, 
-        decimal_places=2
-    )
-    supplier_price = models.DecimalField(
-        _("Supplier Price"), 
-        max_digits=10, 
-        decimal_places=2
-    )
-    is_wholesale = models.BooleanField(
-        _("Is wholesale?"),
-        default=False
-    )
-
-    def __str__(self):
-        return self.product.full_description + ": " + str(self.quantity)
-
-    class Meta:
-        ordering = ['product']

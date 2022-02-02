@@ -273,7 +273,7 @@ class Product(models.Model):
     )
     tax_type = models.CharField(
         _("Tax Type"), 
-        max_length=15,
+        max_length=1,
         choices=TAXTYPE,
         default=VAT
     )

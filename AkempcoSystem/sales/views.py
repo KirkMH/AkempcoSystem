@@ -13,6 +13,7 @@ from AkempcoSystem.decorators import user_is_allowed
 from admin_area.models import Feature
 from .models import *
 from .forms import *
+from .models import Sales, SalesItem
 
 
 # used by pagination
@@ -87,5 +88,19 @@ class CreditorUpdateView(SuccessMessageMixin, UpdateView):
 @login_required
 @user_is_allowed(Feature.TR_POS)
 def pos_view(request):
-    context = {}
+    # get the latest transaction in Sales
+    sales = None
+    try:
+        sales = Sales.objects.latest('transaction_datetime')
+    except:
+        pass
+    
+    if sales == None or (sales and sales.status != 'WIP'):
+        sales = Sales.objects.create()
+    items = SalesItem.objects.filter(sales=sales)
+    context = {
+        'transaction': sales,
+        'items': items,
+    }
     return render(request, 'sales/pos.html', context)
+
