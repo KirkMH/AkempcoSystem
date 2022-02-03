@@ -124,3 +124,16 @@ def add_to_cart(request, pk):
         'success': success,
     }
     return JsonResponse(data, safe=False)
+
+
+@login_required()
+@user_is_allowed(Feature.TR_POS)
+def remove_from_cart(request, pk):
+    try:
+        item = get_object_or_404(SalesItem, pk=pk)
+        product = item.product
+        item.delete()
+        messages.success(request, "Removed " + product.full_description + ".")
+    except:
+        messages.error(request, "Cannot remove the item this time.")
+    return redirect('pos')
