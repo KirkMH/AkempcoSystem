@@ -224,7 +224,12 @@ class Sales(models.Model):
                         unit_price=product.selling_price,
                         is_wholesale=False
                     )
-                return True, "Added " + str(quantity) + " " + product.uom.uom_description + "(s) of " + product.full_description + "."
+                message = ""
+                if quantity < 0:
+                    message = "Removed " + str(quantity * -1)
+                else:
+                    message = "Added " + str(quantity)
+                return True, message + " " + product.uom.uom_description + "(s) of " + product.full_description + "."
         else:
             return False, "Barcode not found."
 

@@ -72,6 +72,16 @@
 {% endblock breadcrumb %}
 
 {% block main_content %}
+
+<div class="modal fade" tabindex="-1" role="dialog" id="modal">
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <input type="hidden" name="sales_pk" id="sales_pk" value="{{ transaction.pk }}">
+        </div>
+        <div class="modal-content"></div>
+    </div>
+</div>
+
     <div class="card col-11 m-4">
         <form method="post" novalidate>
             {% csrf_token %}
@@ -102,7 +112,7 @@
                                 <div class="input-group">
                                     <input id="txtScan" type="text" class="form-control" placeholder="Scan barcode" autocomplete="false">
                                     <div class="input-group-append">
-                                    <button class="btn btn-outline-primary" type="button"><i class="fas fa-search"></i></button>
+                                        <button class="btn btn-outline-primary" type="button" name="product-search" id="product-search"><i class="fas fa-search"></i></button>
                                     </div>
                                 </div>
                             </div>
@@ -116,7 +126,7 @@
                             <div class="col-lg-3 col-md-6 text-large">TOTAL</div>
                             <div class="col-lg-9 col-md-6 text-large text-right"><h3>{{ transaction.total|peso }}</h3></div>
                         </div>
-                        <div class="row">
+                        <div class="row mb-2">
                             <div class="col-lg-3 col-md-6 text-large"><a href="#">DISCOUNT</a></div>
                             <div class="col-lg-9 col-md-6 text-large text-right text-danger">{{ transaction.discount|peso }}</div>
                         </div>
@@ -246,6 +256,11 @@
                 });
             }
             deleteItemFromCart();
+
+            
+            $("#product-search").modalForm({
+                formURL: "{% url 'pos_product_search' transaction.pk %}"
+            });
         });
     </script>
 {% endblock js %}

@@ -1,0 +1,150 @@
+{% load static %}
+{% load humanize %}
+{% load form_tags %}
+
+<form id="search_product_form" method='post' class="form" role="form">
+    <div class="modal-header">
+        <h3 class="modal-title">Search Product</h3>
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    </div>
+    <div class="modal-body">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-lg-12 col-md-12 col-sm-12">
+                <h4 class="card-title">Please fill in all the fields marked with an <label class="required">asterisk</label>.</h4>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 form-group">
+                <label for="id_product">Product</label>
+                <div class="input-group">
+                    <input class="form-control" type="search" name="search" id="search" placeholder="Product name or barcode" autocomplete="off" autofocus>
+                    <div class="input-group-append">
+                      <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    </div>
+                </div>
+                <select class="form-control" name="id_product" id="id_product" size="5"></select>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-6 form-group">
+                <label for="id_quantity">Quantity</label>
+                <input class="form-control" type="number" name="id_quantity" id="id_quantity" value="1" step="1" >
+            </div>
+            <div class="col-6 form-group">
+                <label for="id_uom">Unit of Measure</label>
+                <input class="form-control" type="text" name="id_uom" id="id_uom" disabled >
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <input type="button" class="btn btn-primary" value="Go" style="margin-bottom: 5px;" id="product_search_go" />
+        <input type="button" class="btn btn-default" data-dismiss="modal" value="Close" id="close" />
+    </div>
+</form>
+
+<script>
+$(document).ready(function() {
+
+    function get_data() {
+        let key = $('#search').val()
+        $.ajax({
+            url: "{% url 'load_data' %}",
+            type: 'GET',
+            data: {
+                'key': key,
+            },
+            dataType: 'json',
+            success: function(data) {
+                console.log(data);
+                $('#id_product').empty()
+                data.forEach(e => {
+                    let id = e['id']
+                    let barcode = e['barcode']
+                    let name = e['full_description']
+
+                    $('#id_product').append("<option value='" + id + "' data-barcode='" + barcode + "'>" + name + "</option")
+                });
+            }
+        })
+    }
+
+
+    function select_data() {
+        let pk = $("#id_product").find(":selected").val();
+        if (pk == undefined) {
+            $("#id_product").prop("selectedIndex", 0);
+            pk = $("#id_product").find(":selected").val();
+        }
+        if (pk !== undefined) {
+            $.ajax({
+                url: "{% url 'select_product' %}",
+                type: 'GET',
+                data: {'pk': pk},
+                dataType: 'json',
+                success: function(data) {
+                    console.log(data)
+                    // uom
+                    $('#id_uom').val(data.inv_uom.toLowerCase() + '(s)')
+
+                }
+            })
+        }
+    }
+
+    
+    $('#search').keyup(function(e){
+        if(e.keyCode == 13) {
+            select_data();
+            $('#id_quantity').focus();
+        }
+        else if (e.keyCode == 40) {
+            $('#product').focus()
+        }
+        else {
+            if (e.keyCode == undefined)
+                $('#search').val('')
+            get_data();
+        }
+    });
+    $('#search').click(function() {
+        $('#search').keyup();
+    })
+
+    $('#id_product')
+        .change(function() {
+            select_data();
+        })
+        .trigger( "change" );
+
+    $('#id_quantity').keyup(function(e) {
+        if (e.keyCode == 13)
+            $('#product_search_go').click()
+    })
+
+    $('#product_search_go').click(function() {
+        let qty = parseInt($("#id_quantity").val())
+        if (qty == 0) return;
+
+        let barcode = $("#id_product").find(":selected").data('barcode');
+        if (barcode == undefined) {
+            $("#id_product").prop("selectedIndex", 0);
+            barcode = $("#id_product").find(":selected").data('barcode');
+        }
+        
+        $.ajax({
+            url: "{% url 'addToCart' transaction.pk %}",
+            type: 'GET',
+            data: {'barcode': barcode, 'qty': qty},
+            dataType: 'json',
+            success: function(data) {
+                console.log(data)
+                location.href = "{% url 'pos' %}"
+            }
+        })
+    })
+
+    $('#search').keyup();
+    $('#search').focus();
+});
+</script>

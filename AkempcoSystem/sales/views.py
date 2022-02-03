@@ -137,3 +137,11 @@ def remove_from_cart(request, pk):
     except:
         messages.error(request, "Cannot remove the item this time.")
     return redirect('pos')
+
+
+@login_required()
+@user_is_allowed(Feature.TR_POS)
+def product_search(request, pk):
+    transaction = get_object_or_404(Sales, pk=pk)
+
+    return render(request, 'sales/product_search.html', {'transaction': transaction})
