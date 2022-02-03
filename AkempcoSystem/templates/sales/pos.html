@@ -100,7 +100,7 @@
                             <div class="col-lg-3 col-md-6 text-large">Product</div>
                             <div class="col-lg-9 col-md-6">
                                 <div class="input-group">
-                                    <input id="txtScan" type="text" class="form-control" placeholder="Scan barcode">
+                                    <input id="txtScan" type="text" class="form-control" placeholder="Scan barcode" autocomplete="false">
                                     <div class="input-group-append">
                                     <button class="btn btn-outline-primary" type="button"><i class="fas fa-search"></i></button>
                                     </div>
@@ -151,9 +151,9 @@
                                             <a href="#"><i class="far fa-minus-square text-danger" title="Remove"></i></a> 
                                             {{ item.product.full_description }}
                                         </td>
-                                        <td class="text-center"> {{ item.quantity }}{{ item.product.tax_type }}</td>
+                                        <td class="text-center"> {{ item.quantity }}{{ item.is_wholesale|yesno:'w,r,-' }}</td>
                                         <td class="text-right">{{ item.unit_price|peso }}</td>
-                                        <td class="text-right">{{ item.subtotal|peso }}</td>
+                                        <td class="text-right">{{ item.subtotal|peso }}{{ item.product.tax_type }}</td>
                                     </tr>
                                     {% endfor %}
 
@@ -186,12 +186,42 @@
 
 
 {% block js %}
+    <script src="{% static 'js/jquery.bootstrap.modal.forms.min.js' %}"></script>
+    <!-- bootboxjs -->
+    <script src="{% static 'js/bootbox.all.min.js' %}"></script>
+
     <script>
         $(document).ready(function() {
             $("#menu_trans").addClass("menu-open")
             $("#menu_trans_pos").addClass("active")
 
             $('#txtScan').focus();
+
+            $('#txtScan').keyup(function(e){
+                const text = $('#txtScan').val();
+                
+                if(e.keyCode == 13) {
+                    let qty = 1;
+                    let barcode = text;
+                    
+                    if (text.includes('*')) {
+                        let parts = text.split("*");
+                        qty = parseInt(parts[0]);
+                        barcode = parts[1];
+                    }
+                        
+                    $.ajax({
+                        url: "{% url 'addToCart' transaction.pk %}",
+                        type: 'GET',
+                        data: {'barcode': barcode, 'qty': qty},
+                        dataType: 'json',
+                        success: function(data) {
+                            console.log(data)
+                            location.href = "{% url 'pos' %}"
+                        }
+                    })
+                }
+            })
         })
     </script>
 {% endblock js %}

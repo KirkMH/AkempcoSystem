@@ -7,4 +7,5 @@ urlpatterns = [
     path('creditor/<int:pk>/edit/', views.CreditorUpdateView.as_view(), name='edit_cred'),
 
     path('pos', views.pos_view, name='pos'),
+    path('pos/<int:pk>/add', views.add_to_cart, name='addToCart'),
 ]

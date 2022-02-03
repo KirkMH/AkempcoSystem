@@ -131,7 +131,7 @@ class Sales(models.Model):
         total = 0.0
         if items:
             for item in items:
-                total = total + item.total
+                total = decimal.Decimal(total) + item.subtotal
         return total
 
     @property
@@ -180,6 +180,54 @@ class Sales(models.Model):
         else:
             return 1
 
+    def add_product(self, barcode, quantity):
+        qty = quantity
+        product = Product.objects.filter(barcode=barcode)[:1]
+        if product:
+            product = product.first()
+            if product.status != 'ACTIVE':
+                return False, product.full_description + " is currently not active. Please make it active first."
+            elif product.price_review == True or product.wholesale_price == None or product.selling_price == None:
+                return False, product.full_description + " is currently for price review. The price must be approved first."
+            else:
+                # check if this product exists as wholesale
+                item = SalesItem.objects.filter(product=product, is_wholesale=True)
+                if item:
+                    first = item.first()
+                    # get qty
+                    qty = qty + first.quantity * product.wholesale_qty
+                    item.delete()
+                # check if this product exists as retail
+                item = SalesItem.objects.filter(product=product, is_wholesale=False)
+                if item:
+                    first = item.first()
+                    # get qty and add it to qty
+                    qty = qty + first.quantity
+                    item.delete()
+                
+                # compute wholesale qty
+                ws_qty = int(qty / product.wholesale_qty) if product.wholesale_qty > 0 else 0
+                qty = qty - ws_qty * product.wholesale_qty
+                if ws_qty > 0:
+                    item = SalesItem.objects.create(
+                        sales=self,
+                        product=product,
+                        quantity=ws_qty,
+                        unit_price=product.wholesale_price,
+                        is_wholesale=True
+                    )
+                if qty > 0:
+                    item = SalesItem.objects.create(
+                        sales=self,
+                        product=product,
+                        quantity=qty,
+                        unit_price=product.selling_price,
+                        is_wholesale=False
+                    )
+                return True, "Added " + str(quantity) + " " + product.uom.uom_description + "(s) of " + product.full_description + "."
+        else:
+            return False, "Barcode not found."
+
     class Meta:
         ordering = ['-pk']
 
@@ -204,7 +252,8 @@ class SalesItem(models.Model):
     supplier_price = models.DecimalField(
         _("Supplier Price"), 
         max_digits=10, 
-        decimal_places=2
+        decimal_places=2,
+        default=0
     )
     is_wholesale = models.BooleanField(
         _("Is wholesale?"),

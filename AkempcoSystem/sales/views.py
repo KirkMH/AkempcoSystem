@@ -1,5 +1,5 @@
-from django.shortcuts import render, redirect
-from django.http import HttpResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponse, JsonResponse
 from django.urls import reverse_lazy
 from django.core.paginator import Paginator
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
@@ -9,6 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 
 from fm.views import get_index, add_search_key
+from fm.models import Product
 from AkempcoSystem.decorators import user_is_allowed
 from admin_area.models import Feature
 from .models import *
@@ -104,3 +105,22 @@ def pos_view(request):
     }
     return render(request, 'sales/pos.html', context)
 
+
+@login_required()
+@user_is_allowed(Feature.TR_POS)
+def add_to_cart(request, pk):
+    success = True
+    barcode = request.GET.get('barcode', 0)
+    qty = int(request.GET.get('qty', 0))
+
+    sales = get_object_or_404(Sales, pk=pk)
+    success, message = sales.add_product(barcode, qty)
+    if success:
+        messages.success(request, message)
+    else:
+        messages.error(request, message)
+
+    data = {
+        'success': success,
+    }
+    return JsonResponse(data, safe=False)
