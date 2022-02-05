@@ -213,29 +213,88 @@
 
             $('#txtScan').focus();
 
+            function enterKey(text) {
+                let qty = 1;
+                let barcode = text;
+                
+                if (text.includes('*')) {
+                    let parts = text.split("*");
+                    qty = parseInt(parts[0]);
+                    barcode = parts[1];
+                }
+                    
+                $.ajax({
+                    url: "{% url 'addToCart' transaction.pk %}",
+                    type: 'GET',
+                    data: {'barcode': barcode, 'qty': qty},
+                    dataType: 'json',
+                    success: function(data) {
+                        console.log(data)
+                        location.href = "{% url 'pos' %}"
+                    }
+                })
+            }
+
+            function hold() {
+                bootbox.confirm("Are you sure you want to put this cart on hold?", function(result){ 
+                    if (result) {
+                        // put on hold
+                        $.ajax({
+                            url: "{% url 'putOnHold' transaction.pk %}",
+                            type: 'GET',
+                            dataType: 'json',
+                            success: function(data) {
+                                if (data.success) {
+                                    bootbox.alert({
+                                        message: "The cart was put on hold.<br><br>Transaction Number:<br><h2>{{ transaction.pk|seq_num }}</h2>",
+                                        size: 'small',
+                                        backdrop: true
+                                    });
+                                }
+                            }
+                        })
+
+                    }
+                });
+            }
+            
+            function load() {
+                bootbox.prompt({
+                    title: "Please enter the transaction number to be loaded, zero (0) to load the latest.",
+                    inputType: 'number',
+                    callback: function (result) {
+                        if (result == null) return;
+                        const number = parseInt(result);
+                        $.ajax({
+                            url: "{% url 'loadOnHold' %}",
+                            type: 'GET',
+                            data: {'number': number},
+                            dataType: 'json',
+                            success: function(data) {
+                                if (data.success) {
+                                    
+                                }
+                            }
+                        })
+                    }
+                });
+            }
+
             $('#txtScan').keyup(function(e){
                 const text = $('#txtScan').val();
                 
-                if(e.keyCode == 13) {
-                    let qty = 1;
-                    let barcode = text;
-                    
-                    if (text.includes('*')) {
-                        let parts = text.split("*");
-                        qty = parseInt(parts[0]);
-                        barcode = parts[1];
-                    }
-                        
-                    $.ajax({
-                        url: "{% url 'addToCart' transaction.pk %}",
-                        type: 'GET',
-                        data: {'barcode': barcode, 'qty': qty},
-                        dataType: 'json',
-                        success: function(data) {
-                            console.log(data)
-                            location.href = "{% url 'pos' %}"
-                        }
-                    })
+                switch(e.keyCode) {
+                case 13: // ENTER key
+                    enterKey(text);
+                    break;
+
+                case 72: // h=HOLD
+                    hold();
+                    break;
+
+                case 76: // l=LOAD
+                    load();
+                    break;
                 }
             });
 
@@ -265,18 +324,18 @@
 
         /*
         Shortcuts:
-            = : checkout
-            d : discount
-            c : cancel
-            p : reprint
-            s : search
-            m : member
-            w : walkin
-            h : hold
-            l : load
-            r : reset
-            x : x-reading
-            z : z-reading
+            = : checkout 187
+            d : discount 68
+            c : cancel  67
+            p : reprint 80
+            s : search 83
+            m : member 77
+            w : walkin 87
+            h : hold 72
+            l : load 76
+            r : reset 82
+            x : x-reading 88
+            z : z-reading 90
             */
     </script>
 {% endblock js %}

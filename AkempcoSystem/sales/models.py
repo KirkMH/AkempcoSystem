@@ -83,11 +83,15 @@ class Discount(models.Model):
 
 
 class Sales(models.Model):
+    WIP = 'WIP'
+    HOLD = 'On-Hold'
+    COMPLETED = 'Completed'
+    CANCELLED = 'Cancelled'
     STATUS_LIST = [
-        ('WIP', _('Work-in-Progress')),
-        ('On-Hold', _('On-Hold')),
-        ('Completed', _('Completed')),
-        ('Cancelled', _('Cancelled')),
+        (WIP, _('Work-in-Progress')),
+        (HOLD, _('On-Hold')),
+        (COMPLETED, _('Completed')),
+        (CANCELLED, _('Cancelled')),
     ]
 
     discount = models.DecimalField(
@@ -120,7 +124,7 @@ class Sales(models.Model):
         _("Status"), 
         max_length=10,
         choices=STATUS_LIST,
-        default='WIP'
+        default=WIP
     )
     
     def __str__(self):
@@ -232,6 +236,14 @@ class Sales(models.Model):
                 return True, message + " " + product.uom.uom_description + "(s) of " + product.full_description + "."
         else:
             return False, "Barcode not found."
+
+    def hold(self):
+        self.status = Sales.HOLD
+        self.save()
+
+    def load(self):
+        self.status = Sales.WIP
+        self.save()
 
     class Meta:
         ordering = ['-pk']
