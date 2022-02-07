@@ -1,11 +1,20 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.db.models import Sum
 import decimal
 
 from django.contrib.auth.models import User
 from fm.models import Product
 from admin_area.models import get_vatable_percentage
 
+
+class MemberCreditors(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(creditor_type='Member', active=True).order_by('name')
+
+class GroupCreditors(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(creditor_type='Group', active=True).order_by('name')
 
 class Creditor(models.Model):
     CREDITOR_TYPES = [
@@ -37,9 +46,40 @@ class Creditor(models.Model):
         default=True
     )
 
-    def __str__(self):
-        return self.name
+    objects = models.Manager()
+    members = MemberCreditors()
+    groups = GroupCreditors()
+
+    @ property
+    def total_charges(self):
+        total_charges = 0
+        sales = Sales.objects.filter(customer=self, status='Completed').values_list('pk', flat=True)
+        records = SalesPayment.objects.all()
+        if records and sales:
+            records = records.filter(sales__in=list(sales), payment_mode='Charge')
+            total_charges = records.aggregate(s_amt=Sum('amount'))['s_amt']
+
+        return total_charges
+
+        
+    # TODO: total payments
+    @property
+    def total_payments(self):
+        return 0
+
     
+    @property
+    def remaining_credit(self):
+        total_charges = self.total_charges
+        total_payments = self.total_payments
+
+        return self.credit_limit - total_charges - total_payments
+
+
+    def __str__(self):
+        return self.name + ": " + str(self.remaining_credit) + " of " + str(self.credit_limit)
+    
+
     class Meta:
         ordering = ['name']
 
@@ -295,6 +335,16 @@ class Sales(models.Model):
         self.save()
         return invoice.pk
 
+    def set_customer(self, who):
+        self.customer = who
+        self.save()
+
+    def get_customer(self):
+        if self.customer == None:
+            return 'Walk-in'
+        else:
+            return self.customer.name
+
     class Meta:
         ordering = ['-pk']
 
@@ -423,5 +473,7 @@ class SalesPayment(models.Model):
     )
 
     def __str__(self):
-        return self.payment_mode + " (" + self.details + "): PhP" + str(self.amount)
-    
+        if self.details:
+            return self.payment_mode + " (" + self.details + "): PhP" + str(self.amount)
+        else:
+            return self.payment_mode + ": PhP" + str(self.amount)    

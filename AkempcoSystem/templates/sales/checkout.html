@@ -46,7 +46,7 @@
                         <div class="row mb-1">
                             <div class="col-lg-3 col-md-6 text-large">Customer</div>
                             <div class="col-lg-9 col-md-6">
-                                <input id="txtCustomer" type="text" class="form-control" value="{% if transaction.customer %}{{ transaction.customer.name }}{% else %}Walk-in{% endif %}" disabled>
+                                <input id="txtCustomer" type="text" class="form-control" value="{{ transaction.get_customer }}" disabled>
                             </div>
                         </div>
                     </div>
@@ -74,11 +74,12 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-12 text-center">
+                        <a href="{% url 'pos' %}" role="button" class="btn btn-default btn-menu">Back to Cart</a>
                         <button type="button" class="btn btn-primary btn-menu" id="add-payment">Add Payment</button>
                         <button type="submit" class="btn btn-success btn-menu" id="complete-payment" {% if transaction.change < 0 %}disabled{% endif %}>Complete Payment</button>
                     </div>
                 </div>
-                <div class="row">
+                <div class="row mt-2">
                     <div class="col-12">
                         <h3>Payments received:</h3>
                     </div>

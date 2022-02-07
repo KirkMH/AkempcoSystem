@@ -1,0 +1,110 @@
+{% load static %}
+{% load humanize %}
+{% load form_tags %}
+
+<form id="search_member_form" method='post' class="form" role="form">
+    <div class="modal-header">
+        <h3 class="modal-title">Search Member/Group Creditor</h3>
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    </div>
+    <div class="modal-body">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 form-group">
+                <label for="id_creditor">Member/Group Creditor</label>
+                <div class="input-group">
+                    <input class="form-control" type="search" name="search" id="search" placeholder="Start typing name here" autocomplete="off" autofocus>
+                    <div class="input-group-append">
+                      <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    </div>
+                </div>
+                <select class="form-control" name="id_creditor" id="id_creditor" size="5"></select>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <input type="button" class="btn btn-primary" value="Go" style="margin-bottom: 5px;" id="member_search_go" />
+        <input type="button" class="btn btn-default" data-dismiss="modal" value="Close" id="close" />
+    </div>
+</form>
+
+<script>
+$(document).ready(function() {
+    $('#id_creditor').keyup(function(e) {
+        if (e.keyCode == 13)
+            $('#member_search_go').trigger("click")
+    });
+
+
+    $('#search').keyup(function(e) {
+        let key = $('#search').val()
+        
+        if (e.keyCode == 38 || e.keyCode == 40) {
+            $('#id_creditor').focus();
+            return;
+        }
+        
+        $.ajax({
+            url: "{% url 'do_creditor_search' %}",
+            type: 'GET',
+            data: {
+                'key': key,
+            },
+            dataType: 'json',
+            success: function(data) {
+                console.log(data);
+                $('#id_creditor').empty()
+                if (key == "")
+                    $('#id_creditor').append("<option value='0'>Walk-in</option>")
+                if (data.members.length > 0) {
+                    if (data.groups.length > 0) 
+                        $('#id_creditor').append("<optgroup label='Members'>")
+                    data.members.forEach(e => {
+                        let id = e['id']
+                        let name = e['name']
+
+                        $('#id_creditor').append("<option value='" + id + "'>" + name + "</option")
+                    });
+                    if (data.groups.length > 0) 
+                        $('#id_creditor').append("</optgroup>")
+                }
+                if (data.groups.length > 0) {
+                    if (data.members.length > 0)
+                        $('#id_creditor').append("<optgroup label='Group Creditors'>")
+                    data.groups.forEach(e => {
+                        let id = e['id']
+                        let name = e['name']
+
+                        $('#id_creditor').append("<option value='" + id + "'>" + name + "</option")
+                    });
+                    if (data.members.length > 0)
+                        $('#id_creditor').append("</optgroup>")
+                }
+            }
+        })
+    });
+
+    $('#member_search_go').click(function() {
+        let creditor = $("#id_creditor").find(":selected").val();
+        if (creditor == undefined) {
+            $("#id_creditor").prop("selectedIndex", 0);
+            creditor = $("#id_creditor").find(":selected").val();
+        }
+        
+        $.ajax({
+            url: "{% url 'update_creditor' pk %}",
+            type: 'GET',
+            data: {'creditor': creditor},
+            dataType: 'json',
+            success: function(data) {
+                console.log(data)
+
+                location.href = "{% url 'pos' %}"
+            }
+        })
+    })
+
+    $('#search').trigger("keyup");
+    $('#search').focus();
+});
+</script>

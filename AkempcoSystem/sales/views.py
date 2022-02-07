@@ -85,7 +85,54 @@ class CreditorUpdateView(SuccessMessageMixin, UpdateView):
     pk_url_kwarg = 'pk'
     success_url = reverse_lazy('cred_list')
     success_message = "%(name)s was updated successfully."
+
+
+@login_required()
+@user_is_allowed(Feature.TR_POS)
+def creditor_search(request, pk):
+    members = Creditor.members.all()
+    groups = Creditor.groups.all()
+
+    print(f"members: {members}")
+    print(f"groups: {groups}")
+
+    context = {
+        'pk': pk,
+        'members': members,
+        'groups': groups
+    }
+
+    return render(request, 'sales/member_search.html', context)
+    
+
+@login_required()
+@user_is_allowed(Feature.TR_POS)
+def do_creditor_search(request):
+    key = request.GET.get('key', '')
+    members = list(Creditor.members.filter(name__icontains=key).values())
+    groups = list(Creditor.groups.filter(name__icontains=key).values())
         
+    data = {
+        'members': members,
+        'groups': groups,
+    }
+    return JsonResponse(data, safe=False)
+    
+
+@login_required()
+@user_is_allowed(Feature.TR_POS)
+def update_creditor(request, pk):
+    sales = get_object_or_404(Sales, pk=pk)
+    creditor = int(request.GET.get('creditor', 0))
+    if creditor == 0:
+        # Walk-in
+        sales.set_customer(None)
+    else:
+        cred = get_object_or_404(Creditor, pk=creditor)
+        sales.set_customer(cred)
+    
+    return JsonResponse(True, safe=False)
+
 
 @login_required
 @user_is_allowed(Feature.TR_POS)
@@ -181,15 +228,22 @@ class SalesPaymentCreateView(BSModalCreateView):
             pay_mode = my_form.save(commit=False)
             amount = pay_mode.amount
             sales = get_object_or_404(Sales, pk=self.kwargs['pk']) 
-            prev = SalesPayment.objects.filter(sales=sales, payment_mode=pay_mode.payment_mode)
-            if prev:
-                prev = prev.first()
-                amount = amount + prev.amount
-                prev.delete()
+            if sales.customer == None and pay_mode.payment_mode == 'Charge':
+                # this is a Walk-in customer; no charges
+                messages.error(request, 'Charged sales are not allowed to walk-in customers.')
+            elif sales.customer != None and pay_mode.payment_mode == 'Charge' and sales.customer.remaining_credit < pay_mode.amount:
+                # insufficient balance
+                messages.error(request, 'Insufficient remaining credit.')
+            else:
+                prev = SalesPayment.objects.filter(sales=sales, payment_mode=pay_mode.payment_mode)
+                if prev:
+                    prev = prev.first()
+                    amount = amount + prev.amount
+                    prev.delete()
 
-            pay_mode.sales = sales
-            pay_mode.amount = amount
-            pay_mode.save()
+                pay_mode.sales = sales
+                pay_mode.amount = amount
+                pay_mode.save()
 
         else:
             messages.error(self.request, 'Please fill-in all the required fields.')

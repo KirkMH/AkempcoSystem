@@ -93,18 +93,18 @@
                 <div class="row">
                     <div class="col-lg-5 col-md-12">
                         <div class="row mb-1">
-                            <div class="col-lg-3 col-md-6 text-large">SI #</div>
+                            <div class="col-lg-3 col-md-6 text-large">SO #</div>
                             <div class="col-lg-9 col-md-6 text-large">
-                                <input id="txtSI" type="text" class="form-control" value="{{ transaction.get_next_si|seq_num }}" autocomplete="false" disabled>
+                                <input id="txtSI" type="text" class="form-control" value="{{ transaction.pk|seq_num }}" autocomplete="false" disabled>
                             </div>
                         </div>
                         <div class="row mb-1">
                             <div class="col-lg-3 col-md-6 text-large">Customer</div>
                             <div class="col-lg-9 col-md-6">
                                 <div class="input-group">
-                                    <input id="txtCustomer" type="text" class="form-control" value="Walk-in" autocomplete="false" disabled>
+                                    <input id="txtCustomer" type="text" class="form-control" value="{{ transaction.get_customer }}" autocomplete="false" disabled>
                                     <div class="input-group-append">
-                                        <button class="btn btn-outline-primary" type="button"><i class="fas fa-search"></i></button>
+                                        <button class="btn btn-outline-primary" type="button" name="creditor-search" id="creditor-search"><i class="fas fa-search"></i></button>
                                     </div>
                                 </div>
                             </div>
@@ -238,6 +238,19 @@
                 })
             }
 
+            function set_to_walkin() {
+                $.ajax({
+                    url: "{% url 'update_creditor' transaction.pk %}",
+                    type: 'GET',
+                    data: {'creditor': 0},
+                    dataType: 'json',
+                    success: function(data) {
+                        console.log(data)
+                        location.href = "{% url 'pos' %}"
+                    }
+                })
+            }
+
             $('#txtScan').keyup(function(e){
                 const text = $('#txtScan').val();
                 
@@ -252,6 +265,21 @@
 
                 case 76: // l LOAD
                     // load();
+                    break;
+
+                case 77: // m Member
+                    $('#txtScan').val('');
+                    $("#creditor-search").trigger("click");
+                    break;
+
+                case 83: // s Search
+                    $('#txtScan').val('');
+                    $("#product-search").trigger("click");
+                    break;
+
+                case 87: // w Walk-in
+                    $('#txtScan').val('');
+                    set_to_walkin();
                     break;
 
                 case 187: // = CHECKOUT
@@ -281,6 +309,10 @@
             
             $("#product-search").modalForm({
                 formURL: "{% url 'pos_product_search' transaction.pk %}"
+            });
+            
+            $("#creditor-search").modalForm({
+                formURL: "{% url 'pos_creditor_search' transaction.pk %}"
             });
         });
 

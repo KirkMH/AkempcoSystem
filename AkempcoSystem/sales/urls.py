@@ -16,4 +16,7 @@ urlpatterns = [
     path('pos/<int:pk>/checkout/complete', views.complete_checkout, name='completeCheckout'),
 
     path('pos/<int:pk>/search/product', views.product_search, name='pos_product_search'),
+    path('pos/<int:pk>/search/creditor', views.creditor_search, name='pos_creditor_search'),
+    path('pos/<int:pk>/search/creditor/update', views.update_creditor, name='update_creditor'),
+    path('pos/search/creditor/do', views.do_creditor_search, name='do_creditor_search'),
 ]
