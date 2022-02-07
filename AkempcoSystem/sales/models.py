@@ -116,6 +116,13 @@ class Sales(models.Model):
         blank=True,
         default=None
     )
+    cashier = models.ForeignKey(
+        User, 
+        verbose_name=_("Cashier"), 
+        on_delete=models.RESTRICT,
+        null=True,
+        default=None
+    )
     transaction_datetime = models.DateTimeField(
         _("Transaction Date/Time"), 
         auto_now_add=True
@@ -177,9 +184,23 @@ class Sales(models.Model):
     def payable(self):
         return decimal.Decimal(self.total) - self.discount
 
+    @property
+    def tendered(self):
+        payments = SalesPayment.objects.filter(sales=self)
+        total = 0
+        if payments:
+            for payment in payments:
+                total = total + payment.amount
+        return total
+
+    @property
+    def change(self):
+        return self.tendered - self.payable
+
     def get_next_si(self):
         si = SalesInvoice.objects.all()[:1]
         if si:
+            si = si.first()
             return si.pk + 1
         else:
             return 1
@@ -189,20 +210,24 @@ class Sales(models.Model):
         product = Product.objects.filter(barcode=barcode)[:1]
         if product:
             product = product.first()
+            rem = product.get_store_stock_count()
+            print(rem)
             if product.status != 'ACTIVE':
                 return False, product.full_description + " is currently not active. Please make it active first."
             elif product.price_review == True or product.wholesale_price == None or product.selling_price == None:
                 return False, product.full_description + " is currently for price review. The price must be approved first."
+            elif rem < quantity:
+                return False, "Insufficient stocks. <br>Remaining stocks is only " + str(rem) + "."
             else:
                 # check if this product exists as wholesale
-                item = SalesItem.objects.filter(product=product, is_wholesale=True)
+                item = SalesItem.objects.filter(sales=self, product=product, is_wholesale=True)
                 if item:
                     first = item.first()
                     # get qty
                     qty = qty + first.quantity * product.wholesale_qty
                     item.delete()
                 # check if this product exists as retail
-                item = SalesItem.objects.filter(product=product, is_wholesale=False)
+                item = SalesItem.objects.filter(sales=self, product=product, is_wholesale=False)
                 if item:
                     first = item.first()
                     # get qty and add it to qty
@@ -244,6 +269,31 @@ class Sales(models.Model):
     def load(self):
         self.status = Sales.WIP
         self.save()
+
+    def add_payment(self, mode, detail, amount):
+        payment = SalesPayment.objects.create(
+            sales=self, 
+            amount=amount, 
+            payment_mode=mode, 
+            details=detail
+        )
+
+    def complete(self, cashier):
+        invoice = SalesInvoice()
+        invoice.sales = self
+        invoice.save()
+        # adjust store stocks accordingly
+        items = SalesItem.objects.filter(sales=self)
+        if items:
+            for item in items:
+                cogs = item.product.purchase(item.quantity, cashier)
+                item.supplier_price = cogs
+                item.save()
+
+        self.cashier = cashier
+        self.status = Sales.COMPLETED
+        self.save()
+        return invoice.pk
 
     class Meta:
         ordering = ['-pk']
@@ -331,3 +381,47 @@ class SalesInvoice(models.Model):
 
     class Meta:
         ordering = ['-pk']
+
+
+class SalesPayment(models.Model):
+    CASH = 'Cash'
+    CHEQUE = 'Cheque'
+    CHARGE = 'Charge'
+    GC = 'Gift Certificate'
+    EMONEY = 'E-Money'
+    CARD = 'Debit/Credit Card'
+    MODE_CHOICES = [
+        (CASH, _(CASH)),
+        (CHEQUE, CHEQUE),
+        (CHARGE, CHARGE),
+        (GC, GC),
+        (EMONEY, EMONEY),
+        (CARD, CARD)
+    ]
+    sales = models.ForeignKey(
+        Sales, 
+        verbose_name=_("Sales Record"), 
+        on_delete=models.CASCADE
+    )
+    payment_mode = models.CharField(
+        _("Payment Mode"), 
+        max_length=20,
+        choices=MODE_CHOICES,
+        default=CASH
+    )
+    details = models.CharField(
+        _("Payment Details"), 
+        max_length=50,
+        null=True,
+        blank=True,
+        default=None
+    )
+    amount = models.DecimalField(
+        _("Amount Tendered"), 
+        max_digits=8,
+        decimal_places=2
+    )
+
+    def __str__(self):
+        return self.payment_mode + " (" + self.details + "): PhP" + str(self.amount)
+    

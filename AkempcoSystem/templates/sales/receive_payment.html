@@ -1,0 +1,62 @@
+{% load static %}
+{% load humanize %}
+{% load form_tags %}
+{% load crispy_forms_tags %}
+
+<form id="receive_payment_form" method='post' class="form" role="form">
+    <div class="modal-header">
+        <h3 class="modal-title">Checkout</h3>
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    </div>
+    <div class="modal-body">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-lg-12 col-md-12 col-sm-12">
+                <h4 class="card-title">Please fill in all the fields marked with an <label class="required">asterisk</label>.</h4>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 form-group">
+                {% crispy form %}
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <input type="button" onclick="document.getElementById('receive_payment_form').submit();" class="btn btn-primary" value="Go" style="margin-bottom: 5px;" id="payment_go" />
+        <input type="button" class="btn btn-default" data-dismiss="modal" value="Close" id="close" />
+    </div>
+</form>
+
+<script>
+$(document).ready(function() {
+
+    $('#id_payment_mode').change(function() {
+        let mode = $("#id_payment_mode").find(":selected").val();
+        if (mode == undefined) {
+            $("#id_payment_mode").prop("selectedIndex", 0);
+            mode = $("#id_payment_mode").find(":selected").val();
+        }
+        if (mode == 'Cash') {
+            $('#id_details').prop('disabled', true);
+            $('#id_amount').focus();
+        }
+        else {
+            $('#id_details').prop('disabled', false);
+            $('#id_details').focus();
+        }
+    })
+
+    $('#id_amount').keyup(function (e) {
+        if (e.keyCode == 13)
+            $('#payment_go').trigger('click');
+    })
+    
+    $('#id_payment_mode').trigger('change');
+    let change = parseInt($('#change-amount').val())
+    if (change < 0) {
+        $('#id_amount').val(change*-1);
+    }
+    $('#receive_payment_form #id_amount').focus();
+
+});
+</script>

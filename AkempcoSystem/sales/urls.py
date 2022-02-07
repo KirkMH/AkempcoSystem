@@ -7,8 +7,13 @@ urlpatterns = [
     path('creditor/<int:pk>/edit/', views.CreditorUpdateView.as_view(), name='edit_cred'),
 
     path('pos', views.pos_view, name='pos'),
+    path('pos/<int:pk>/transaction', views.pos_view, name='load_pos'),
     path('pos/<int:pk>/add', views.add_to_cart, name='addToCart'),
     path('pos/<int:pk>/remove', views.remove_from_cart, name='removeFromCart'),
+    path('pos/<int:pk>/checkout', views.PaymentDetailView.as_view(), name='checkout'),
+    path('pos/<int:pk>/checkout/payment', views.SalesPaymentCreateView.as_view(), name='payment'),
+    path('pos/<int:pk>/checkout/<int:payment_pk>/remove', views.remove_payment, name='removePayment'),
+    path('pos/<int:pk>/checkout/complete', views.complete_checkout, name='completeCheckout'),
 
     path('pos/<int:pk>/search/product', views.product_search, name='pos_product_search'),
 ]

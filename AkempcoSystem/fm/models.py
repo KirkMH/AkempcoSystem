@@ -6,7 +6,7 @@ import math
 from django.contrib.auth.models import User
 from admin_area.models import UserDetail, Store
 from purchases.models import PurchaseOrder, PO_Product
-from stocks.models import WarehouseStock, StoreStock
+from stocks.models import WarehouseStock, StoreStock, ProductHistory
 
 # will be used for the status of different models
 ACTIVE = 'ACTIVE'
@@ -463,6 +463,40 @@ class Product(models.Model):
         if wholesale is None: wholesale = 0
         wholesale = float(int(wholesale*100)) / 100
         return round_up(wholesale)
+
+    def purchase(self, quantity, cashier):
+        qty = quantity
+        stocks = StoreStock.availableStocks.filter(product=self).order_by('pk')
+        cogs = 0
+        items = 0
+        for item in stocks:
+            rem = item.remaining_stocks
+            if rem >= qty:
+                print(f"deducted {qty}")
+                item.remaining_stocks = rem - qty
+                item.save()
+                
+            else:
+                print(f"deducted {rem}")
+                qty = qty - rem
+                item.remaining_stocks = 0
+                item.save()
+
+            cogs = cogs + item.supplier_price
+            items = items + 1
+
+            if qty == 0: break
+        
+        # record history
+        hist = ProductHistory()
+        hist.product = self
+        hist.location = 1
+        hist.quantity = 0 - quantity
+        hist.remarks = 'Purchased.'
+        hist.performed_by = cashier
+        hist.save()
+
+        return cogs / items
 
     class Meta:
         ordering = ['full_description']

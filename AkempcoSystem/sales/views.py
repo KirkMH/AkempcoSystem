@@ -3,6 +3,7 @@ from django.http import HttpResponse, JsonResponse
 from django.urls import reverse_lazy
 from django.core.paginator import Paginator
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
+from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView
 from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -14,7 +15,7 @@ from AkempcoSystem.decorators import user_is_allowed
 from admin_area.models import Feature
 from .models import *
 from .forms import *
-from .models import Sales, SalesItem
+from .models import Sales, SalesItem, SalesPayment
 
 
 # used by pagination
@@ -88,11 +89,14 @@ class CreditorUpdateView(SuccessMessageMixin, UpdateView):
 
 @login_required
 @user_is_allowed(Feature.TR_POS)
-def pos_view(request):
+def pos_view(request, pk=0):
     # get the latest transaction in Sales
     sales = None
     try:
-        sales = Sales.objects.latest('transaction_datetime')
+        if pk == 0:
+            sales = Sales.objects.latest('transaction_datetime')
+        else:
+            sales = get_object_or_404(Sales, pk=pk)
     except:
         pass
     
@@ -145,3 +149,78 @@ def product_search(request, pk):
     transaction = get_object_or_404(Sales, pk=pk)
 
     return render(request, 'sales/product_search.html', {'transaction': transaction})
+
+    
+##########################
+### CHECKOUT
+##########################
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_BO), name='dispatch')
+class PaymentDetailView(DetailView):
+    model = Sales
+    context_object_name = 'transaction'
+    template_name = "sales/checkout.html"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["items"] = SalesPayment.objects.filter(sales=self.object)
+        return context
+
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_POS), name='dispatch')
+class SalesPaymentCreateView(BSModalCreateView):
+    template_name = 'sales/receive_payment.html'
+    model = SalesPayment
+    form_class = SalesPaymentForm
+
+    def post(self, request, *args, **kwargs):
+        my_form = self.form_class(self.request.POST)
+
+        if my_form.is_valid():
+            pay_mode = my_form.save(commit=False)
+            amount = pay_mode.amount
+            sales = get_object_or_404(Sales, pk=self.kwargs['pk']) 
+            prev = SalesPayment.objects.filter(sales=sales, payment_mode=pay_mode.payment_mode)
+            if prev:
+                prev = prev.first()
+                amount = amount + prev.amount
+                prev.delete()
+
+            pay_mode.sales = sales
+            pay_mode.amount = amount
+            pay_mode.save()
+
+        else:
+            messages.error(self.request, 'Please fill-in all the required fields.')
+            
+        return redirect('checkout', pk=self.kwargs['pk'])
+
+    def get_success_url(self):
+        return reverse('checkout', kwargs={'pk' : self.kwargs['pk']})
+
+
+@login_required
+@user_is_allowed(Feature.TR_POS)
+def remove_payment(request, pk, payment_pk):
+    try:
+        payment = SalesPayment.objects.get(pk=payment_pk)
+        payment.delete()
+        messages.success(request, "Record was removed from the payment list.")
+    except:
+        messages.error(request, "There was an error removing the record from the payment list.")
+    return redirect('checkout', pk=pk)
+
+
+@login_required
+@user_is_allowed(Feature.TR_POS)
+def complete_checkout(request, pk):
+    # try:
+    sales = Sales.objects.get(pk=pk)
+    print(sales)
+    si = str(sales.complete(request.user)).rjust(8, '0')
+    messages.success(request, 'Checkout completed for SI# ' + si + '.')
+    return redirect('pos')
+    # except:
+    #     messages.error(request, "There was an error completing the checkout operation.")
+    #     return redirect('checkout', pk=pk)
