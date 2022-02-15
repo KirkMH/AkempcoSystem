@@ -417,7 +417,7 @@ def update_unit_price(request, pk):
         prod = PO_Product.objects.get(pk=pk)
         print(prod)
         prod.unit_price = unit_price
-        prod.set_for_price_review()
+        prod.for_price_review = True
         prod.save()
     except:
         success = False

@@ -188,7 +188,7 @@
             <a class="btn btn-info" title="Put On-hold" href="#"><i class="far fa-hand-paper"></i></a>
             <a class="btn btn-info" title="Load On-hold" href="#"><i class="fas fa-arrow-down"></i></a>
             <a class="btn btn-info" title="Reset" href="#"><i class="fas fa-eraser"></i></a>
-            <a class="btn btn-info" title="Checkout" href="#"><i class="far fa-share-square"></i></a>
+            <a class="btn btn-info" title="Checkout" href="{% url 'checkout' transaction.pk %}"><i class="far fa-share-square"></i></a>
             <a class="btn btn-info" title="Reprint Receipt" href="#"><i class="fas fa-receipt"></i></a>
             <a class="btn btn-info" title="Cancel Receipt" href="#"><i class="fas fa-window-close"></i></a>
             <a class="btn btn-info" title="X-Reading" href="#"><i class="fas fa-file-alt"></i></a>
@@ -283,10 +283,14 @@
                     break;
 
                 case 187: // = CHECKOUT
-                    $('#txtScan').val('');
-                    location.href = "{% url 'checkout' transaction.pk %}";
+                    checkout();
                 }
             });
+
+            function checkout() {
+                $('#txtScan').val('');
+                location.href = "{% url 'checkout' transaction.pk %}";
+            }
 
             
             function deleteItemFromCart() {

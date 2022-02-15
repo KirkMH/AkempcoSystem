@@ -181,6 +181,7 @@
             $(".set-price-review").each(function () {
                 $(this).click(function() {
                     var url = $(this).data("form-url");
+                    if ($(this).prop('disabled') == true) return;
                     bootbox.confirm("Are you sure you want to set this product for price review? You won't be able to sell this item until the price has been confirmed.", function(result){ 
                         if (result) {
                             process(url)

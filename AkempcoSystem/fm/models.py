@@ -464,26 +464,30 @@ class Product(models.Model):
         wholesale = float(int(wholesale*100)) / 100
         return round_up(wholesale)
 
-    def purchase(self, quantity, cashier):
+    def purchase(self, quantity, is_wholesale, cashier):
+        if is_wholesale:
+            quantity = quantity * self.wholesale_qty
         qty = quantity
         stocks = StoreStock.availableStocks.filter(product=self).order_by('pk')
-        cogs = 0
-        items = 0
+        cogs = []
         for item in stocks:
             rem = item.remaining_stocks
+            deducted = 0
             if rem >= qty:
                 print(f"deducted {qty}")
+                deducted = qty
                 item.remaining_stocks = rem - qty
                 item.save()
                 
             else:
                 print(f"deducted {rem}")
+                deducted = rem
                 qty = qty - rem
                 item.remaining_stocks = 0
                 item.save()
 
-            cogs = cogs + item.supplier_price
-            items = items + 1
+            cogs_item = (deducted, item.supplier_price)
+            cogs.append(cogs_item)
 
             if qty == 0: break
         
@@ -496,7 +500,7 @@ class Product(models.Model):
         hist.performed_by = cashier
         hist.save()
 
-        return cogs / items
+        return cogs
 
     class Meta:
         ordering = ['full_description']

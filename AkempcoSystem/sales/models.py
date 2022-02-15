@@ -326,9 +326,17 @@ class Sales(models.Model):
         items = SalesItem.objects.filter(sales=self)
         if items:
             for item in items:
-                cogs = item.product.purchase(item.quantity, cashier)
-                item.supplier_price = cogs
-                item.save()
+                cogs = item.product.purchase(item.quantity, item.is_wholesale, cashier)
+                # save individual cogs
+                for cogs_item in cogs:
+                    qty = cogs_item[0]
+                    price = cogs_item[1]
+                    sic = SalesItemCogs()
+                    sic.sales_item = item
+                    sic.quantity = qty
+                    sic.cogs = price
+                    sic.selling_price = item.product.wholesale_price if item.is_wholesale else item.product.selling_price
+                    sic.save()
 
         self.cashier = cashier
         self.status = Sales.COMPLETED
@@ -366,12 +374,6 @@ class SalesItem(models.Model):
         decimal_places=2
     )
     quantity = models.PositiveIntegerField(_("Quantity"))
-    supplier_price = models.DecimalField(
-        _("Supplier Price"), 
-        max_digits=10, 
-        decimal_places=2,
-        default=0
-    )
     is_wholesale = models.BooleanField(
         _("Is wholesale?"),
         default=False
@@ -386,6 +388,39 @@ class SalesItem(models.Model):
 
     class Meta:
         ordering = ['product']
+
+
+# used for monitoring cogs per sold item
+# due to the possibility of getting a product
+# from different supplier prices
+class SalesItemCogs(models.Model):
+    sales_item = models.ForeignKey(
+        SalesItem, 
+        verbose_name=_("Sales Item"), 
+        on_delete=models.CASCADE
+    )
+    cogs = models.DecimalField(
+        _("Cost of Goods Sold"), 
+        max_digits=8, 
+        decimal_places=2
+    )
+    quantity = models.PositiveIntegerField(_("Quantity"))
+    selling_price = models.DecimalField(
+        _("Selling Price"), 
+        max_digits=8, 
+        decimal_places=2
+    )
+
+    @property
+    def gross_profit(self):
+        return self.quantity * (self.selling_price - self.cogs)
+
+    def __str__(self):
+        return self.sales_item.product.full_description + "\n" + \
+            "COGS: " + str(self.cogs) + "\n" + \
+                "Selling Price: " + str(self.selling_price) + "\n" + \
+                    "Gross Profit: " + str(self.gross_profit)
+    
 
 
 class SalesInvoice(models.Model):
