@@ -6,9 +6,9 @@ from django.contrib.auth.models import User
 
 
 def get_vatable_percentage():
-    store = Store.objects.all()[:1]
-    if store and store.vat_percentage:
-        return store.vat_percentage
+    store = Store.objects.first()
+    if store and store.vat_percent:
+        return store.vat_percent
     else:
         return 0
         

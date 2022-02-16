@@ -22,7 +22,7 @@
         </div>
     </div>
     <div class="modal-footer">
-        <input type="button" onclick="document.getElementById('receive_payment_form').submit();" class="btn btn-primary" value="Go" style="margin-bottom: 5px;" id="payment_go" />
+        <input type="button" class="btn btn-primary" value="Go" style="margin-bottom: 5px;" id="payment_go" />
         <input type="button" class="btn btn-default" data-dismiss="modal" value="Close" id="close" />
     </div>
 </form>
@@ -30,8 +30,14 @@
 <script>
 $(document).ready(function() {
 
+    $('#payment_go').click(function() {
+        $('#id_amount').prop('disabled', false);
+        $('#receive_payment_form').submit();
+    });
+
     $('#id_payment_mode').change(function() {
         let mode = $("#id_payment_mode").find(":selected").val();
+        $('#id_amount').prop('disabled', false);
         if (mode == undefined) {
             $("#id_payment_mode").prop("selectedIndex", 0);
             mode = $("#id_payment_mode").find(":selected").val();
@@ -39,6 +45,9 @@ $(document).ready(function() {
         if (mode == 'Cash') {
             $('#id_details').prop('disabled', true);
             $('#id_amount').focus();
+        }
+        else if (mode == 'Charge') {
+            $('#id_amount').prop('disabled', true);
         }
         else {
             $('#id_details').prop('disabled', false);
@@ -52,9 +61,10 @@ $(document).ready(function() {
     })
     
     $('#id_payment_mode').trigger('change');
-    let change = parseInt($('#change-amount').val())
+    let change = parseFloat($('#change-amount').val())
     if (change < 0) {
-        $('#id_amount').val(change*-1);
+        let amount = (change*-1).toFixed(2);
+        $('#id_amount').val(amount);
     }
     $('#receive_payment_form #id_amount').focus();
 

@@ -200,7 +200,7 @@ class Supplier(models.Model):
 class Product(models.Model):
     # for TaxType
     VAT = 'V'
-    VATEX = 'X'
+    VATEX = 'E'
     ZERO = 'Z'
     TAXTYPE = [
         (VAT, _("VAT")),

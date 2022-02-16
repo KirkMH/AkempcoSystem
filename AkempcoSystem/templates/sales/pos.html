@@ -86,6 +86,7 @@
 </div>
 
     <div class="card col-11 m-4">
+        <a href="{% url 'sales_invoice' 18 %}" target="_blank">Open SI#18</a>
         <form method="post" novalidate>
             {% csrf_token %}
 
@@ -272,6 +273,9 @@
                     $("#creditor-search").trigger("click");
                     break;
 
+                case 79: // o open (a receipt)
+                    $('#txtScan').val('');
+
                 case 83: // s Search
                     $('#txtScan').val('');
                     $("#product-search").trigger("click");
@@ -325,6 +329,7 @@
             = : checkout 187
             d : discount 68
             c : cancel  67
+            o : reprint 79
             p : reprint 80
             s : search 83
             m : member 77

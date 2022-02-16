@@ -19,11 +19,12 @@ def input_class(bound_field):
 
 @register.filter
 def peso(amount):
-    if amount:
-        amount = round(float(amount), 2)
-        return "₱ %s%s" % (intcomma(int(amount)), ("%0.2f" % amount)[-3:])
-    else:
-        return '₱ 0.00'
+    return '₱ ' + currency(amount)
+    # if amount:
+    #     amount = round(float(amount), 2)
+    #     return "₱ %s%s" % (intcomma(int(amount)), ("%0.2f" % amount)[-3:])
+    # else:
+    #     return '₱ 0.00'
 
 @register.filter
 def seq_num(number):
@@ -38,3 +39,11 @@ def percentage(value):
         return '{:.0%}'.format(value)
     else:
         return "0%"
+
+@register.filter
+def currency(amount):
+    if amount:
+        amount = round(float(amount), 2)
+        return "%s%s" % (intcomma(int(amount)), ("%0.2f" % amount)[-3:])
+    else:
+        return "0.00"

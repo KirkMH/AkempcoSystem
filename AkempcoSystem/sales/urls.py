@@ -14,6 +14,7 @@ urlpatterns = [
     path('pos/<int:pk>/checkout/payment', views.SalesPaymentCreateView.as_view(), name='payment'),
     path('pos/<int:pk>/checkout/<int:payment_pk>/remove', views.remove_payment, name='removePayment'),
     path('pos/<int:pk>/checkout/complete', views.complete_checkout, name='completeCheckout'),
+    path('pos/<int:pk>/invoice', views.sales_invoice, name='sales_invoice'),
 
     path('pos/<int:pk>/search/product', views.product_search, name='pos_product_search'),
     path('pos/<int:pk>/search/creditor', views.creditor_search, name='pos_creditor_search'),

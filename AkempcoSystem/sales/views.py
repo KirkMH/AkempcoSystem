@@ -12,7 +12,7 @@ from django.utils.decorators import method_decorator
 from fm.views import get_index, add_search_key
 from fm.models import Product
 from AkempcoSystem.decorators import user_is_allowed
-from admin_area.models import Feature
+from admin_area.models import Feature, Store
 from .models import *
 from .forms import *
 from .models import Sales, SalesItem, SalesPayment
@@ -272,9 +272,25 @@ def complete_checkout(request, pk):
     # try:
     sales = Sales.objects.get(pk=pk)
     print(sales)
-    si = str(sales.complete(request.user)).rjust(8, '0')
-    messages.success(request, 'Checkout completed for SI# ' + si + '.')
-    return redirect('pos')
+    si = sales.complete(request.user)
+    # messages.success(request, 'Checkout completed for SI# ' + si + '.')
+    return redirect('sales_invoice', pk=si)
     # except:
     #     messages.error(request, "There was an error completing the checkout operation.")
     #     return redirect('checkout', pk=pk)
+
+
+@login_required
+@user_is_allowed(Feature.TR_POS)
+def sales_invoice(request, pk, for_transaction=False):
+    si = get_object_or_404(SalesInvoice, pk=pk)
+    items = SalesItem.objects.filter(sales=si.sales)
+    payments = SalesPayment.objects.filter(sales=si.sales)
+    context = {
+        'transaction': si,
+        'items': items,
+        'payments': payments,
+        'for_transaction': for_transaction,
+        'akempco': Store.objects.all().first()
+    }
+    return render(request, 'sales/sales_invoice.html', context)

@@ -35,6 +35,13 @@ class Creditor(models.Model):
         _("Address"), 
         max_length=250
     )
+    tin = models.CharField(
+        _("Tax Identification Number"), 
+        max_length=20,
+        blank=True,
+        null=True,
+        default=None
+    )
     credit_limit = models.DecimalField(
         _("Credit Limit"), 
         max_digits=10, 
@@ -191,11 +198,16 @@ class Sales(models.Model):
         return self.compute_total(items)
 
     @property
+    def item_count(self):
+        return SalesItem.objects.filter(sales=self).count()
+
+    @property
     def vatable(self):
         items = SalesItem.objects.filter(sales=self, product__tax_type='V')
         # this is the total with VAT
         total = self.compute_total(items)
         # less the VAT
+        print(get_vatable_percentage())
         vat_p = 1 + get_vatable_percentage()
         return total / vat_p
        
@@ -205,8 +217,9 @@ class Sales(models.Model):
         # this is the total with VAT
         total = self.compute_total(items)
         # less the VAT
+        print(get_vatable_percentage())
         vat_p = 1 + get_vatable_percentage()
-        return total - total / vat_p
+        return total - (total / vat_p)
 
     @property
     def zero_rated(self):
@@ -216,7 +229,7 @@ class Sales(models.Model):
 
     @property
     def vat_exempt(self):
-        items = SalesItem.objects.filter(sales=self, product__tax_type='X')
+        items = SalesItem.objects.filter(sales=self, product__tax_type='E')
         total = self.compute_total(items)
         return total
 
@@ -417,9 +430,10 @@ class SalesItemCogs(models.Model):
 
     def __str__(self):
         return self.sales_item.product.full_description + "\n" + \
+            "Quantity: " + str(self.quantity) + "\n" + \
             "COGS: " + str(self.cogs) + "\n" + \
-                "Selling Price: " + str(self.selling_price) + "\n" + \
-                    "Gross Profit: " + str(self.gross_profit)
+            "Selling Price: " + str(self.selling_price) + "\n" + \
+            "Gross Profit: " + str(self.gross_profit)
     
 
 
@@ -463,6 +477,14 @@ class SalesInvoice(models.Model):
         blank=True,
         default=None
     )
+
+    @property
+    def si_date(self):
+        return self.sales_datetime.date()
+
+    @property 
+    def si_time(self):
+        return self.sales_datetime.time()
 
     class Meta:
         ordering = ['-pk']
