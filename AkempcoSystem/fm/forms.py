@@ -91,6 +91,10 @@ class UpdateSupplierForm(forms.ModelForm):
 
 
 class NewProductForm(forms.ModelForm):
+    for_discount = forms.ChoiceField(choices = TRUE_FALSE_CHOICES,
+                                initial=False, widget=forms.Select(),
+                                label=_("Basic necessity or prime commodity?"),
+                                help_text=_("If yes, Senior Citizen and PWD discounts will be applied."))
     is_consignment = forms.ChoiceField(choices = TRUE_FALSE_CHOICES,
                                 initial=False, widget=forms.Select(), label=_("Is this a consigned product?"))
     is_buyer_info_needed = forms.ChoiceField(choices = TRUE_FALSE_CHOICES,
@@ -108,6 +112,7 @@ class NewProductForm(forms.ModelForm):
             'ceiling_qty',
             'wholesale_qty',
             'tax_type',
+            'for_discount',
             'is_consignment',
             'is_buyer_info_needed',
             'other_info'
@@ -115,7 +120,10 @@ class NewProductForm(forms.ModelForm):
 
         
 class UpdateProductForm(forms.ModelForm):
-
+    for_discount = forms.ChoiceField(choices = TRUE_FALSE_CHOICES,
+                                initial=False, widget=forms.Select(),
+                                label=_("Basic necessity or prime commodity?"),
+                                help_text=_("If yes, Senior Citizen and PWD discounts will be applied."))
     is_consignment = forms.ChoiceField(choices = TRUE_FALSE_CHOICES,
                                 initial=False, widget=forms.Select(), label=_("Is this a consigned product?"))
     is_buyer_info_needed = forms.ChoiceField(choices = TRUE_FALSE_CHOICES,
@@ -133,6 +141,7 @@ class UpdateProductForm(forms.ModelForm):
             'ceiling_qty',
             'wholesale_qty',
             'tax_type',
+            'for_discount',
             'is_consignment',
             'is_buyer_info_needed',
             'other_info',

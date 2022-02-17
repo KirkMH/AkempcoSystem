@@ -277,6 +277,11 @@ class Product(models.Model):
         choices=TAXTYPE,
         default=VAT
     )
+    for_discount = models.BooleanField(
+        _("Basic necessity or prime commodity?"),
+        help_text=_("Is this a basic necessity or prime commodity? SC and PWD discounts will be applied."),
+        default=False
+    )
     is_consignment = models.BooleanField(
         _("Consigned product?"),
         help_text=_("Is this a consigned product?"),
@@ -323,6 +328,13 @@ class Product(models.Model):
     )
     # objects = models.Manager()
     # misc_qs = ProductManager()
+
+    @property
+    def tax_type_description(self):
+        for tt in self.TAXTYPE:
+            if tt[0] == self.tax_type:
+                return tt[1]
+        return ''
 
     def __str__(self):
         return self.full_description

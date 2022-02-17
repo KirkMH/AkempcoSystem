@@ -42,7 +42,7 @@
                     <p class="card-text"><span class="text-muted">Wholesale Qty: </span>{{ product.wholesale_qty }}</p>
                 </div>
                 <div class="col-lg-4 col-md-4 col-sm-4">
-                    <p class="card-text"><span class="text-muted">Tax Type: </span>{{ product.tax_type }}</p>
+                    <p class="card-text"><span class="text-muted">Tax Type: </span>{{ product.tax_type_description }}</p>
                 </div>
             </div>
             <div class="row mb-2">
@@ -58,16 +58,19 @@
             </div>
             <div class="row mb-2">
                 <div class="col-lg-4 col-md-4 col-sm-4">
+                    <p class="card-text"><span class="text-muted">Basic necessity or prime commodity?: </span>{{ product.for_discount|yesno:'Yes,No,-' }}</p>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-4">
                     <p class="card-text"><span class="text-muted">Consigned?: </span>{{ product.is_consigned }}</p>
                 </div>
                 <div class="col-lg-4 col-md-4 col-sm-4">
                     <p class="card-text"><span class="text-muted">Buyer's information needed?: </span>{{ product.is_buyer_info_required }}</p>
                 </div>
+            </div>
+            <div class="row mb-2">
                 <div class="col-lg-4 col-md-4 col-sm-4">
                     <p class="card-text"><span class="text-muted">Last price update: </span>{{ product.price_updated_on|naturaltime }}</p>
                 </div>
-            </div>
-            <div class="row mb-2">
                 <div class="col-lg-4 col-md-4 col-sm-4">
                     <p class="card-text"><span class="text-muted">Created: </span>{{ product.created_at|naturaltime }}</p>
                 </div>
