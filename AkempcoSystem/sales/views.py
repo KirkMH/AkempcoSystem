@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.core.paginator import Paginator
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
 from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView
@@ -282,7 +282,8 @@ def complete_checkout(request, pk):
 
 @login_required
 @user_is_allowed(Feature.TR_POS)
-def sales_invoice(request, pk, for_transaction=False):
+def sales_invoice(request, pk, for_transaction=0):
+    transactional = False if for_transaction == 0 else True
     si = get_object_or_404(SalesInvoice, pk=pk)
     items = SalesItem.objects.filter(sales=si.sales)
     payments = SalesPayment.objects.filter(sales=si.sales)
@@ -290,7 +291,31 @@ def sales_invoice(request, pk, for_transaction=False):
         'transaction': si,
         'items': items,
         'payments': payments,
-        'for_transaction': for_transaction,
+        'for_transaction': transactional,
         'akempco': Store.objects.all().first()
     }
     return render(request, 'sales/sales_invoice.html', context)
+
+
+@login_required
+@user_is_allowed(Feature.TR_POS)
+def open_receipt(request):
+    pk = int(request.GET.get('si_number', 0))
+    data = ""
+    if SalesInvoice.objects.filter(pk=pk).exists():
+        data = reverse('open_sales_invoice', kwargs={'pk': pk, 'for_transaction': 1})
+    else:
+        print('No match')
+        messages.error(request, 'Cannot find specified SI number.')
+        data = reverse_lazy('pos')
+    return JsonResponse(data, safe=False)
+
+
+@login_required
+@user_is_allowed(Feature.TR_POS)
+def reprint_receipt(request, pk):
+    data = "Re-printed"
+    si = get_object_or_404(SalesInvoice, pk=pk)
+    si.reprint(request.user)
+    return JsonResponse(data, safe=False)
+    

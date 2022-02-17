@@ -20,4 +20,8 @@ urlpatterns = [
     path('pos/<int:pk>/search/creditor', views.creditor_search, name='pos_creditor_search'),
     path('pos/<int:pk>/search/creditor/update', views.update_creditor, name='update_creditor'),
     path('pos/search/creditor/do', views.do_creditor_search, name='do_creditor_search'),
+
+    path('pos/open', views.open_receipt, name='open_receipt'),
+    path('pos/<int:pk>/invoice/<int:for_transaction>/open', views.sales_invoice, name='open_sales_invoice'),
+    path('pos/<int:pk>/invoice/reprint', views.reprint_receipt, name='reprint_receipt'),
 ]

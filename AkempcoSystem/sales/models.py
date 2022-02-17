@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Sum
 import decimal
+from datetime import datetime
 
 from django.contrib.auth.models import User
 from fm.models import Product
@@ -485,6 +486,11 @@ class SalesInvoice(models.Model):
     @property 
     def si_time(self):
         return self.sales_datetime.time()
+
+    def reprint(self, cashier):
+        self.last_reprint = datetime.now()
+        self.reprint_by = cashier
+        self.save()
 
     class Meta:
         ordering = ['-pk']

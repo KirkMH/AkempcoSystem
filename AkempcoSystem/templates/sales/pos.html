@@ -252,6 +252,27 @@
                 })
             }
 
+            function open_receipt() {
+                bootbox.prompt("Please enter the SI number to open.", function(result){ 
+                    if (result !== null)  {
+                        let si = parseInt(result);
+                        if (si > 0) {
+                            console.log(si)
+                            $.ajax({
+                                url: "{% url 'open_receipt' %}",
+                                type: 'GET',
+                                data: {'si_number': si},
+                                dataType: 'json',
+                                success: function(data) {
+                                    console.log(data);
+                                    location.href = data;
+                                }
+                            })
+                        }
+                    }
+                });
+            }
+
             $('#txtScan').keyup(function(e){
                 const text = $('#txtScan').val();
                 
@@ -275,6 +296,8 @@
 
                 case 79: // o open (a receipt)
                     $('#txtScan').val('');
+                    open_receipt();
+                    break;
 
                 case 83: // s Search
                     $('#txtScan').val('');
@@ -329,7 +352,7 @@
             = : checkout 187
             d : discount 68
             c : cancel  67
-            o : reprint 79
+            o : open si 79
             p : reprint 80
             s : search 83
             m : member 77
