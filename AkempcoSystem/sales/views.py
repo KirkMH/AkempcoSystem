@@ -8,11 +8,13 @@ from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from django.contrib.auth.hashers import check_password # for overriding validation
 
+from django.contrib.auth.models import User
 from fm.views import get_index, add_search_key
 from fm.models import Product
 from AkempcoSystem.decorators import user_is_allowed
-from admin_area.models import Feature, Store
+from admin_area.models import Feature, Store, UserDetail
 from .models import *
 from .forms import *
 from .models import Sales, SalesItem, SalesPayment
@@ -92,9 +94,6 @@ class CreditorUpdateView(SuccessMessageMixin, UpdateView):
 def creditor_search(request, pk):
     members = Creditor.members.all()
     groups = Creditor.groups.all()
-
-    print(f"members: {members}")
-    print(f"groups: {groups}")
 
     context = {
         'pk': pk,
@@ -271,7 +270,6 @@ def remove_payment(request, pk, payment_pk):
 def complete_checkout(request, pk):
     # try:
     sales = Sales.objects.get(pk=pk)
-    print(sales)
     si = sales.complete(request.user)
     # messages.success(request, 'Checkout completed for SI# ' + si + '.')
     return redirect('sales_invoice', pk=si)
@@ -305,7 +303,6 @@ def open_receipt(request):
     if SalesInvoice.objects.filter(pk=pk).exists():
         data = reverse('open_sales_invoice', kwargs={'pk': pk, 'for_transaction': 1})
     else:
-        print('No match')
         messages.error(request, 'Cannot find specified SI number.')
         data = reverse_lazy('pos')
     return JsonResponse(data, safe=False)
@@ -318,4 +315,23 @@ def reprint_receipt(request, pk):
     si = get_object_or_404(SalesInvoice, pk=pk)
     si.reprint(request.user)
     return JsonResponse(data, safe=False)
+    
+
+@login_required
+@user_is_allowed(Feature.TR_POS)
+def cancel_receipt(request, pk):
+    pw = request.GET.get('password', '')
+
+    # validate GM's password
+    gm_list = User.objects.filter(userdetail__userType='General Manager')
+    valid = False
+    for gm in gm_list:
+        valid = check_password(pw, gm.password)
+        if valid: break
+
+    if valid:
+        si = get_object_or_404(SalesInvoice, pk=pk)
+        si.cancel(request.user)
+
+    return JsonResponse(valid, safe=False)
     

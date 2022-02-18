@@ -492,6 +492,11 @@ class SalesInvoice(models.Model):
         self.reprint_by = cashier
         self.save()
 
+    def cancel(self, cashier):
+        self.cancelled_on = datetime.now()
+        self.cancelled_by = cashier
+        self.save()
+
     class Meta:
         ordering = ['-pk']
 

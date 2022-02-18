@@ -24,4 +24,5 @@ urlpatterns = [
     path('pos/open', views.open_receipt, name='open_receipt'),
     path('pos/<int:pk>/invoice/<int:for_transaction>/open', views.sales_invoice, name='open_sales_invoice'),
     path('pos/<int:pk>/invoice/reprint', views.reprint_receipt, name='reprint_receipt'),
+    path('pos/<int:pk>/invoice/cancel', views.cancel_receipt, name='cancel_receipt'),
 ]
