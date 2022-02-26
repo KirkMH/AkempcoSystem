@@ -88,8 +88,8 @@
 <div class="text-center pre wrap40">{% if akempco.registration_number %}{{ akempco.registration_number }}{% endif %}</div>
 <div class="pre wrap40">========================================</div>
 <div id="reprint-text" class="text-center taller" {% if not transaction.last_reprint %}style="display: none;"{% endif %}>- - - R E - P R I N T E D - - -</div>
-<div id="cancel-text" class="text-center taller" {% if not transaction.cancelled_on %}style="display: none;"{% endif %}>- - - C A N C E L L E D - - -</div>
-<div class="pre wrap40">SI#:     {{ transaction.pk|seq_num }}
+<div id="cancel-text" class="text-center taller" {% if not transaction.cancelled_on %}style="display: none;"{% endif %}>- - - V O I D - - -</div>
+<div class="pre wrap40">SI No.:  {{ transaction.pk|seq_num }}
 DATE:    {{ transaction.si_date|date:'m/d/Y'}}    TIME: {{ transaction.si_time|date:'h:i:s A' }}
 CASHIER: {{ user.pk }}-{{ user.get_full_name }}
 ========================================
@@ -97,7 +97,7 @@ CASHIER: {{ user.pk }}-{{ user.get_full_name }}
 {% for item in items %}<div class="c_qty">{{ item.quantity }}{{ item.is_wholesale|yesno:'W,R,-' }}</div> <div class="c_item">{{ item.product.full_description }} @{{ item.unit_price|currency }}</div> <div class="c_amt">{{ item.subtotal|currency }}{{ item.product.tax_type }}</div>{% endfor %}
 ========================================
 <div class="c_desc">{{ transaction.sales.item_count }} item(s)</div><div class="c_value">{{ transaction.sales.total }}</div>{% if transaction.sales.discount_type %}
-<div class="c_desc">Sales {{ transaction.sales.discount_type.name }}</div><div class="c_value">{{ transaction.sales.with_discount_total|currency }}  </div>{% if akempco.vatable %}
+<div class="c_desc">Sales {{ transaction.sales.discount_type.name }}</div><div class="c_value">{{ transaction.sales.with_discount_total|currency }}  </div>{% if transaction.sales.less_vat_total > 0 %}
 <div class="c_desc">Less: VAT</div><div class="c_value">-{{ transaction.sales.less_vat_total|currency }}</div>
 <div class="c_desc">  Sales without VAT</div><div class="c_value">{{ transaction.sales.sales_without_vat|currency }}  </div>{% endif %}
 <div class="c_desc">Less: {{ transaction.sales.discount_type.name }} DISC</div><div class="c_value">-{{ transaction.sales.less_discount_total|currency }}</div>{% endif %}
@@ -111,9 +111,9 @@ CASHIER: {{ user.pk }}-{{ user.get_full_name }}
 <div class="c_desc">Zero-Rated Sale:</div><div class="c_value">{{ transaction.sales.zero_rated|currency }}</div>
 ========================================
           CUSTOMER INFORMATION
-Name: {% if transaction.sales.customer.name %}{{ transaction.sales.customer.name }}{% else %}__________________________________{% endif %}
-Address: {% if transaction.sales.customer.address %}{{ transaction.sales.customer.address }}{% else %}_______________________________{% endif %}
-TIN: {% if transaction.sales.customer.tin %}{{ transaction.sales.customer.tin }}{% else %}___________________________________{% endif %}{% if transaction.sales.discount_type %}
+Name: {% if transaction.sales.customer_name %}{{ transaction.sales.customer_name }}{% else %}__________________________________{% endif %}
+Address: {% if transaction.sales.customer_address %}{{ transaction.sales.customer_address }}{% else %}_______________________________{% endif %}
+TIN: {% if transaction.sales.customer_tin %}{{ transaction.sales.customer_tin }}{% else %}___________________________________{% endif %}{% if transaction.sales.discount_type %}
 ID #: {{ transaction.sales.customer_id_card }}{% endif %}
 ========================================
 </div>

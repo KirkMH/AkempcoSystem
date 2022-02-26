@@ -127,9 +127,12 @@ class Discount(models.Model):
         unit = ' PhP' if self.discount_type == 'peso' else '%'
         return self.name + ': ' + str(self.value) + unit
 
-    def compute(self, amount):
+    def compute(self, amount, count):
         if self.discount_type == 'peso':
-            return self.value
+            if count == 0:
+                return self.value
+            else:
+                return self.value / count
         else:
             return amount * (self.value / 100)
 
@@ -330,9 +333,10 @@ class Sales(models.Model):
         print(self.discount_type)
         # go over the entire SalesItem and apply discount accordingly,
         items = SalesItem.objects.filter(sales=self)
+        count = items.count()
         if items:
             for item in items:
-                item.apply_discount(self.discount_type)
+                item.apply_discount(self.discount_type, count)
 
 
     def price_composition(self, product, subtotal):
@@ -414,7 +418,9 @@ class Sales(models.Model):
                 else:
                     message = "Added " + str(quantity)
 
-                if self.discount_type:
+                if self.discount_type and self.discount_type.discount_type == 'peso':
+                    self.apply_discount()
+                elif self.discount_type:
                     item.apply_discount(self.discount_type)
 
                 return True, message + " " + product.uom.uom_description + "(s) of " + product.full_description + "."
@@ -556,7 +562,7 @@ class SalesItem(models.Model):
         less_discount = 0 if self.less_discount == None else self.less_discount
         return self.subtotal - less_vat - less_discount
 
-    def apply_discount(self, discount_type):
+    def apply_discount(self, discount_type, count = 0):
         if not discount_type:
             return
         print(f"self.product.tax_type: {self.product.tax_type}")
@@ -568,7 +574,7 @@ class SalesItem(models.Model):
             print(self.product)
             self.less_vat = self.vat_amount # the entire VAT will be deducted
             self.vat_exempt = self.vatable  # the product will become VAT-Exempt
-            self.less_discount = discount_type.compute(self.vatable)
+            self.less_discount = discount_type.compute(self.vatable, count)
             self.vatable = 0
             print("Discount-1 Applied")
             print(f" self.less_vat: {self.less_vat}")
@@ -578,7 +584,7 @@ class SalesItem(models.Model):
         elif (discount_type.necessity_only and self.product.for_discount) \
             or not discount_type.necessity_only:
             print("Discount-2 Applied")
-            self.less_discount = discount_type.compute(self.subtotal)
+            self.less_discount = discount_type.compute(self.subtotal, count)
             print(f" self.less_discount: {self.less_discount}")
         else:
             print("No Discount Applied")
