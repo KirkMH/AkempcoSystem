@@ -1,6 +1,6 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
-from .models import Creditor, SalesPayment
+from .models import Creditor, SalesPayment, Sales
 from bootstrap_modal_forms.forms import BSModalModelForm
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Submit, Row, Column
@@ -54,6 +54,37 @@ class SalesPaymentForm(BSModalModelForm):
             ),
             Row(
                 Column('amount', css_class='form-group col-md-12'),
+                css_class='form-row'
+            ),
+            # Submit()
+        )
+
+
+#####################################
+###     Discounting - Update Sales
+#####################################
+class DiscountForm(BSModalModelForm):
+    required_css_class = 'required'
+
+    class Meta:
+        model = Sales
+        fields = ['discount_type', 'customer_name', 'customer_address', 'customer_id_card', 'customer_tin']
+
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            'discount_type',
+            Row(
+                Column('customer_name', css_class='form-group col-md-6'),
+                Column('customer_address', css_class='form-group col-md-6'),
+                css_class='form-row'
+            ),
+            Row(
+                Column('customer_tin', css_class='form-group col-md-6'),
+                Column('customer_id_card', css_class='form-group col-md-6'),
                 css_class='form-row'
             ),
             # Submit()

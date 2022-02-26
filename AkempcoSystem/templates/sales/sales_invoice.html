@@ -82,8 +82,9 @@
     </div>
     <div class="card-body">
 <div class="receipt wrap40 m-auto">
-<div class="text-center text-uppercase pre wrap40 taller">{{ akempco.name }}</div>
-<div class="text-center pre wrap40 mt-4">{{ akempco.address }}</div>
+<div class="text-center text-uppercase pre wrap40 taller">AKEMPCO Store</div>
+<div class="text-center pre wrap40">Operated by: AKEMPCO</div>
+<div class="text-center pre wrap40">{{ akempco.address }}</div>
 <div class="text-center pre wrap40">{% if akempco.registration_number %}{{ akempco.registration_number }}{% endif %}</div>
 <div class="pre wrap40">========================================</div>
 <div id="reprint-text" class="text-center taller" {% if not transaction.last_reprint %}style="display: none;"{% endif %}>- - - R E - P R I N T E D - - -</div>
@@ -95,7 +96,11 @@ CASHIER: {{ user.pk }}-{{ user.get_full_name }}
  QTY DESCRIPTION                  AMOUNT
 {% for item in items %}<div class="c_qty">{{ item.quantity }}{{ item.is_wholesale|yesno:'W,R,-' }}</div> <div class="c_item">{{ item.product.full_description }} @{{ item.unit_price|currency }}</div> <div class="c_amt">{{ item.subtotal|currency }}{{ item.product.tax_type }}</div>{% endfor %}
 ========================================
-<div class="c_desc">Total Items:</div><div class="c_value">{{ transaction.sales.item_count }}</div>
+<div class="c_desc">{{ transaction.sales.item_count }} item(s)</div><div class="c_value">{{ transaction.sales.total }}</div>{% if transaction.sales.discount_type %}
+<div class="c_desc">Sales {{ transaction.sales.discount_type.name }}</div><div class="c_value">{{ transaction.sales.with_discount_total|currency }}  </div>{% if akempco.vatable %}
+<div class="c_desc">Less: VAT</div><div class="c_value">-{{ transaction.sales.less_vat_total|currency }}</div>
+<div class="c_desc">  Sales without VAT</div><div class="c_value">{{ transaction.sales.sales_without_vat|currency }}  </div>{% endif %}
+<div class="c_desc">Less: {{ transaction.sales.discount_type.name }} DISC</div><div class="c_value">-{{ transaction.sales.less_discount_total|currency }}</div>{% endif %}
 <div class="c_desc taller">AMOUNT DUE:</div><div class="c_value taller">{{ transaction.sales.payable|currency }}</div>
 {% for payment in payments %}<div class="c_desc">{{ payment.payment_mode }}:</div><div class="c_value">{{ payment.amount|currency }}</div>{% endfor %}
 <div class="c_desc taller">CHANGE:</div><div class="c_value taller">{{ transaction.sales.change|currency }}</div>
@@ -108,7 +113,8 @@ CASHIER: {{ user.pk }}-{{ user.get_full_name }}
           CUSTOMER INFORMATION
 Name: {% if transaction.sales.customer.name %}{{ transaction.sales.customer.name }}{% else %}__________________________________{% endif %}
 Address: {% if transaction.sales.customer.address %}{{ transaction.sales.customer.address }}{% else %}_______________________________{% endif %}
-TIN:{% if transaction.sales.customer.tin %}{{ transaction.sales.customer.tin }}{% else %}____________________________________{% endif %}
+TIN: {% if transaction.sales.customer.tin %}{{ transaction.sales.customer.tin }}{% else %}___________________________________{% endif %}{% if transaction.sales.discount_type %}
+ID #: {{ transaction.sales.customer_id_card }}{% endif %}
 ========================================
 </div>
 <div class="text-center pre wrap40">F-1 IT SYSTEM SOLUTIONS CORPORATION

@@ -5,6 +5,9 @@
 
 
 {% block css %}
+    <!-- Select2 -->
+    <link rel="stylesheet" href="{% static 'plugins/select2/css/select2.min.css' %}">
+    <link rel="stylesheet" href="{% static 'plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css' %}">
 
     <link rel="stylesheet" href="{% static 'css/asterisk_on_required.css' %}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/css/bootstrap-select.min.css"> 
@@ -86,7 +89,6 @@
 </div>
 
     <div class="card col-11 m-4">
-        <a href="{% url 'sales_invoice' 18 %}" target="_blank">Open SI#18</a>
         <form method="post" novalidate>
             {% csrf_token %}
 
@@ -131,7 +133,7 @@
                             <div class="col-lg-9 col-md-6 text-large text-right"><h3>{{ transaction.total|peso }}</h3></div>
                         </div>
                         <div class="row mb-2">
-                            <div class="col-lg-3 col-md-6 text-large"><a href="#">DISCOUNT</a></div>
+                            <div class="col-lg-3 col-md-6 text-large"><a id="apply-discount" href="#">DISCOUNT</a></div>
                             <div class="col-lg-9 col-md-6 text-large text-right text-danger">{{ transaction.discount|peso }}</div>
                         </div>
                         <div class="row">
@@ -166,7 +168,7 @@
                                             {{ item.product.full_description }}
                                         </td>
                                         <td class="text-center"> {{ item.quantity }}{{ item.is_wholesale|yesno:'w,r,-' }}</td>
-                                        <td class="text-right">{{ item.unit_price|peso }}</td>
+                                        <td class="text-right">{{ item.unit_price|peso }} - {{ item.less_discount }}</td>
                                         <td class="text-right">{{ item.subtotal|peso }}{{ item.product.tax_type }}</td>
                                     </tr>
                                     {% endfor %}
@@ -190,8 +192,7 @@
             <a class="btn btn-info" title="Load On-hold" href="#"><i class="fas fa-arrow-down"></i></a>
             <a class="btn btn-info" title="Reset" href="#"><i class="fas fa-eraser"></i></a>
             <a class="btn btn-info" title="Checkout" href="{% url 'checkout' transaction.pk %}"><i class="far fa-share-square"></i></a>
-            <a class="btn btn-info" title="Reprint Receipt" href="#"><i class="fas fa-receipt"></i></a>
-            <a class="btn btn-info" title="Cancel Receipt" href="#"><i class="fas fa-window-close"></i></a>
+            <button class="btn btn-info" title="Open Receipt" onclick="open_receipt();"><i class="fas fa-receipt"></i></a>
             <a class="btn btn-info" title="X-Reading" href="#"><i class="fas fa-file-alt"></i></a>
             <a class="btn btn-info" title="Z-Reading" href="#"><i class="fas fa-file-invoice"></i></a>
         </div>
@@ -281,6 +282,11 @@
                     enterKey(text);
                     break;
 
+                case 68: // d DISCOUNT
+                    $('#txtScan').val('');
+                    $("#apply-discount").trigger("click");
+                    break;
+
                 case 72: // h HOLD
                     // hold();
                     break;
@@ -344,6 +350,10 @@
             
             $("#creditor-search").modalForm({
                 formURL: "{% url 'pos_creditor_search' transaction.pk %}"
+            });
+            
+            $("#apply-discount").modalForm({
+                formURL: "{% url 'apply_discount' transaction.pk %}"
             });
         });
 

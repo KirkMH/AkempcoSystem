@@ -6,11 +6,20 @@ from django.contrib.auth.models import User
 
 
 def get_vatable_percentage():
-    store = Store.objects.first()
-    if store and store.vat_percent:
-        return store.vat_percent
+    store = Store.objects.all()
+    if store:
+        store = store.first()
+        if is_store_vatable() and store.vat_percent:
+            return store.vat_percent
+    return 0
+
+def is_store_vatable():
+    store = Store.objects.all()
+    if store:
+        store = store.first()
+        return store.vatable
     else:
-        return 0
+        return False
         
 
 # Feature is used to load in the side menu under the specified group

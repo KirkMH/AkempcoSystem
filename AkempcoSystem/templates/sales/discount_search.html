@@ -1,0 +1,44 @@
+{% load static %}
+{% load humanize %}
+{% load form_tags %}
+{% load crispy_forms_tags %}
+
+<form id="search_discount_form" method='post' class="form" role="form">
+    <div class="modal-header">
+        <h3 class="modal-title">Apply Discount</h3>
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    </div>
+    <div class="modal-body">
+        {% csrf_token %}
+        
+        <div class="row">
+            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 form-group">
+                {% crispy form %}
+            </div>
+        </div>
+        
+    </div>
+    <div class="modal-footer">
+        <input type="button" class="btn btn-primary" value="Go" style="margin-bottom: 5px;" id="discount_search_go" />
+        <input type="button" class="btn btn-default" data-dismiss="modal" value="Close" id="close" />
+    </div>
+</form>
+
+<!-- Select2 -->
+    <script src="{% static 'js/jquery.bootstrap.modal.forms.min.js' %}"></script>
+    <script src="{% static 'plugins/select2/js/select2.full.min.js' %}"></script>
+
+<script>
+$(document).ready(function() {
+    //Initialize Select2 Elements
+    $('#id_discount_type').select2({
+      theme: 'bootstrap4'
+    });
+
+    $('#discount_search_go').click(function() {
+        $('#search_discount_form').submit();
+    })
+
+    $('#id_discount_type').focus();
+});
+</script>

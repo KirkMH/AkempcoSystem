@@ -268,14 +268,9 @@ def remove_payment(request, pk, payment_pk):
 @login_required
 @user_is_allowed(Feature.TR_POS)
 def complete_checkout(request, pk):
-    # try:
     sales = Sales.objects.get(pk=pk)
     si = sales.complete(request.user)
-    # messages.success(request, 'Checkout completed for SI# ' + si + '.')
     return redirect('sales_invoice', pk=si)
-    # except:
-    #     messages.error(request, "There was an error completing the checkout operation.")
-    #     return redirect('checkout', pk=pk)
 
 
 @login_required
@@ -334,4 +329,16 @@ def cancel_receipt(request, pk):
         si.cancel(request.user)
 
     return JsonResponse(valid, safe=False)
-    
+
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_POS), name='dispatch')
+class SalesDiscountUpdateView(BSModalUpdateView):
+    template_name = 'sales/discount_search.html'
+    model = Sales
+    form_class = DiscountForm
+
+    def get_success_url(self):
+        print(self.object)
+        self.object.apply_discount()
+        return reverse_lazy('pos')
