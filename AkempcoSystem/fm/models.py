@@ -415,7 +415,7 @@ class Product(models.Model):
         else:
             retail = price * (1 + (retail_markup / 100))
         if self.wholesale_qty > 0:
-            wholesale = price * (1 + (wholesale_markup / 100))
+            wholesale = price * (1 + (wholesale_markup / 100)) * self.wholesale_qty
         return retail, wholesale
 
     def get_prices(self):

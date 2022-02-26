@@ -40,22 +40,27 @@
                         <div class="col-3">Avg. Supplier Price:</div>
                         <div class="col-2 text-bold text-right">{{ product.get_avg_supplier_price|peso }}</div>
                         <div class="col-1"></div>
-                        <div class="col-3">Max. Supplier Price:</div>
-                        <div class="col-2 text-bold text-right">{{ product.get_max_supplier_price|peso }}</div>
+                        <div class="col-3">Wholesale Quantity:</div>
+                        <div class="col-2 text-bold text-right">{{ product.wholesale_qty }}</div>
                     </div>
                     <div class="row">
-                        <div class="col-3">Current Retail Price:</div>
-                        <div class="col-2 text-bold text-right">{{ product.selling_price|peso }}</div>
+                        <div class="col-3">Max. Supplier Price:</div>
+                        <div class="col-2 text-bold text-right">{{ product.get_max_supplier_price|peso }}</div>
                         <div class="col-1"></div>
                         <div class="col-3">Current Wholesale Price:</div>
                         <div class="col-2 text-bold text-right">{{ product.wholesale_price|peso }}</div>
                     </div>
                     <div class="row">
-                        <div class="col-3">Recommended Retail Price:</div>
-                        <div class="col-2 text-bold text-right">{{ product.get_recommended_retail_price|peso }}</div>
+                        <div class="col-3">Current Retail Price:</div>
+                        <div class="col-2 text-bold text-right">{{ product.selling_price|peso }}</div>
                         <div class="col-1"></div>
                         <div class="col-3">Recommended Wholesale Price:</div>
                         <div class="col-2 text-bold text-right">{{ product.get_recommended_wholesale_price|peso }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-3">Recommended Retail Price:</div>
+                        <div class="col-2 text-bold text-right">{{ product.get_recommended_retail_price|peso }}</div>
+
                     </div>
                     <div class="row mt-1">
                         <div class="col">
