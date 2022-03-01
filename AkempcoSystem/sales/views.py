@@ -320,13 +320,16 @@ def cancel_receipt(request, pk):
     # validate GM's password
     gm_list = User.objects.filter(userdetail__userType='General Manager')
     valid = False
+    approver = None
     for gm in gm_list:
         valid = check_password(pw, gm.password)
-        if valid: break
+        if valid: 
+            approver = gm
+            break
 
     if valid:
         si = get_object_or_404(SalesInvoice, pk=pk)
-        si.cancel(request.user)
+        si.cancel(request.user, approver)
 
     return JsonResponse(valid, safe=False)
 

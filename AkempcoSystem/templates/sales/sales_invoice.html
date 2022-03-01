@@ -52,6 +52,16 @@
         width: 12ch;
         text-align: right;
     }
+    .c_desc15 {
+        display: inline-block;
+        width: 15ch;
+        text-align: left;
+    }
+    .c_value25 {
+        display: inline-block;
+        width: 25ch;
+        text-align: right;
+    }
     .btn-menu {
         width: 100pt;
         margin-left: 10pt;
@@ -73,8 +83,8 @@
                 {% if not for_transaction %}
                 <button class="btn btn-primary btn-menu" id="print">Print</button>
                 {% else %}
-                <button class="btn btn-warning btn-menu" id="reprint" {% if transaction.cancelled_on %}style="display: none;"{% endif %}>Re-Print</button>
-                <button class="btn btn-danger btn-menu" id="cancel" {% if transaction.cancelled_on %}style="display: none;"{% endif %}>Cancel</button>
+                <button class="btn btn-warning btn-menu" id="reprint" {% if transaction.is_cancelled %}style="display: none;"{% endif %}>Re-Print</button>
+                <button class="btn btn-danger btn-menu" id="cancel" {% if transaction.is_cancelled %}style="display: none;"{% endif %}>Cancel</button>
                 {% endif %}
                 <a class="btn btn-secondary btn-menu" href="{% url 'pos' %}">POS</a>
             </div>
@@ -87,17 +97,18 @@
 <div class="text-center pre wrap40">{{ akempco.address }}</div>
 <div class="text-center pre wrap40">{{ akempco.registration_number }}</div>
 <div class="text-center pre wrap40">POS-SN:ABCD0123  MIN:20220225012345678</div>
-<div class="pre wrap40">========================================</div>
-<div class="text-center taller pre wrap40">S a l e s   I n v o i c e</div>
+<div class="pre wrap40">----------------------------------------</div>
 <div id="reprint-text" class="text-center taller" {% if not transaction.last_reprint %}style="display: none;"{% endif %}>- - - R E - P R I N T E D - - -</div>
-<div id="cancel-text" class="text-center taller" {% if not transaction.cancelled_on %}style="display: none;"{% endif %}>- - - V O I D E D - - -</div>
-<div class="pre wrap40">SI No.:  {{ transaction.pk|seq_num }}
-DATE:    {{ transaction.si_date|date:'m/d/Y'}}    TIME: {{ transaction.si_time|date:'h:i:s A' }}
-CASHIER: {{ user.pk }}-{{ user.get_full_name }}
-========================================
+<div id="cancel-text" class="text-center taller" {% if not transaction.is_cancelled %}style="display: none;"{% endif %}>- - - V O I D - - -</div>
+<div class="text-center taller pre wrap40">S a l e s   I n v o i c e</div>
+<div class="pre wrap40" {% if not transaction.is_cancelled %}style="display: none;"{% endif %}><div class="c_desc">Void Transaction No.:</div><div class="c_value">{{ transaction.sales_void.pk|seq_num }}</div></div>
+<div class="pre wrap40"><div class="c_desc"><span {% if not transaction.is_cancelled %}style="display: none;"{% endif %}>Reference </span>SI No.:</div><div class="c_value">{{ transaction.pk|seq_num }}</div>
+<div class="c_desc15">DATE/TIME:</div><div class="c_value25">{{ transaction.si_date|date:'m/d/Y'}} {{ transaction.si_time|date:'h:i:s A' }}</div>
+<div class="c_desc15">CASHIER:</div><div class="c_value25">{{ user.pk }}-{{ user.get_full_name }}</div>
+----------------------------------------
  QTY DESCRIPTION                  AMOUNT
-{% for item in items %}<div class="c_qty">{{ item.quantity }}{{ item.is_wholesale|yesno:'W,R,-' }}</div> <div class="c_item">{{ item.product.full_description }} @{{ item.unit_price|currency }}</div> <div class="c_amt">{{ item.subtotal|currency }}{{ item.product.tax_type }}</div>{% endfor %}
-========================================
+{% for item in items %}<div class="c_qty">{{ transaction.is_cancelled|yesno:'-, '}}{{ item.quantity }}{{ item.is_wholesale|yesno:'W,R,-' }}</div> <div class="c_item">{{ item.product.full_description }}{% if item.quantity > 1 %} @{{ item.unit_price|currency }}{% endif %}</div> <div class="c_amt">{{ transaction.is_cancelled|yesno:'-, '}}{{ item.subtotal|currency }}{{ item.product.tax_type }}</div>{% endfor %}
+----------------------------------------
 <div class="c_desc">{{ transaction.sales.item_count }} item(s)</div><div class="c_value">{{ transaction.sales.total }}</div>{% if transaction.sales.discount_type %}
 <div class="c_desc">Sales {{ transaction.sales.discount_type.name }}</div><div class="c_value">{{ transaction.sales.with_discount_total|currency }}  </div>{% if transaction.sales.less_vat_total > 0 %}
 <div class="c_desc">Less: VAT</div><div class="c_value">-{{ transaction.sales.less_vat_total|currency }}</div>
@@ -106,20 +117,20 @@ CASHIER: {{ user.pk }}-{{ user.get_full_name }}
 <div class="c_desc taller">AMOUNT DUE:</div><div class="c_value taller">{{ transaction.sales.payable|currency }}</div>
 {% for payment in payments %}<div class="c_desc">{{ payment.payment_mode }}:</div><div class="c_value">{{ payment.amount|currency }}</div>{% endfor %}
 <div class="c_desc taller">CHANGE:</div><div class="c_value taller">{{ transaction.sales.change|currency }}</div>
-========================================
-<div class="c_desc">VATable Sales:</div><div class="c_value">{{ transaction.sales.vatable|currency }}</div>
-<div class="c_desc">VAT Amount:</div><div class="c_value">{{ transaction.sales.vat|currency }}</div>
-<div class="c_desc">VAT Exempt Sales:</div><div class="c_value">{{ transaction.sales.vat_exempt|currency }}</div>
-<div class="c_desc">Zero-Rated Saled:</div><div class="c_value">{{ transaction.sales.zero_rated|currency }}</div>
-========================================
+----------------------------------------
+<div class="c_desc">VATable Sales:</div><div class="c_value">{{ transaction.is_cancelled|yesno:'-, '}}{{ transaction.sales.vatable|currency }}</div>
+<div class="c_desc">VAT Amount:</div><div class="c_value">{{ transaction.is_cancelled|yesno:'-, '}}{{ transaction.sales.vat|currency }}</div>
+<div class="c_desc">VAT Exempt Sales:</div><div class="c_value">{{ transaction.is_cancelled|yesno:'-, '}}{{ transaction.sales.vat_exempt|currency }}</div>
+<div class="c_desc">Zero-Rated Saled:</div><div class="c_value">{{ transaction.is_cancelled|yesno:'-, '}}{{ transaction.sales.zero_rated|currency }}</div>
+----------------------------------------
           CUSTOMER INFORMATION
 Name: {% if transaction.sales.customer_name %}{{ transaction.sales.customer_name }}{% else %}__________________________________{% endif %}
 Address: {% if transaction.sales.customer_address %}{{ transaction.sales.customer_address }}{% else %}_______________________________{% endif %}
 TIN: {% if transaction.sales.customer_tin %}{{ transaction.sales.customer_tin }}{% else %}___________________________________{% endif %}{% if transaction.sales.discount_type %}
 ID #: {{ transaction.sales.customer_id_card }}{% endif %}
-========================================
+----------------------------------------
 </div>
-<div class="text-center pre wrap40">F-1 IT SYSTEM SOLUTIONS CORPORATION
+<div class="text-center pre wrap40" {% if transaction.is_cancelled %}style="display: none;"{% endif %}>F-1 IT SYSTEM SOLUTIONS CORPORATION
 2nd Floor D-2 Q-Building, Pastrana 
 Street, Kalibo, Aklan
 Supplier TIN: 000-000-000-0000
@@ -132,7 +143,7 @@ Valid Until: 07/08/2029
 THIS INVOICE SHALL BE VALID FOR
 FIVE (5) YEARS FROM TH DATE OF THE
 PERMIT TO USE.
-========================================
+----------------------------------------
 THIS SERVES AS AN OFFICIAL RECEIPT
 Bring this receipt in case of exchange
 of merchandise within 7 days.

@@ -29,7 +29,7 @@ def peso(amount):
 @register.filter
 def seq_num(number):
     if number:
-        return "%08d" % number
+        return "%012d" % number
     else:
         return ""
 
