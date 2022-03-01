@@ -656,6 +656,44 @@ class SalesInvoice(models.Model):
         blank=True,
         default=None
     )
+
+    @property
+    def si_date(self):
+        return self.sales_datetime.date()
+
+    @property 
+    def si_time(self):
+        return self.sales_datetime.time()
+
+    @property
+    def is_cancelled(self):
+        return SalesVoid.objects.filter(sales_invoice=self).exists()
+
+    def reprint(self, cashier):
+        self.last_reprint = datetime.now()
+        self.reprint_by = cashier
+        self.save()
+
+    def cancel(self, cashier, approver):
+        void = SalesVoid()
+        void.sales_invoice = self
+        void.cancelled_on = datetime.now()
+        void.cancelled_by = cashier
+        void.approved_by = approver
+        void.save()
+        return void.pk
+
+    class Meta:
+        ordering = ['-pk']
+
+
+class SalesVoid(models.Model):
+    sales_invoice = models.OneToOneField(
+        SalesInvoice, 
+        verbose_name=_("Sales Invoice"), 
+        related_name="sales_void",
+        on_delete=models.CASCADE
+    )
     cancelled_on = models.DateTimeField(
         _("Cancelled on"), 
         null=True,
@@ -671,27 +709,19 @@ class SalesInvoice(models.Model):
         blank=True,
         default=None
     )
+    approved_by = models.ForeignKey(
+        User, 
+        verbose_name=_("Approved by"), 
+        related_name='si_cancellation_approver',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        default=None
+    )
 
-    @property
-    def si_date(self):
-        return self.sales_datetime.date()
-
-    @property 
-    def si_time(self):
-        return self.sales_datetime.time()
-
-    def reprint(self, cashier):
-        self.last_reprint = datetime.now()
-        self.reprint_by = cashier
-        self.save()
-
-    def cancel(self, cashier):
-        self.cancelled_on = datetime.now()
-        self.cancelled_by = cashier
-        self.save()
-
-    class Meta:
-        ordering = ['-pk']
+    def __str__(self):
+        return "Cancelled by " + self.cancelled_by.full_name + " on " + str(self.cancelled_on)
+    
 
 
 class SalesPayment(models.Model):
