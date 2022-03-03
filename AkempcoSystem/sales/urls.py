@@ -27,4 +27,5 @@ urlpatterns = [
     path('pos/<int:pk>/invoice/cancel', views.cancel_receipt, name='cancel_receipt'),
 
     path('pos/<int:pk>/discount/apply', views.SalesDiscountUpdateView.as_view(), name='apply_discount'),
+    path('pos/discount/validate', views.password_for_discount, name='validate_discount_pw'),
 ]

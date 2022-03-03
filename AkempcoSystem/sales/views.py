@@ -312,24 +312,39 @@ def reprint_receipt(request, pk):
     return JsonResponse(data, safe=False)
     
 
+def validate_password(password):
+    gm_list = User.objects.filter(userdetail__userType='General Manager')
+    for gm in gm_list:
+        valid = check_password(password, gm.password)
+        if valid: 
+            return gm
+    return None
+
+
 @login_required
 @user_is_allowed(Feature.TR_POS)
 def cancel_receipt(request, pk):
     pw = request.GET.get('password', '')
 
     # validate GM's password
-    gm_list = User.objects.filter(userdetail__userType='General Manager')
-    valid = False
-    approver = None
-    for gm in gm_list:
-        valid = check_password(pw, gm.password)
-        if valid: 
-            approver = gm
-            break
-
-    if valid:
+    approver = validate_password(pw)
+    
+    if approver:
         si = get_object_or_404(SalesInvoice, pk=pk)
         si.cancel(request.user, approver)
+
+    return JsonResponse(valid, safe=False)
+    
+
+
+@login_required
+@user_is_allowed(Feature.TR_POS)
+def password_for_discount(request):
+    pw = request.GET.get('id_password', '')
+
+    # validate GM's password
+    approver = validate_password(pw)
+    valid = True if approver else False
 
     return JsonResponse(valid, safe=False)
 
