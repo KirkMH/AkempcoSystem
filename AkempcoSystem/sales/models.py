@@ -321,6 +321,14 @@ class Sales(models.Model):
     def change(self):
         return self.tendered - self.payable
 
+    @property
+    def is_buyer_info_required(self):
+        items = SalesItem.objects.filter(sales=self)
+        for item in items:
+            if item.product.is_buyer_info_needed == True:
+                return True
+        return False
+
     def get_next_si(self):
         si = SalesInvoice.objects.all()[:1]
         if si:
@@ -443,9 +451,10 @@ class Sales(models.Model):
             details=detail
         )
 
-    def complete(self, cashier):
+    def complete(self, cashier, details=None):
         invoice = SalesInvoice()
         invoice.sales = self
+        invoice.details = details
         invoice.save()
         # adjust store stocks accordingly
         items = SalesItem.objects.filter(sales=self)
@@ -484,6 +493,8 @@ class Sales(models.Model):
 
     class Meta:
         ordering = ['-pk']
+        verbose_name = 'Sales'
+        verbose_name_plural = 'Sales'
 
 
 class SalesItem(models.Model):
@@ -661,6 +672,11 @@ class SalesInvoice(models.Model):
         blank=True,
         default=None
     )
+    details = models.TextField(
+        _("Details"), 
+        null=True,
+        blank=True,
+        default=None)
 
     @property
     def si_date(self):

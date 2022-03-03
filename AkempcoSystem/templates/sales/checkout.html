@@ -32,6 +32,7 @@
 
     <div class="card col-11 m-4">
         <form id="checkout-form" action="{% url 'completeCheckout' transaction.pk %}" method="post" novalidate>
+            <input type="hidden" name="details" id="details">
             {% csrf_token %}
 
             <div class="card-header">
@@ -76,7 +77,7 @@
                     <div class="col-12 text-center">
                         <a href="{% url 'pos' %}" role="button" class="btn btn-default btn-menu">Back to Cart</a>
                         <button type="button" class="btn btn-primary btn-menu" id="add-payment">Add Payment</button>
-                        <button type="submit" class="btn btn-success btn-menu" id="complete-payment" {% if transaction.change < 0 %}disabled{% endif %}>Complete Payment</button>
+                        <button type="button" class="btn btn-success btn-menu" id="complete-payment" {% if transaction.change < 0 %}disabled{% endif %}>Complete Payment</button>
                     </div>
                 </div>
                 <div class="row mt-2">
@@ -136,25 +137,52 @@
 <!-- bootboxjs -->
 <script src="{% static 'js/bootbox.all.min.js' %}"></script>
 <script>
-$("#add-payment").modalForm({
-    formURL: "{% url 'payment' transaction.pk %}"
-});
+$(document).ready(function() {
     
-function deleteItemModalForm() {
-    $(".delete-item").each(function () {
-        $(this).click(function() {
-            var url = $(this).data("form-url");
-            bootbox.confirm("Are you sure you want to remove this payment record?", function(result){ 
-                if (result) {
-                    // location.href = url;
-                    $('#delete_form').attr('action', url);
-                    $('#delete_form').submit()
+    $('#complete-payment').click(function() {
+        let info_required = '{{ transaction.is_buyer_info_required }}';
+        console.log(info_required);
+        if (info_required == 'True') {
+            bootbox.prompt({
+                title: "Please enter buyer's information and other details.",
+                inputType: 'textarea',
+                callback: function (result) {
+                    if (result == null || result == '') {
+                        bootbox.alert("Buyer's information is required to complete this purchase.");
+                    }
+                    else {
+                        $('#details').val(result);
+                        $('#checkout-form').submit();
+                    }
                 }
             });
-        });
+        }
+        else {
+            $('#details').val('');
+            $('#checkout-form').submit();
+        }
     });
-}
-deleteItemModalForm();
+
+    $("#add-payment").modalForm({
+        formURL: "{% url 'payment' transaction.pk %}"
+    });
+        
+    function deleteItemModalForm() {
+        $(".delete-item").each(function () {
+            $(this).click(function() {
+                var url = $(this).data("form-url");
+                bootbox.confirm("Are you sure you want to remove this payment record?", function(result){ 
+                    if (result) {
+                        // location.href = url;
+                        $('#delete_form').attr('action', url);
+                        $('#delete_form').submit()
+                    }
+                });
+            });
+        });
+    }
+    deleteItemModalForm();
+})
 </script>
 {% endblock js %}
     

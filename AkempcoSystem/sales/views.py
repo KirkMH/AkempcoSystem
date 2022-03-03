@@ -269,7 +269,9 @@ def remove_payment(request, pk, payment_pk):
 @user_is_allowed(Feature.TR_POS)
 def complete_checkout(request, pk):
     sales = Sales.objects.get(pk=pk)
-    si = sales.complete(request.user)
+    details = request.POST.get('details', '')       # retrieve details from the form
+    details = None if details == '' else details    # make it null if there is no value
+    si = sales.complete(request.user, details)
     return redirect('sales_invoice', pk=si)
 
 
