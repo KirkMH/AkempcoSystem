@@ -498,7 +498,7 @@ class Product(models.Model):
                 item.remaining_stocks = 0
                 item.save()
 
-            cogs_item = (deducted, item.supplier_price)
+            cogs_item = (deducted, item)
             cogs.append(cogs_item)
 
             if qty == 0: break

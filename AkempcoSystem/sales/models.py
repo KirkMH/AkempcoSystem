@@ -7,7 +7,7 @@ from datetime import datetime
 from django.contrib.auth.models import User
 from fm.models import Product
 from admin_area.models import get_vatable_percentage, is_store_vatable
-
+from stocks.models import StoreStock, ProductHistory
 
 class MemberCreditors(models.Manager):
     def get_queryset(self):
@@ -454,12 +454,13 @@ class Sales(models.Model):
                 cogs = item.product.purchase(item.quantity, item.is_wholesale, cashier)
                 # save individual cogs
                 for cogs_item in cogs:
+                    stock = cogs_item[1]
                     qty = cogs_item[0]
-                    price = cogs_item[1]
+                    price = stock.supplier_price
                     sic = SalesItemCogs()
                     sic.sales_item = item
                     sic.quantity = qty
-                    sic.cogs = price
+                    sic.store_stock = stock
                     sic.selling_price = item.product.wholesale_price if item.is_wholesale else item.product.selling_price
                     sic.save()
 
@@ -606,10 +607,10 @@ class SalesItemCogs(models.Model):
         verbose_name=_("Sales Item"), 
         on_delete=models.CASCADE
     )
-    cogs = models.DecimalField(
-        _("Cost of Goods Sold"), 
-        max_digits=8, 
-        decimal_places=2
+    store_stock = models.ForeignKey(
+        StoreStock, 
+        verbose_name=_("Store Stock Reference"), 
+        on_delete=models.CASCADE
     )
     quantity = models.PositiveIntegerField(_("Quantity"))
     selling_price = models.DecimalField(
@@ -617,6 +618,10 @@ class SalesItemCogs(models.Model):
         max_digits=8, 
         decimal_places=2
     )
+
+    @property
+    def cogs(self):
+        return self.store_stock.supplier_price
 
     @property
     def gross_profit(self):
@@ -675,12 +680,36 @@ class SalesInvoice(models.Model):
         self.save()
 
     def cancel(self, cashier, approver):
+        # create SalesVoid for Void Transaction Number
         void = SalesVoid()
         void.sales_invoice = self
         void.cancelled_on = datetime.now()
         void.cancelled_by = cashier
         void.approved_by = approver
         void.save()
+        # Return products to store
+        sales_items = SalesItem.objects.filter(sales=self.sales)
+        print(sales_items)
+        for sales_item in sales_items:
+            sics = SalesItemCogs.objects.filter(sales_item=sales_item)
+            print(sales_item)
+            print(sics)
+            for sic in sics:
+                # return quantity to where it came from
+                sic.store_stock.remaining_stocks = sic.store_stock.remaining_stocks + sic.quantity
+                sic.store_stock.save()
+                print(sic.store_stock.remaining_stocks)
+            # record this in the history
+            hist = ProductHistory()
+            hist.product = sales_item.product
+            hist.location = 1 # Store
+            hist.quantity = sales_item.quantity
+            hist.remarks = "Cancelled sales invoice."
+            hist.performed_on = datetime.now()
+            hist.performed_by = cashier
+            hist.save()
+            print(hist)
+
         return void.pk
 
     class Meta:

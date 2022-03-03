@@ -203,8 +203,7 @@ THANK YOU AND COME AGAIN!
                                     success: function(data) {
                                         console.log(data);
                                         if (data) {
-                                            $('#cancel-text').css('display', 'block');
-                                            window.print();
+                                            location.reload();
                                         }
                                         else {
                                             bootbox.alert("Incorrect manager's password. Cancellation was not performed.")
