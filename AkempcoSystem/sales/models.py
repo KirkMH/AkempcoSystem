@@ -337,6 +337,10 @@ class Sales(models.Model):
         else:
             return 1
 
+    def reset(self):
+        # delete all sales items under this transaction
+        SalesItem.objects.filter(sales=self).delete()
+
     def apply_discount(self):
         if self.discount > 0:
             self.cancel_discount()

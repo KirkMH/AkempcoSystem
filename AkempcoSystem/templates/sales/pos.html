@@ -49,7 +49,7 @@
         }
 
         /* Links inside the dropup */
-        .dropup-content a {
+        .dropup-content a, .dropup-content button {
             border-radius: 50%;
             height: 50px;
             font-size: 1.2em;
@@ -128,8 +128,8 @@
                     <div class="col-lg-2"></div>
 
                     <div class="col-lg-5 col-md-12">
-                        <div class="row">&nbsp;</div>
-                        <div class="row">&nbsp;</div>
+                        <div class="row menu-bar mb-2">&nbsp;</div>
+                        <div class="row menu-bar">&nbsp;</div>
                         <div class="row">&nbsp;</div>
                         <div class="row">
                             <div class="col-lg-3 col-md-6 text-large">TOTAL</div>
@@ -183,13 +183,13 @@
     <div class="fixedButton">
         <button class="btn btn-primary roundedFixedBtn">+</button>
         <div class="dropup-content">
-            <a class="btn btn-info" title="Put On-hold" href="#"><i class="far fa-hand-paper"></i></a>
-            <a class="btn btn-info" title="Load On-hold" href="#"><i class="fas fa-arrow-down"></i></a>
-            <a class="btn btn-info" title="Reset" href="#"><i class="fas fa-eraser"></i></a>
-            <a class="btn btn-info" title="Checkout" href="{% url 'checkout' transaction.pk %}"><i class="far fa-share-square"></i></a>
-            <button class="btn btn-info" title="Open Receipt" onclick="open_receipt();"><i class="fas fa-receipt"></i></a>
-            <a class="btn btn-info" title="X-Reading" href="#"><i class="fas fa-file-alt"></i></a>
-            <a class="btn btn-info" title="Z-Reading" href="#"><i class="fas fa-file-invoice"></i></a>
+            <a class="btn btn-info" title="Put On-hold" id="id_hold"><i class="far fa-hand-paper"></i></a>
+            <a class="btn btn-info" title="Load On-hold" id="id_load"><i class="fas fa-arrow-down"></i></a>
+            <a class="btn btn-info" title="Reset" id="id_reset"><span><i class="fas fa-eraser"></i></span></a>
+            <a class="btn btn-info" title="Checkout" id="id_checkout"><i class="far fa-share-square"></i></a>
+            <a class="btn btn-info" title="Open Receipt" id="id_open"><span><i class="fas fa-receipt"></i></span></a>
+            <a class="btn btn-info" title="X-Reading" id="id_xreading"><i class="fas fa-file-alt"></i></a>
+            <a class="btn btn-info" title="Z-Reading" id="id_zreading"><i class="fas fa-file-invoice"></i></a>
         </div>
     </div>
 
@@ -208,6 +208,7 @@
 
     <script>
         $(document).ready(function() {
+
             $("#menu_trans").addClass("menu-open")
             $("#menu_trans_pos").addClass("active")
 
@@ -248,7 +249,7 @@
                 })
             }
 
-            function open_receipt() {
+            $('#id_open').click(function() {
                 bootbox.prompt("Please enter the SI number to open.", function(result){ 
                     if (result !== null)  {
                         let si = parseInt(result);
@@ -267,7 +268,27 @@
                         }
                     }
                 });
-            }
+            });
+
+            $('#id_reset').click(function() {
+                bootbox.confirm("Are you sure you want to reset the cart?", function(result){ 
+                    if (result === true)  {
+                        $.ajax({
+                            url: "{% url 'reset_cart' transaction.pk %}",
+                            type: 'GET',
+                            dataType: 'json',
+                            success: function(data) {
+                                location.reload();
+                            }
+                        })
+                    }
+                });
+            });
+            
+            $('#id_checkout').click(function() {
+                location.href = "{% url 'checkout' transaction.pk %}";
+            });
+
 
             $('#txtScan').keyup(function(e){
                 const text = $('#txtScan').val();
@@ -275,11 +296,6 @@
                 switch(e.keyCode) {
                 case 13: // ENTER key
                     enterKey(text);
-                    break;
-
-                case 68: // d DISCOUNT
-                    $('#txtScan').val('');
-                    $("#apply-discount").trigger("click");
                     break;
 
                 case 72: // h HOLD
@@ -297,7 +313,12 @@
 
                 case 79: // o open (a receipt)
                     $('#txtScan').val('');
-                    open_receipt();
+                    $('#id_open').click();
+                    break;
+
+                case 82: // r reset
+                    $('#txtScan').val('');
+                    $('#id_reset').click();
                     break;
 
                 case 83: // s Search
@@ -311,15 +332,10 @@
                     break;
 
                 case 187: // = CHECKOUT
-                    checkout();
+                    $('#txtScan').val('');
+                    $('#id_checkout').click();
                 }
             });
-
-            function checkout() {
-                $('#txtScan').val('');
-                location.href = "{% url 'checkout' transaction.pk %}";
-            }
-
             
             function deleteItemFromCart() {
                 $(".delete-item").each(function () {

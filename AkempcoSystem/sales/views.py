@@ -362,3 +362,14 @@ class SalesDiscountUpdateView(BSModalUpdateView):
         print(self.object)
         self.object.apply_discount()
         return reverse('checkout', kwargs={'pk': self.object.pk})
+    
+
+
+@login_required
+@user_is_allowed(Feature.TR_POS)
+def reset_cart(request, pk):
+    sales = get_object_or_404(Sales, pk=pk)
+    sales.reset()
+
+    data = True
+    return JsonResponse(data, safe=False)
