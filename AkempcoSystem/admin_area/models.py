@@ -147,6 +147,34 @@ class UserDetail(models.Model):
         return list
 
 
+# Stores user log-in and log-out
+class UserLog(models.Model):
+    username = models.CharField(
+        _("Username"), 
+        max_length=100
+    )
+    user = models.ForeignKey(
+        User,
+        related_name='userlog',
+        on_delete=models.CASCADE,
+        null=True,
+        default=None
+    )
+    # logged in, logged out, failed login
+    action_taken = models.CharField(
+        _("Action taken"),
+        max_length=100
+    )
+    timestamp = models.DateTimeField(
+        _("Timestamp"), 
+        auto_now_add=True
+    )
+
+    def __str__(self):
+        return f"{self.username} {self.action_taken} on {self.timestamp}"
+    
+
+
 class Store(models.Model):
     name = models.CharField(
         _("Store Name"), 
