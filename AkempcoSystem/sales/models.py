@@ -338,13 +338,36 @@ class Sales(models.Model):
             return 1
 
     def apply_discount(self):
-        print(self.discount_type)
+        if self.discount > 0:
+            self.cancel_discount()
         # go over the entire SalesItem and apply discount accordingly,
         items = SalesItem.objects.filter(sales=self)
         count = items.count()
         if items:
             for item in items:
                 item.apply_discount(self.discount_type, count)
+
+    def cancel_discount(self):
+        # get products and their quantity
+        items = SalesItem.objects.filter(sales=self)
+        prod_qty = []
+        for item in items:
+            pq = (item.product, item.quantity)
+            prod_qty.append(pq)
+        # delete all items
+        items.delete()
+        # add products with quantity
+        for pq in prod_qty:
+            self.add_product(pq[0].barcode, pq[1])
+
+        # If the discount_type was set to none, reset customer details too
+        print(self.discount_type)
+        if self.discount_type == None:
+            self.customer_name = None
+            self.customer_address = None
+            self.customer_id_card = None
+            self.customer_tin = None
+            self.save()
 
 
     def price_composition(self, product, subtotal):
@@ -426,10 +449,10 @@ class Sales(models.Model):
                 else:
                     message = "Added " + str(quantity)
 
-                if self.discount_type and self.discount_type.discount_type == 'peso':
-                    self.apply_discount()
-                elif self.discount_type:
-                    item.apply_discount(self.discount_type)
+                # if self.discount_type and self.discount_type.discount_type == 'peso':
+                #     self.apply_discount()
+                # elif self.discount_type:
+                #     item.apply_discount(self.discount_type)
 
                 return True, message + " " + product.uom.uom_description + "(s) of " + product.full_description + "."
         else:

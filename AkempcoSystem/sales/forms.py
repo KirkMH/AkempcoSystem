@@ -80,12 +80,10 @@ class DiscountForm(BSModalModelForm):
             Row(
                 Column('customer_name', css_class='form-group col-md-6 mb-0'),
                 Column('customer_address', css_class='form-group col-md-6 mb-0'),
-                css_class='form-row'
             ),
             Row(
                 Column('customer_tin', css_class='form-group col-md-6 mb-0'),
                 Column('customer_id_card', css_class='form-group col-md-6 mb-0'),
-                css_class='form-row'
             ),
             # Submit()
         )

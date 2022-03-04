@@ -128,25 +128,12 @@
                     <div class="col-lg-2"></div>
 
                     <div class="col-lg-5 col-md-12">
+                        <div class="row">&nbsp;</div>
+                        <div class="row">&nbsp;</div>
+                        <div class="row">&nbsp;</div>
                         <div class="row">
                             <div class="col-lg-3 col-md-6 text-large">TOTAL</div>
-                            <div class="col-lg-9 col-md-6 text-large text-right"><h3>{{ transaction.total|peso }}</h3></div>
-                        </div>
-                        <div class="row">
-                            <div class="col-lg-3 col-md-6 text-large"><a id="apply-discount" href="#">DISCOUNT</a></div>
-                            <div class="col-lg-9 col-md-6 text-large text-right text-danger">{{ transaction.discount|peso }}</div>
-                        </div>
-                        {% if transaction.discount_type %}
-                        <div class="row">
-                            <div class="col-12">
-                                <span class="text-muted">({{ transaction.discount_type.name }} Granted)</span>
-                            </div>
-                        </div>
-                        
-                        {% endif %}
-                        <div class="row mt-2">
-                            <div class="col-lg-3 col-md-6 text-large">PAYABLE</div>
-                            <div class="col-lg-9 col-md-6 text-large text-right"><h1>{{ transaction.payable|peso }}</h1></div>
+                            <div class="col-lg-9 col-md-6 text-large text-right"><h1>{{ transaction.total|peso }}</h1></div>
                         </div>
                     </div>
                 </div>
@@ -358,10 +345,6 @@
             
             $("#creditor-search").modalForm({
                 formURL: "{% url 'pos_creditor_search' transaction.pk %}"
-            });
-            
-            $("#apply-discount").modalForm({
-                formURL: "{% url 'apply_discount' transaction.pk %}"
             });
         });
 

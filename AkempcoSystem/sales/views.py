@@ -361,4 +361,4 @@ class SalesDiscountUpdateView(BSModalUpdateView):
     def get_success_url(self):
         print(self.object)
         self.object.apply_discount()
-        return reverse_lazy('pos')
+        return reverse('checkout', kwargs={'pk': self.object.pk})
