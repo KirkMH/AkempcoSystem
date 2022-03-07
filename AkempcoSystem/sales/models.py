@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from django.db.models import Sum
+from django.db.models import Sum, F
 import decimal
 from datetime import datetime
 
@@ -223,42 +223,21 @@ class Sales(models.Model):
 
     @property
     def less_discount_total(self):
-        items = SalesItem.objects.filter(sales=self)
-        discount_total = 0
-        for item in items:
-            if item.less_discount:
-                discount_total = discount_total + item.less_discount 
-        return discount_total
+        return SalesItem.objects.filter(sales=self).aggregate(Sum('less_discount'))
 
     @property
     def less_vat_total(self):
-        items = SalesItem.objects.filter(sales=self)
-        discount_total = 0
-        for item in items:
-            if item.less_vat:
-                discount_total = discount_total + item.less_vat
-        return discount_total
+        return SalesItem.objects.filter(sales=self).aggregate(Sum('less_vat'))
 
     # grand total, without consideration to discounts
     @property
     def total(self):
-        items = SalesItem.objects.filter(sales=self)
-        total = decimal.Decimal(0.0)
-        if items:
-            for item in items:
-                total = total + item.subtotal
-        return total
+        return SalesItem.objects.filter(sales=self).aggregate(Sum(F('unit_price') * F('quantity')))
 
     # total of items with applied discount
     @property
     def with_discount_total(self):
-        items = SalesItem.objects.filter(sales=self)
-        total = decimal.Decimal(0.0)
-        if items:
-            for item in items:
-                if item.less_discount != None and item.less_discount > 0:
-                    total = total + item.subtotal
-        return total
+        return SalesItem.objects.filter(sales=self, less_discount__gt=0).aggregate(Sum(F('unit_price') * F('quantity')))
 
     @property
     def sales_without_vat(self):
@@ -266,43 +245,23 @@ class Sales(models.Model):
 
     @property
     def item_count(self):
-        return SalesItem.objects.filter(sales=self).count()
+        return SalesItem.objects.filter(sales=self).aggregate(Sum('quantity'))
 
     @property
     def vatable(self):
-        items = SalesItem.objects.filter(sales=self)
-        total = decimal.Decimal(0.0)
-        if items:
-            for item in items:
-                if item.vatable: total = total + item.vatable
-        return total
+        return SalesItem.objects.filter(sales=self, vatable__isnull=False).aggregate(Sum('vatable'))
        
     @property
     def vat(self):
-        items = SalesItem.objects.filter(sales=self)
-        total = decimal.Decimal(0.0)
-        if items:
-            for item in items:
-                if item.vat_amount: total = total + item.vat_amount
-        return total - self.less_vat_total
+        return SalesItem.objects.filter(sales=self, vat_amount__isnull=False).aggregate(Sum('vat_amount'))
 
     @property
     def zero_rated(self):
-        items = SalesItem.objects.filter(sales=self)
-        total = decimal.Decimal(0.0)
-        if items:
-            for item in items:
-                if item.zero_rated: total = total + item.zero_rated
-        return total
+        return SalesItem.objects.filter(sales=self, zero_rated__isnull=False).aggregate(Sum('zero_rated'))
 
     @property
     def vat_exempt(self):
-        items = SalesItem.objects.filter(sales=self)
-        total = decimal.Decimal(0.0)
-        if items:
-            for item in items:
-                if item.vat_exempt: total = total + item.vat_exempt
-        return total
+        return SalesItem.objects.filter(sales=self, vat_exempt__isnull=False).aggregate(Sum('vat_exempt'))
 
     @property
     def payable(self):
@@ -310,12 +269,7 @@ class Sales(models.Model):
 
     @property
     def tendered(self):
-        payments = SalesPayment.objects.filter(sales=self)
-        total = 0
-        if payments:
-            for payment in payments:
-                total = total + payment.amount
-        return total
+        payments = SalesPayment.objects.filter(sales=self).aggregate(Sum('amount'))
 
     @property
     def change(self):
@@ -323,11 +277,7 @@ class Sales(models.Model):
 
     @property
     def is_buyer_info_required(self):
-        items = SalesItem.objects.filter(sales=self)
-        for item in items:
-            if item.product.is_buyer_info_needed == True:
-                return True
-        return False
+        return SalesItem.objects.filter(sales=self, product__is_buyer_info_needed=True).count() > 0
 
     def get_next_si(self):
         si = SalesInvoice.objects.all()[:1]
@@ -604,29 +554,29 @@ class SalesItem(models.Model):
     def apply_discount(self, discount_type, count = 0):
         if not discount_type:
             return
-        print(f"self.product.tax_type: {self.product.tax_type}")
-        print(f"discount_type.necessity_only: {discount_type.necessity_only}")
-        print(f"self.product.for_discount: {self.product.for_discount}")
+        # print(f"self.product.tax_type: {self.product.tax_type}")
+        # print(f"discount_type.necessity_only: {discount_type.necessity_only}")
+        # print(f"self.product.for_discount: {self.product.for_discount}")
         # check if the tax is VATable, and for necessity
         if self.product.tax_type == 'V' \
             and discount_type.necessity_only and self.product.for_discount:
-            print(self.product)
+            # print(self.product)
             self.less_vat = self.vat_amount # the entire VAT will be deducted
             self.vat_exempt = self.vatable  # the product will become VAT-Exempt
             self.less_discount = discount_type.compute(self.vatable, count)
             self.vatable = 0
-            print("Discount-1 Applied")
-            print(f" self.less_vat: {self.less_vat}")
-            print(f" self.vat_exempt: {self.vat_exempt}")
-            print(f" self.less_discount: {self.less_discount}")
+            # print("Discount-1 Applied")
+            # print(f" self.less_vat: {self.less_vat}")
+            # print(f" self.vat_exempt: {self.vat_exempt}")
+            # print(f" self.less_discount: {self.less_discount}")
         # apply discount for non-VATable products, or when not for necessity
         elif (discount_type.necessity_only and self.product.for_discount) \
             or not discount_type.necessity_only:
-            print("Discount-2 Applied")
+            # print("Discount-2 Applied")
             self.less_discount = discount_type.compute(self.subtotal, count)
-            print(f" self.less_discount: {self.less_discount}")
+            # print(f" self.less_discount: {self.less_discount}")
         else:
-            print("No Discount Applied")
+            # print("No Discount Applied")
             self.less_vat = 0
             self.less_discount = 0
         self.save()
