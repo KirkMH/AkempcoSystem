@@ -137,6 +137,14 @@ class UserDetail(models.Model):
         blank=True
     )
 
+    @property
+    def last_login(self):
+        log = UserLog.objects.filter(user=self.user, action_taken='logged in').latest('timestamp')
+        if log:
+            return log.timestamp
+        else:
+            return None
+
     def __str__(self):
         return self.user.get_full_name()
 

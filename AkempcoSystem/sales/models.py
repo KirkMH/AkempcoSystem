@@ -140,6 +140,263 @@ class Discount(models.Model):
         ordering = ['name']
 
 
+class XReading(models.Model):
+    total_sales = models.DecimalField(
+        _('Total Sales'),
+        max_digits=10,
+        decimal_places=2
+    )
+    vat_removed = models.DecimalField(
+        _('VAT Removed'),
+        max_digits=10,
+        decimal_places=2
+    )
+    discounts = models.DecimalField(
+        _('Discounts'),
+        max_digits=10,
+        decimal_places=2
+    )
+    vatable = models.DecimalField(
+        _('VATable Sales'),
+        max_digits=10,
+        decimal_places=2
+    )
+    vat = models.DecimalField(
+        _('VAT Amount'),
+        max_digits=10,
+        decimal_places=2
+    )
+    vatex = models.DecimalField(
+        _('VAT Exempt Sales'),
+        max_digits=10,
+        decimal_places=2
+    )
+    zero_rated = models.DecimalField(
+        _('Zero Rated Sales'),
+        max_digits=10,
+        decimal_places=2
+    )
+    items_sold = models.PositiveIntegerField(
+        _('Number of Items Sold')
+    )
+    transaction_count = models.PositiveIntegerField(
+        _('Transaction Count')
+    )
+    void_count = models.PositiveIntegerField(
+        _('Void Count')
+    )
+    void_total = models.DecimalField(
+        _('Void Total'),
+        max_digits=10,
+        decimal_places=2
+    )
+    first_si = models.PositiveIntegerField(
+        _('First Sales Invoice')
+    )
+    last_si = models.PositiveIntegerField(
+        _('Last Sales Invoice')
+    )
+    created_at = models.DateTimeField(
+        _("Created At"), 
+        auto_now_add=True
+    )
+    created_by = models.ForeignKey(
+        User,
+        related_name='xreading_creator',
+        verbose_name=_("Created By"),
+        on_delete=models.CASCADE
+    )
+
+    @property
+    def gross_sales(self):
+        return self.total_sales + self.vat_removed + self.discounts
+
+    @property
+    def total_sales(self):
+        return self.vatable + self.vat + self.vatex + self.zero_rated
+
+    def __str__(self):
+        return f"X-Reading #{self.pk} Total Sales: PhP{self.total_sales} at {self.created_at}"
+
+
+class TenderReport(models.Model):
+    xreading = models.ForeignKey(
+        XReading,
+        verbose_name=_('X-Reading'),
+        on_delete=models.CASCADE
+    )
+    payment_mode = models.CharField(
+        _('Payment Mode'),
+        max_length=50
+    )
+    amount = models.DecimalField(
+        _('Amount'),
+        max_digits=10,
+        decimal_places=2
+    )
+
+    def __str__(self):
+        return f"{self.xreading} {self.payment_mode} {self.amount}"
+
+
+class DiscountReport(models.Model):
+    xreading = models.ForeignKey(
+        XReading,
+        verbose_name=_('X-Reading'),
+        on_delete=models.CASCADE
+    )
+    discount = models.ForeignKey(
+        Discount,
+        verbose_name=_('Discount'),
+        on_delete=models.CASCADE
+    )
+    total_vat = models.DecimalField(
+        _('Total VAT'),
+        max_digits=10,
+        decimal_places=2
+    )
+    total_discount = models.DecimalField(
+        _('Total Discount'),
+        max_digits=10,
+        decimal_places=2
+    )
+
+    def __str__(self):
+        return f"{self.xreading} {self.discount} {self.total_vat} {self.total_discount}"
+
+
+class ZReading(models.Model):
+    xreading = models.ForeignKey(
+        XReading,
+        verbose_name=_('X-Reading'),
+        on_delete=models.CASCADE
+    )
+    beginning_bal = models.DecimalField(
+        _('Beginning Balance'),
+        max_digits=10,
+        decimal_places=2
+    )
+    ending_bal = models.DecimalField(
+        _('Ending Balance'),
+        max_digits=10,
+        decimal_places=2
+    )
+    transaction_count = models.PositiveIntegerField(_('Transaction Count'))
+
+    def __str__(self):
+        return f"{self.xreading} from SI#{self.beginning_bal} to SI#{self.ending_bal}"
+
+    @property
+    def created_at(self):
+        return self.xreading.created_at
+
+    @property
+    def created_by(self):
+        return self.xreading.created_by
+
+
+class SalesReport(models.Manager):
+    def generate_xreading(self, cashier):
+        last = cashier.userdetail.last_login
+        if last == None: return None
+
+        # create a new x-reading report
+        xreading = XReading()
+
+        # query all Sales that happened from last login to now
+        sales = Sales.objects.filter(transaction_datetime__gte=last)
+
+        # tender reconciliation - payment types
+        tender_types = SalesPayment.objects.filter(sales__in=sales, sales__status='Completed') \
+                    .values('payment_mode') \
+                    .annotate(total_amount=Sum('amount')) \
+                    .order_by('payment_mode')
+        xreading.total_sales = SalesPayment.objects \
+                    .filter(sales__in=sales, sales__status='Completed') \
+                    .aggregate(val=Sum('amount'))['val']
+        xreading.vat_removed = SalesItem.objects \
+                    .filter(sales__in=sales, sales__status='Completed') \
+                    .aggregate(val=Sum('less_vat'))['val']
+        xreading.discounts = SalesItem.objects \
+                    .filter(sales__in=sales, sales__status='Completed') \
+                    .aggregate(val=Sum('less_discount'))['val']
+
+        for tender in tender_types:
+            TenderReport.objects.create(
+                xreading=xreading,
+                payment_mode=tender.payment_mode,
+                amount=tender.total_amount
+            )
+
+        # VAT declarations
+        xreading.vatable = SalesItem.objects \
+                    .filter(sales__in=sales, sales__status='Completed') \
+                    .aggregate(val=Sum('vatable'))['val']
+        xreading.vat = SalesItem.objects \
+                    .filter(sales__in=sales, sales__status='Completed') \
+                    .aggregate(val=Sum('vat_amount'))['val']
+        xreading.vatex = SalesItem.objects \
+                    .filter(sales__in=sales, sales__status='Completed') \
+                    .aggregate(val=Sum('vat_exempt'))['val']
+        xreading.zero_rated = SalesItem.objects \
+                    .filter(sales__in=sales, sales__status='Completed') \
+                    .aggregate(val=Sum('zero_rated'))['val']
+
+        # cashier audit
+        xreading.items_sold = SalesItem.objects \
+                    .filter(sales__in=sales, sales__status='Completed') \
+                    .aggregate(val=Sum('quantity'))['val']
+        xreading.transaction_count = SalesItem.objects \
+                    .filter(sales__in=sales, sales__status='Completed') \
+                    .count()
+        xreading.void_count = SalesVoid.objects \
+                    .filter(sales__in=sales) \
+                    .count()
+        xreading.void_total = SalesPayment.objects \
+                    .filter(sales__in=sales, sales__status='Cancelled') \
+                    .aggregate(val=Sum('amount'))['val']
+
+        # for discounts
+        discounts_granted = sales.order_by().values('discount_type').distinct()
+        for dg in discounts_granted:
+            if dg.discount_type:
+                discount_rpt = DiscountReport()
+                discount_rpt.xreading = xreading
+                discount_rpt.discount = get_object_or_404(Discount, pk=dg.discount_type)
+                discount_rpt.total_vat = SalesItem.objects \
+                        .filter(sales__in=sales, sales__status='Completed', sales__discount_type=discount) \
+                        .aggregate(val=Sum('less_vat'))['val']
+                discount_rpt.total_discount = SalesItem.objects \
+                        .filter(sales__in=sales, sales__status='Completed', sales__discount_type=discount) \
+                        .aggregate(val=Sum('less_discount'))['val']       
+        
+        xreading.created_by = cashier
+        xreading.save()
+        return xreading
+
+    def generate_zreading(self, cashier):
+        xreading = self.generate_xreading(cashier)
+        if xreading == None: return None
+
+        # Create a new Z-Reading
+        zreading = ZReading()
+        zreading.xreading = xreading
+
+        # get beginning balance
+        beg_bal = 0
+        beg_trans_count = 0
+        last_rec = ZReading.objects.last()
+        if last_rec: 
+            beg_bal = last_rec.ending_balance
+            beg_trans_count = last_rec.transaction_count
+
+        zreading.beginning_balance = beg_bal
+        zreading.ending_balance = beg_bal + xreading.total_sales
+        zreading.transaction_count = beg_trans_count + xreading.transaction_count
+        zreading.save()
+        return zreading
+            
+
 class Sales(models.Model):
     WIP = 'WIP'
     HOLD = 'On-Hold'
@@ -213,6 +470,8 @@ class Sales(models.Model):
         choices=STATUS_LIST,
         default=WIP
     )
+    objects = models.Manager()
+    reports = SalesReport()
     
     def __str__(self):
         return str(self.pk) + ": PhP " + str(self.payable)
@@ -223,21 +482,25 @@ class Sales(models.Model):
 
     @property
     def less_discount_total(self):
-        return SalesItem.objects.filter(sales=self).aggregate(Sum('less_discount'))
+        val = SalesItem.objects.filter(sales=self).aggregate(val=Sum('less_discount'))['val']
+        return val if val else 0
 
     @property
     def less_vat_total(self):
-        return SalesItem.objects.filter(sales=self).aggregate(Sum('less_vat'))
+        val = SalesItem.objects.filter(sales=self).aggregate(val=Sum('less_vat'))['val']
+        return val if val else 0
 
     # grand total, without consideration to discounts
     @property
     def total(self):
-        return SalesItem.objects.filter(sales=self).aggregate(Sum(F('unit_price') * F('quantity')))
+        val = SalesItem.objects.filter(sales=self).aggregate(val=Sum(F('unit_price') * F('quantity')))['val']
+        return val if val else 0
 
     # total of items with applied discount
     @property
     def with_discount_total(self):
-        return SalesItem.objects.filter(sales=self, less_discount__gt=0).aggregate(Sum(F('unit_price') * F('quantity')))
+        val = SalesItem.objects.filter(sales=self, less_discount__gt=0).aggregate(val=Sum(F('unit_price') * F('quantity')))['val']
+        return val if val else 0
 
     @property
     def sales_without_vat(self):
@@ -245,23 +508,28 @@ class Sales(models.Model):
 
     @property
     def item_count(self):
-        return SalesItem.objects.filter(sales=self).aggregate(Sum('quantity'))
+        val = SalesItem.objects.filter(sales=self).aggregate(val=Sum('quantity'))['val']
+        return val if val else 0
 
     @property
     def vatable(self):
-        return SalesItem.objects.filter(sales=self, vatable__isnull=False).aggregate(Sum('vatable'))
+        val = SalesItem.objects.filter(sales=self, vatable__isnull=False).aggregate(val=Sum('vatable'))['val']
+        return val if val else 0
        
     @property
     def vat(self):
-        return SalesItem.objects.filter(sales=self, vat_amount__isnull=False).aggregate(Sum('vat_amount'))
+        val = SalesItem.objects.filter(sales=self, vat_amount__isnull=False).aggregate(val=Sum('vat_amount'))['val']
+        return val if val else 0
 
     @property
     def zero_rated(self):
-        return SalesItem.objects.filter(sales=self, zero_rated__isnull=False).aggregate(Sum('zero_rated'))
+        val = SalesItem.objects.filter(sales=self, zero_rated__isnull=False).aggregate(val=Sum('zero_rated'))['val']
+        return val if val else 0
 
     @property
     def vat_exempt(self):
-        return SalesItem.objects.filter(sales=self, vat_exempt__isnull=False).aggregate(Sum('vat_exempt'))
+        val = SalesItem.objects.filter(sales=self, vat_exempt__isnull=False).aggregate(val=Sum('vat_exempt'))['val']
+        return val if val else 0
 
     @property
     def payable(self):
@@ -269,7 +537,8 @@ class Sales(models.Model):
 
     @property
     def tendered(self):
-        payments = SalesPayment.objects.filter(sales=self).aggregate(Sum('amount'))
+        val = SalesPayment.objects.filter(sales=self).aggregate(val=Sum('amount'))['val']
+        return val if val else 0
 
     @property
     def change(self):
@@ -673,6 +942,9 @@ class SalesInvoice(models.Model):
         self.save()
 
     def cancel(self, cashier, approver):
+        # cancel parent sales record
+        self.sales.status = Sales.CANCELLED
+        self.sales.save()
         # create SalesVoid for Void Transaction Number
         void = SalesVoid()
         void.sales_invoice = self

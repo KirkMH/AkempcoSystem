@@ -373,3 +373,14 @@ def reset_cart(request, pk):
 
     data = True
     return JsonResponse(data, safe=False)
+    
+
+
+@login_required
+@user_is_allowed(Feature.TR_POS)
+def x_reading(request):
+    last = request.user.userdetail.last_login
+    if last:
+        # query all Sales that happened from last login to now
+        sales = Sales.objects.filter(transaction_datetime__gte=last)
+        
