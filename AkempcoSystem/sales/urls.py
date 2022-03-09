@@ -29,4 +29,6 @@ urlpatterns = [
 
     path('pos/<int:pk>/discount/apply', views.SalesDiscountUpdateView.as_view(), name='apply_discount'),
     path('pos/discount/validate', views.password_for_discount, name='validate_discount_pw'),
+
+    path('pos/x_reading', views.x_reading, name='x_reading'),
 ]

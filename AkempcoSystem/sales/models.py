@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Max, Min
 import decimal
 from datetime import datetime
 
@@ -141,11 +141,6 @@ class Discount(models.Model):
 
 
 class XReading(models.Model):
-    total_sales = models.DecimalField(
-        _('Total Sales'),
-        max_digits=10,
-        decimal_places=2
-    )
     vat_removed = models.DecimalField(
         _('VAT Removed'),
         max_digits=10,
@@ -208,11 +203,16 @@ class XReading(models.Model):
     )
 
     @property
+    def total_sales(self):
+        val = TenderReport.objects.filter(xreading=self).aggregate(val=Sum('amount'))['val']
+        return val if val else 0
+
+    @property
     def gross_sales(self):
         return self.total_sales + self.vat_removed + self.discounts
 
     @property
-    def total_sales(self):
+    def vd_total_sales(self):
         return self.vatable + self.vat + self.vatex + self.zero_rated
 
     def __str__(self):
@@ -253,7 +253,8 @@ class DiscountReport(models.Model):
     total_vat = models.DecimalField(
         _('Total VAT'),
         max_digits=10,
-        decimal_places=2
+        decimal_places=2,
+        null=True
     )
     total_discount = models.DecimalField(
         _('Total Discount'),
@@ -305,73 +306,85 @@ class SalesReport(models.Manager):
 
         # query all Sales that happened from last login to now
         sales = Sales.objects.filter(transaction_datetime__gte=last)
+        print(f"last: {last}")
+        print(f"sales: {sales}")
+
+        # SI numbers in the series
+        xreading.first_si = SalesInvoice.objects.filter(sales__in=sales).aggregate(val=Min('id'))['val'] or 0
+        xreading.last_si = SalesInvoice.objects.filter(sales__in=sales).aggregate(val=Max('id'))['val'] or 0
 
         # tender reconciliation - payment types
         tender_types = SalesPayment.objects.filter(sales__in=sales, sales__status='Completed') \
                     .values('payment_mode') \
-                    .annotate(total_amount=Sum('amount')) \
+                    .annotate(total_amount=Sum('value')) \
                     .order_by('payment_mode')
-        xreading.total_sales = SalesPayment.objects \
-                    .filter(sales__in=sales, sales__status='Completed') \
-                    .aggregate(val=Sum('amount'))['val']
         xreading.vat_removed = SalesItem.objects \
                     .filter(sales__in=sales, sales__status='Completed') \
-                    .aggregate(val=Sum('less_vat'))['val']
+                    .aggregate(val=Sum('less_vat'))['val'] or 0
         xreading.discounts = SalesItem.objects \
                     .filter(sales__in=sales, sales__status='Completed') \
-                    .aggregate(val=Sum('less_discount'))['val']
-
-        for tender in tender_types:
-            TenderReport.objects.create(
-                xreading=xreading,
-                payment_mode=tender.payment_mode,
-                amount=tender.total_amount
-            )
+                    .aggregate(val=Sum('less_discount'))['val'] or 0
 
         # VAT declarations
         xreading.vatable = SalesItem.objects \
                     .filter(sales__in=sales, sales__status='Completed') \
-                    .aggregate(val=Sum('vatable'))['val']
+                    .aggregate(val=Sum('vatable'))['val'] or 0
         xreading.vat = SalesItem.objects \
                     .filter(sales__in=sales, sales__status='Completed') \
-                    .aggregate(val=Sum('vat_amount'))['val']
+                    .aggregate(val=Sum(F('vat_amount')-F('less_vat')))['val'] or 0
         xreading.vatex = SalesItem.objects \
                     .filter(sales__in=sales, sales__status='Completed') \
-                    .aggregate(val=Sum('vat_exempt'))['val']
+                    .aggregate(val=Sum('vat_exempt'))['val'] or 0
         xreading.zero_rated = SalesItem.objects \
                     .filter(sales__in=sales, sales__status='Completed') \
-                    .aggregate(val=Sum('zero_rated'))['val']
+                    .aggregate(val=Sum('zero_rated'))['val'] or 0
 
         # cashier audit
         xreading.items_sold = SalesItem.objects \
                     .filter(sales__in=sales, sales__status='Completed') \
-                    .aggregate(val=Sum('quantity'))['val']
+                    .aggregate(val=Sum('quantity'))['val'] or 0
         xreading.transaction_count = SalesItem.objects \
                     .filter(sales__in=sales, sales__status='Completed') \
-                    .count()
+                    .count() - 1
         xreading.void_count = SalesVoid.objects \
-                    .filter(sales__in=sales) \
+                    .filter(sales_invoice__sales__in=sales) \
                     .count()
         xreading.void_total = SalesPayment.objects \
                     .filter(sales__in=sales, sales__status='Cancelled') \
-                    .aggregate(val=Sum('amount'))['val']
+                    .aggregate(val=Sum('value'))['val'] or 0
 
         # for discounts
-        discounts_granted = sales.order_by().values('discount_type').distinct()
-        for dg in discounts_granted:
-            if dg.discount_type:
-                discount_rpt = DiscountReport()
-                discount_rpt.xreading = xreading
-                discount_rpt.discount = get_object_or_404(Discount, pk=dg.discount_type)
-                discount_rpt.total_vat = SalesItem.objects \
-                        .filter(sales__in=sales, sales__status='Completed', sales__discount_type=discount) \
-                        .aggregate(val=Sum('less_vat'))['val']
-                discount_rpt.total_discount = SalesItem.objects \
-                        .filter(sales__in=sales, sales__status='Completed', sales__discount_type=discount) \
-                        .aggregate(val=Sum('less_discount'))['val']       
+        # discounts_granted = sales.order_by().values('discount_type').distinct()     
         
         xreading.created_by = cashier
         xreading.save()
+
+        # save tender types
+        for tender in tender_types:
+            print(tender)
+            TenderReport.objects.create(
+                xreading=xreading,
+                payment_mode=tender['payment_mode'],
+                amount=tender['total_amount']
+            )
+
+        # for discounts
+        discounts = Discount.objects.filter(active=True)
+        # save discounts granted
+        for disc in discounts:
+            if disc:
+                discount_rpt = DiscountReport()
+                discount_rpt.xreading = xreading
+                discount_rpt.discount = disc
+                if disc.necessity_only:
+                    discount_rpt.total_vat = SalesItem.objects \
+                            .filter(sales__in=sales, sales__status='Completed', sales__discount_type=disc) \
+                            .aggregate(val=Sum('less_vat'))['val'] or 0
+                discount_rpt.total_discount = SalesItem.objects \
+                        .filter(sales__in=sales, sales__status='Completed', sales__discount_type=disc) \
+                        .aggregate(val=Sum('less_discount'))['val'] or 0  
+                discount_rpt.save()
+
         return xreading
 
     def generate_zreading(self, cashier):
@@ -672,11 +685,6 @@ class Sales(models.Model):
                 else:
                     message = "Added " + str(quantity)
 
-                # if self.discount_type and self.discount_type.discount_type == 'peso':
-                #     self.apply_discount()
-                # elif self.discount_type:
-                #     item.apply_discount(self.discount_type)
-
                 return True, message + " " + product.uom.uom_description + "(s) of " + product.full_description + "."
         else:
             return False, "Barcode not found."
@@ -696,6 +704,12 @@ class Sales(models.Model):
             payment_mode=mode, 
             details=detail
         )
+        if self.change > 0:
+            payment.value = amount - self.change
+        else:
+            payment.value = amount
+        payment.save()
+
 
     def complete(self, cashier, details=None):
         invoice = SalesInvoice()
@@ -768,43 +782,37 @@ class SalesItem(models.Model):
         _("VATable"), 
         max_digits=10, 
         decimal_places=2,
-        null=True,
-        default=None
+        default=0
     )
     vat_amount = models.DecimalField(
         _("VAT Amount"), 
         max_digits=10, 
         decimal_places=2,
-        null=True,
-        default=None
+        default=0
     )
     vat_exempt = models.DecimalField(
         _("VAT-Exempt"), 
         max_digits=10, 
         decimal_places=2,
-        null=True,
-        default=None
+        default=0
     )
     zero_rated = models.DecimalField(
         _("Zero-Rated"), 
         max_digits=10, 
         decimal_places=2,
-        null=True,
-        default=None
+        default=0
     )
     less_vat = models.DecimalField(
         _("Less: VAT"), 
         max_digits=10, 
         decimal_places=2,
-        null=True,
-        default=None
+        default=0
     )
     less_discount = models.DecimalField(
         _("Less: Discount"), 
         max_digits=10, 
         decimal_places=2,
-        null=True,
-        default=None
+        default=0
     )
 
     def __str__(self):
@@ -831,8 +839,9 @@ class SalesItem(models.Model):
             and discount_type.necessity_only and self.product.for_discount:
             # print(self.product)
             self.less_vat = self.vat_amount # the entire VAT will be deducted
-            self.vat_exempt = self.vatable  # the product will become VAT-Exempt
-            self.less_discount = discount_type.compute(self.vatable, count)
+            discount_amt = discount_type.compute(self.vatable, count)
+            self.less_discount = discount_amt
+            self.vat_exempt = self.vatable - discount_amt  # the product will become VAT-Exempt less discount
             self.vatable = 0
             # print("Discount-1 Applied")
             # print(f" self.less_vat: {self.less_vat}")
@@ -843,7 +852,12 @@ class SalesItem(models.Model):
             or not discount_type.necessity_only:
             # print("Discount-2 Applied")
             self.less_discount = discount_type.compute(self.subtotal, count)
-            # print(f" self.less_discount: {self.less_discount}")
+            if self.vatable > 0:
+                self.vatable = self.vatable - self.less_discount
+            elif self.vat_exempt > 0:
+                self.vat_exempt = self.vat_exempt - self.less_discount
+            else:
+                self.zero_rated = self.zero_rated - self.less_discount
         else:
             # print("No Discount Applied")
             self.less_vat = 0
@@ -1055,6 +1069,12 @@ class SalesPayment(models.Model):
         _("Amount Tendered"), 
         max_digits=8,
         decimal_places=2
+    )
+    value = models.DecimalField(
+        _("Accepted Value"), 
+        max_digits=8,
+        decimal_places=2,
+        null=True
     )
 
     def __str__(self):

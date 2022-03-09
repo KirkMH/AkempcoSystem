@@ -243,6 +243,11 @@ class SalesPaymentCreateView(BSModalCreateView):
                 pay_mode.sales = sales
                 pay_mode.amount = amount
                 pay_mode.save()
+                if sales.change > 0:
+                    pay_mode.value = amount - sales.change
+                else:
+                    pay_mode.value = amount
+                pay_mode.save()
 
         else:
             messages.error(self.request, 'Please fill-in all the required fields.')
@@ -330,10 +335,12 @@ def cancel_receipt(request, pk):
 
     # validate GM's password
     approver = validate_password(pw)
+    valid = False
     
     if approver:
         si = get_object_or_404(SalesInvoice, pk=pk)
         si.cancel(request.user, approver)
+        valid = True
 
     return JsonResponse(valid, safe=False)
     
@@ -379,8 +386,6 @@ def reset_cart(request, pk):
 @login_required
 @user_is_allowed(Feature.TR_POS)
 def x_reading(request):
-    last = request.user.userdetail.last_login
-    if last:
-        # query all Sales that happened from last login to now
-        sales = Sales.objects.filter(transaction_datetime__gte=last)
+    xreading = Sales.reports.generate_xreading(request.user)
+    return render(request, 'sales/x_reading.html', {'xreading' : xreading})
         

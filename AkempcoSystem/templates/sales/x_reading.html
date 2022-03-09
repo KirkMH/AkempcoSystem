@@ -1,0 +1,196 @@
+{% extends '../base.html' %}
+{% load static form_tags %}
+
+{% block page_title %}X-Reading{% endblock page_title %}
+
+{% block css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/css/bootstrap-select.min.css"> 
+
+<style>
+    .receipt {
+        text-transform: uppercase;
+        padding-top: 20px;
+        padding-bottom: 20px;
+    }
+    .taller { transform: scaleY(1.2); }
+    .tallest { transform: scaleY(1.5); }
+    .wrap40 {
+        inline-size: 40ch;
+        overflow-wrap: break-word;
+    }
+    .pre {
+        font-family: monospace;
+        white-space: pre-wrap;
+    }
+    .text-center {
+        text-align: center;
+    }
+    .c_qty {
+        display: inline-block;
+        width: 4ch;
+        text-align: right;
+        vertical-align: top;
+    }
+    .c_item {
+        display: inline-block;
+        width: 23ch;
+        text-align: left;
+        vertical-align: top;
+    }
+    .c_amt {
+        display: inline-block;
+        width: 11ch;
+        text-align: right;
+        vertical-align: top;
+    }
+    .c_desc {
+        display: inline-block;
+        width: 28ch;
+        text-align: left;
+    }
+    .c_desc15 {
+        display: inline-block;
+        width: 15ch;
+        text-align: left;
+    }
+    .c_desc20 {
+        display: inline-block;
+        width: 20ch;
+        text-align: left;
+    }
+    .c_value {
+        display: inline-block;
+        width: 12ch;
+        text-align: right;
+    }
+    .c_value9 {
+        display: inline-block;
+        width: 9ch;
+        text-align: right;
+    }
+    .c_value16 {
+        display: inline-block;
+        width: 16ch;
+        text-align: right;
+    }
+    .c_value20 {
+        display: inline-block;
+        width: 20ch;
+        text-align: right;
+    }
+    .c_value25 {
+        display: inline-block;
+        width: 25ch;
+        text-align: right;
+    }
+    .btn-menu {
+        width: 100pt;
+        margin-left: 10pt;
+    }
+</style>
+{% endblock css %}
+    
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item"><a href="{% url 'pos' %}">Point-of-Sale</a></li>
+<li class="breadcrumb-item active">X-Reading</a></li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+<div class="card col-11 m-auto">
+    <div class="card-header no-print">
+        <div class="row">
+            <div class="col-lg-12 col-md-12 text-center">
+                <button class="btn btn-primary btn-menu" id="print">Print</button>
+                <a class="btn btn-secondary btn-menu" href="{% url 'pos' %}">POS</a>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+<div class="receipt wrap40 m-auto">
+<div class="text-center text-uppercase pre wrap40 tallest">AKEMPCO Store</div>
+<div class="text-center pre wrap40">Operated by: AKEMPCO</div>
+<div class="text-center pre wrap40">{{ akempco.address }}</div>
+<div class="text-center pre wrap40">{{ akempco.registration_number }}</div>
+<div class="text-center pre wrap40">POS-SN:ABCD0123  MIN:20220225012345678</div>
+<div class="pre wrap40">----------------------------------------</div>
+<div class="text-center tallest pre wrap40">X  -  R E A D I N G</div>
+<div class="pre wrap40"><div class="c_desc15">REPORTING DATE:</div><div class="c_value25">{{ xreading.created_at|date:'m/d/Y'}}</div>
+----------------------------------------
+<div class="taller">TENDER RECONCILIATION</div>
+{% for item in xreading.tenderreport_set.all %}<div class="c_desc">{{ item.payment_mode }}</div><div class="c_value">{{ item.amount|currency }}</div>{% endfor %}
+<div class="c_desc"> </div><div class="c_value">------------</div>
+<div class="c_desc">TOTAL AMOUNT</div><div class="c_value">{{ xreading.total_sales|currency }}</div>
+<div class="c_desc">Add: VAT Removed</div><div class="c_value">{{ xreading.vat_removed|currency }}</div>
+<div class="c_desc">Add: Discounts</div><div class="c_value">{{ xreading.discounts|currency }}</div>
+<div class="c_desc"> </div><div class="c_value">------------</div>
+<div class="c_desc">GROSS SALES</div><div class="c_value">{{ xreading.gross_sales|currency }}</div>
+
+----------------------------------------
+<div class="taller">VAT DECLARATION</div>
+<div class="c_desc">VATable Sales:</div><div class="c_value">{{ xreading.vatable|currency }}</div>
+<div class="c_desc">VAT Amount:</div><div class="c_value">{{ xreading.vat|currency }}</div>
+<div class="c_desc">VAT Exempt Sales:</div><div class="c_value">{{ xreading.vatex|currency }}</div>
+<div class="c_desc">Zero-Rated Sales:</div><div class="c_value">{{ xreading.zero_rated|currency }}</div>
+<div class="c_desc"> </div><div class="c_value">------------</div>
+<div class="c_desc">TOTAL SALES</div><div class="c_value">{{ xreading.vd_total_sales|currency }}</div>
+
+----------------------------------------
+<div class="taller">CASHIER AUDIT</div>
+<div class="c_desc">Items Sold:</div><div class="c_value">{{ xreading.items_sold }}</div>
+<div class="c_desc15">Transactions:</div><div class="c_value9">{{ xreading.transaction_count }}</div><div class="c_value16">{{ xreading.total_sales|currency }}</div>
+<div class="c_desc15">Void Trans:</div><div class="c_value9">{{ xreading.void_count }}</div><div class="c_value16">{{ xreading.void_total|currency }}</div>{% for item in xreading.discountreport_set.all %}{% if item.total_vat != None %}<div class="c_desc text-truncate m-0">{{ item.discount.name }} VAT</div><div class="c_value m-0">{{ item.total_vat|currency }}</div>{% endif %}<div class="c_desc20 text-truncate m-0">{{ item.discount.name }} Discounts</div><div class="c_value20 m-0">{{ item.total_discount|currency }}</div>{% endfor %}
+<div class="c_desc20">Net Sales:</div><div class="c_value20">{{ xreading.total_sales|currency }}</div>
+
+----------------------------------------
+<div class="taller">CASH COUNT</div>
+________ x 1,000.00 = __________________
+________ x   500.00 = __________________
+________ x   200.00 = __________________
+________ x   100.00 = __________________
+________ x    50.00 = __________________
+________ x    20.00 = __________________
+________ x    10.00 = __________________
+________ x     5.00 = __________________
+________ x     1.00 = __________________
+________ x     0.25 = __________________
+________ x     0.10 = __________________
+________ x     0.05 = __________________
+________ x     0.01 = __________________
+
+              TOTAL = __________________
+----------------------------------------
+Cashier:
+
+<div class="text-center taller">{{ xreading.created_by.get_full_name }}</div>
+----------------------------------------
+<div class="text-center">{{ xreading.created_at }}</div>
+</div>
+</div>
+</div>
+</div>
+{% endblock main_content %}
+
+
+{% block js %}
+<script src="{% static 'js/jquery.bootstrap.modal.forms.min.js' %}"></script>
+<!-- bootboxjs -->
+<script src="{% static 'js/bootbox.all.min.js' %}"></script>
+
+<script>
+    $(document).ready(function() {
+
+            window.print();
+    });
+
+    $(document).on('keydown', function(e) {
+    if((e.ctrlKey || e.metaKey) && (e.key == "p" || e.charCode == 16 || e.charCode == 112 || e.keyCode == 80) ){
+        bootbox.alert("Please use the buttons provided for a better rendering of the document.");
+        e.cancelBubble = true;
+        e.preventDefault();
+
+        e.stopImmediatePropagation();
+    }  
+});
+</script>
+{% endblock js %}

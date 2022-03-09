@@ -84,7 +84,7 @@
                 <button class="btn btn-primary btn-menu" id="print">Print</button>
                 {% else %}
                 <button class="btn btn-warning btn-menu" id="reprint" {% if transaction.is_cancelled %}style="display: none;"{% endif %}>Re-Print</button>
-                <button class="btn btn-danger btn-menu" id="cancel" {% if transaction.is_cancelled %}style="display: none;"{% endif %}>Cancel</button>
+                <button class="btn btn-danger btn-menu" id="cancel" {% if transaction.is_cancelled %}style="display: none;"{% endif %}>Void</button>
                 {% endif %}
                 <a class="btn btn-secondary btn-menu" href="{% url 'pos' %}">POS</a>
             </div>
@@ -121,7 +121,7 @@
 <div class="c_desc">VATable Sales:</div><div class="c_value">{{ transaction.is_cancelled|yesno:'-, '}}{{ transaction.sales.vatable|currency }}</div>
 <div class="c_desc">VAT Amount:</div><div class="c_value">{{ transaction.is_cancelled|yesno:'-, '}}{{ transaction.sales.vat|currency }}</div>
 <div class="c_desc">VAT Exempt Sales:</div><div class="c_value">{{ transaction.is_cancelled|yesno:'-, '}}{{ transaction.sales.vat_exempt|currency }}</div>
-<div class="c_desc">Zero-Rated Saled:</div><div class="c_value">{{ transaction.is_cancelled|yesno:'-, '}}{{ transaction.sales.zero_rated|currency }}</div>
+<div class="c_desc">Zero-Rated Sales:</div><div class="c_value">{{ transaction.is_cancelled|yesno:'-, '}}{{ transaction.sales.zero_rated|currency }}</div>
 ----------------------------------------
           CUSTOMER INFORMATION
 Name: {% if transaction.sales.customer_name %}{{ transaction.sales.customer_name }}{% else %}__________________________________{% endif %}
@@ -187,7 +187,7 @@ THANK YOU AND COME AGAIN!
         })
 
         $('#cancel').click(function() {
-            var dialog = bootbox.confirm("Are you sure you want to cancel this sales invoice? This requires the manager's approval.", function(result){ 
+            var dialog = bootbox.confirm("Are you sure you want to void this sales invoice? This requires the manager's approval.", function(result){ 
                 if (result) {
                     dialog.modal('hide');
                     dialog = bootbox.prompt({
@@ -206,7 +206,7 @@ THANK YOU AND COME AGAIN!
                                             location.reload();
                                         }
                                         else {
-                                            bootbox.alert("Incorrect manager's password. Cancellation was not performed.")
+                                            bootbox.alert("Incorrect manager's password. Void was not performed.")
                                         }
                                     }
                                 });
