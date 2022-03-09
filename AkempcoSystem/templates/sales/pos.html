@@ -291,7 +291,39 @@
 
             $('#id_xreading').click(function() {
                 location.href = "{% url 'x_reading' %}"
-            })
+            });
+
+            $('#id_zreading').click(function() {
+                // requires gm's validation first
+                var dialog = bootbox.confirm("Are you sure you want to generate the Z-Reading? This requires the manager's approval and you cannot make additional transactions after.", function(result){ 
+                if (result) {
+                    dialog.modal('hide');
+                    dialog = bootbox.prompt({
+                        title: "Manager's Password:",
+                        inputType: 'password',
+                        callback: function(result) {
+                            if (result !== null) {
+                                $.ajax({
+                                    url: "{% url 'validate_gm_password' %}",
+                                    type: 'GET',
+                                    data: {'password': result},
+                                    dataType: 'json',
+                                    success: function(data) {
+                                        console.log(data);
+                                        if (data) {
+                                            location.href = "{% url 'z_reading' %}";
+                                        }
+                                        else {
+                                            bootbox.alert("Incorrect manager's password. Z-Reading will not be generated.")
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
+                });
+            });
 
 
             $('#txtScan').keyup(function(e){
@@ -338,6 +370,12 @@
                 case 88: // x X-Reading
                     $('#txtScan').val('');
                     $('#id_xreading').click();
+                    break;
+
+                case 90: // z Z-Reading
+                    $('#txtScan').val('');
+                    $('#id_zreading').click();
+                    break;
 
                 case 187: // = CHECKOUT
                     $('#txtScan').val('');

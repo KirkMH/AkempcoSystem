@@ -247,8 +247,11 @@ class Store(models.Model):
     
     def __str__(self):
         return self.name
-    
-    def save(self, *args, **kwargs):
-        if Store.objects.count() == 1:
-            raise ValidationError("You can only have one store record.")
-        super().save(*args, **kwargs)
+
+    @property
+    def gm(self):
+        mngr = UserDetail.objects.filter(userType=UserType.GM).last()
+        if mngr:
+            return mngr.user
+        else:
+            return None

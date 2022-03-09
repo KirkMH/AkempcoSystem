@@ -266,11 +266,20 @@ class DiscountReport(models.Model):
         return f"{self.xreading} {self.discount} {self.total_vat} {self.total_discount}"
 
 
+class ZReadingValidation(models.Manager):
+    def is_report_generated_today(self):
+        return ZReading.objects.filter(xreading__created_at__date=datetime.date(datetime.now())).count() > 0
+
 class ZReading(models.Model):
-    xreading = models.ForeignKey(
+    xreading = models.OneToOneField(
         XReading,
         verbose_name=_('X-Reading'),
         on_delete=models.CASCADE
+    )
+    void_sales = models.DecimalField(
+        _('Beginning Balance'),
+        max_digits=10,
+        decimal_places=2
     )
     beginning_bal = models.DecimalField(
         _('Beginning Balance'),
@@ -283,9 +292,11 @@ class ZReading(models.Model):
         decimal_places=2
     )
     transaction_count = models.PositiveIntegerField(_('Transaction Count'))
+    objects = models.Manager()
+    validations = ZReadingValidation()
 
     def __str__(self):
-        return f"{self.xreading} from SI#{self.beginning_bal} to SI#{self.ending_bal}"
+        return f"{self.xreading} from SI#{self.xreading.first_si} to SI#{self.xreading.last_si}"
 
     @property
     def created_at(self):
@@ -297,17 +308,9 @@ class ZReading(models.Model):
 
 
 class SalesReport(models.Manager):
-    def generate_xreading(self, cashier):
-        last = cashier.userdetail.last_login
-        if last == None: return None
-
+    def generate_report(self, sales, cashier):
         # create a new x-reading report
         xreading = XReading()
-
-        # query all Sales that happened from last login to now
-        sales = Sales.objects.filter(transaction_datetime__gte=last)
-        print(f"last: {last}")
-        print(f"sales: {sales}")
 
         # SI numbers in the series
         xreading.first_si = SalesInvoice.objects.filter(sales__in=sales).aggregate(val=Min('id'))['val'] or 0
@@ -353,9 +356,6 @@ class SalesReport(models.Manager):
                     .filter(sales__in=sales, sales__status='Cancelled') \
                     .aggregate(val=Sum('value'))['val'] or 0
 
-        # for discounts
-        # discounts_granted = sales.order_by().values('discount_type').distinct()     
-        
         xreading.created_by = cashier
         xreading.save()
 
@@ -387,8 +387,23 @@ class SalesReport(models.Manager):
 
         return xreading
 
+    def generate_xreading(self, cashier):
+        last = cashier.userdetail.last_login
+        if last == None: return None
+        # query all Sales that happened from last login to now
+        sales = Sales.objects.filter(transaction_datetime__gte=last)
+        return self.generate_report(sales, cashier)
+        
+
     def generate_zreading(self, cashier):
-        xreading = self.generate_xreading(cashier)
+        # check if a z-reading was already generated
+        if ZReading.validations.is_report_generated_today():
+            # do not continue with the transaction
+            return False
+
+        sales = Sales.objects.filter(transaction_datetime__date=datetime.date(datetime.now()))
+        print(f"sales: {sales}")
+        xreading = self.generate_report(sales, cashier)
         if xreading == None: return None
 
         # Create a new Z-Reading
@@ -398,14 +413,19 @@ class SalesReport(models.Manager):
         # get beginning balance
         beg_bal = 0
         beg_trans_count = 0
+        beg_void = 0
         last_rec = ZReading.objects.last()
         if last_rec: 
-            beg_bal = last_rec.ending_balance
-            beg_trans_count = last_rec.transaction_count
+            beg_bal = last_rec.ending_balance or 0
+            beg_trans_count = last_rec.transaction_count or 0
+            beg_void = last_rec.void_sales or 0
 
-        zreading.beginning_balance = beg_bal
-        zreading.ending_balance = beg_bal + xreading.total_sales
+        print(f"beg_bal: {beg_bal}")
+        zreading.void_sales = beg_void + xreading.void_total
+        zreading.beginning_bal = beg_bal
+        zreading.ending_bal = beg_bal + xreading.total_sales
         zreading.transaction_count = beg_trans_count + xreading.transaction_count
+        print(f"zreading: {zreading}")
         zreading.save()
         return zreading
             

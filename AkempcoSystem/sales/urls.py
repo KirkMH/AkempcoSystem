@@ -31,4 +31,6 @@ urlpatterns = [
     path('pos/discount/validate', views.password_for_discount, name='validate_discount_pw'),
 
     path('pos/x_reading', views.x_reading, name='x_reading'),
+    path('pos/z_reading', views.z_reading, name='z_reading'),
+    path('pos/validate_gm_password', views.validate_gm_password, name='validate_gm_password'),
 ]

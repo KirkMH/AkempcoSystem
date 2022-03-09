@@ -17,7 +17,6 @@ from AkempcoSystem.decorators import user_is_allowed
 from admin_area.models import Feature, Store, UserDetail
 from .models import *
 from .forms import *
-from .models import Sales, SalesItem, SalesPayment
 
 
 # used by pagination
@@ -136,6 +135,13 @@ def update_creditor(request, pk):
 @login_required
 @user_is_allowed(Feature.TR_POS)
 def pos_view(request, pk=0):
+    # check first if POS transactions are still allowed
+    # not allowed when Z-Reading has been generated already
+    if ZReading.validations.is_report_generated_today():
+        # already generated, so this is an error
+        messages.error(request, "A Z-Reading has already been generated for today. No further POS transactions are allowed this time.")
+        return redirect('dashboard')
+
     # get the latest transaction in Sales
     sales = None
     try:
@@ -382,10 +388,39 @@ def reset_cart(request, pk):
     return JsonResponse(data, safe=False)
     
 
-
 @login_required
 @user_is_allowed(Feature.TR_POS)
 def x_reading(request):
     xreading = Sales.reports.generate_xreading(request.user)
     return render(request, 'sales/x_reading.html', {'xreading' : xreading})
-        
+
+
+@login_required
+@user_is_allowed(Feature.TR_POS)
+def validate_gm_password(request):
+    pw = request.GET.get('password', '')
+
+    # validate GM's password
+    approver = validate_password(pw)
+    valid = False
+    
+    if approver:
+        valid = True
+
+    return JsonResponse(valid, safe=False)
+    
+
+@login_required
+@user_is_allowed(Feature.TR_POS)
+def z_reading(request):
+    zreading = Sales.reports.generate_zreading(request.user)
+    if zreading == False:
+        # already generated; do not regenerate
+        messages.error(request, "A Z-Reading has already been generated for today. No further POS transactions are allowed this time.")
+        return redirect('dashboard')
+    else:
+        context = {
+            'xreading' : zreading.xreading,
+            'zreading' : zreading
+        }
+        return render(request, 'sales/z_reading.html', context)
