@@ -183,11 +183,12 @@
     <div class="fixedButton">
         <button class="btn btn-primary roundedFixedBtn">+</button>
         <div class="dropup-content">
-            <a class="btn btn-info" title="Put On-hold" id="id_hold"><i class="far fa-hand-paper"></i></a>
-            <a class="btn btn-info" title="Load On-hold" id="id_load"><i class="fas fa-arrow-down"></i></a>
+            <!-- <a class="btn btn-info" title="Put On-hold" id="id_hold"><i class="far fa-hand-paper"></i></a>
+            <a class="btn btn-info" title="Load On-hold" id="id_load"><i class="fas fa-arrow-down"></i></a> -->
             <a class="btn btn-info" title="Reset" id="id_reset"><span><i class="fas fa-eraser"></i></span></a>
             <a class="btn btn-info" title="Checkout" id="id_checkout"><i class="far fa-share-square"></i></a>
             <a class="btn btn-info" title="Open Receipt" id="id_open"><span><i class="fas fa-receipt"></i></span></a>
+            <a class="btn btn-info" title="Copy SI" id="id_copy"><span><i class="fas fa-copy"></i></span></a>
             <a class="btn btn-info" title="X-Reading" id="id_xreading"><i class="fas fa-file-alt"></i></a>
             <a class="btn btn-info" title="Z-Reading" id="id_zreading"><i class="fas fa-file-invoice"></i></a>
         </div>
@@ -325,6 +326,27 @@
                 });
             });
 
+            $('#id_copy').click(function() {
+                bootbox.prompt("Please enter the SI number to copy.", function(result){ 
+                    if (result !== null)  {
+                        let si = parseInt(result);
+                        if (si > 0) {
+                            console.log(si)
+                            $.ajax({
+                                url: "{% url 'copy_receipt' transaction.pk %}",
+                                type: 'GET',
+                                data: {'si_number': si},
+                                dataType: 'json',
+                                success: function(data) {
+                                    console.log(data);
+                                    location.reload();
+                                }
+                            })
+                        }
+                    }
+                });
+            });
+
 
             $('#txtScan').keyup(function(e){
                 const text = $('#txtScan').val();
@@ -332,6 +354,11 @@
                 switch(e.keyCode) {
                 case 13: // ENTER key
                     enterKey(text);
+                    break;
+
+                case 67: // c copy
+                    $('#txtScan').val('');
+                    $('#id_copy').click();
                     break;
 
                 case 72: // h HOLD
@@ -410,19 +437,5 @@
             });
         });
 
-        /*
-        Shortcuts:
-            = : checkout 187
-            d : discount 68
-            o : open si 79
-            s : search 83
-            m : member 77
-            w : walkin 87
-            h : hold 72
-            l : load 76
-            r : reset 82
-            x : x-reading 88
-            z : z-reading 90
-            */
     </script>
 {% endblock js %}

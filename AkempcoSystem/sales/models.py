@@ -588,6 +588,17 @@ class Sales(models.Model):
         else:
             return 1
 
+    def clone(self, current):
+        try:
+            items = SalesItem.objects.filter(sales=self)
+            for item in items:
+                item.pk = None
+                item.sales = current
+                item.save()
+            return True
+        except:
+            return False
+
     def reset(self):
         # delete all sales items under this transaction
         SalesItem.objects.filter(sales=self).delete()

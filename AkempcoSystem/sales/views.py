@@ -424,3 +424,23 @@ def z_reading(request):
             'zreading' : zreading
         }
         return render(request, 'sales/z_reading.html', context)
+
+
+@login_required
+@user_is_allowed(Feature.TR_POS)
+def copy_receipt(request, pk):
+    si = int(request.GET.get('si_number', 0))
+    data = False
+    if SalesInvoice.objects.filter(pk=si).exists():
+        sales = get_object_or_404(SalesInvoice, pk=si).sales
+        this = get_object_or_404(Sales, pk=pk)
+        if sales.clone(this):
+            messages.success(request, 'Items in the specified SI has been copied successfully.')
+            data = True
+        else:
+            messages.error(request, 'Failed to copy the specified SI.')
+
+    else:
+        messages.error(request, 'Cannot find specified SI number.')
+        
+    return JsonResponse(data, safe=False)
