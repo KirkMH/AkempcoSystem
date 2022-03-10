@@ -5,68 +5,7 @@
 
 {% block css %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/css/bootstrap-select.min.css"> 
-
-<style>
-    .receipt {
-        text-transform: uppercase;
-        padding-top: 20px;
-        padding-bottom: 20px;
-    }
-    .taller { transform: scaleY(1.5); }
-    .wrap40 {
-        inline-size: 40ch;
-        overflow-wrap: break-word;
-    }
-    .pre {
-        font-family: monospace;
-        white-space: pre-wrap;
-    }
-    .text-center {
-        text-align: center;
-    }
-    .c_qty {
-        display: inline-block;
-        width: 4ch;
-        text-align: right;
-        vertical-align: top;
-    }
-    .c_item {
-        display: inline-block;
-        width: 23ch;
-        text-align: left;
-        vertical-align: top;
-    }
-    .c_amt {
-        display: inline-block;
-        width: 11ch;
-        text-align: right;
-        vertical-align: top;
-    }
-    .c_desc {
-        display: inline-block;
-        width: 28ch;
-        text-align: left;
-    }
-    .c_value {
-        display: inline-block;
-        width: 12ch;
-        text-align: right;
-    }
-    .c_desc15 {
-        display: inline-block;
-        width: 15ch;
-        text-align: left;
-    }
-    .c_value25 {
-        display: inline-block;
-        width: 25ch;
-        text-align: right;
-    }
-    .btn-menu {
-        width: 100pt;
-        margin-left: 10pt;
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/receipt.css' %}">
 {% endblock css %}
     
 {% block breadcrumb %}
@@ -92,15 +31,15 @@
     </div>
     <div class="card-body">
 <div class="receipt wrap40 m-auto">
-<div class="text-center text-uppercase pre wrap40 taller">AKEMPCO Store</div>
+<div class="text-center text-uppercase pre wrap40 tallest">AKEMPCO Store</div>
 <div class="text-center pre wrap40">Operated by: AKEMPCO</div>
 <div class="text-center pre wrap40">{{ akempco.address }}</div>
 <div class="text-center pre wrap40">{{ akempco.registration_number }}</div>
 <div class="text-center pre wrap40">POS-SN:ABCD0123  MIN:20220225012345678</div>
 <div class="pre wrap40">----------------------------------------</div>
-<div id="reprint-text" class="text-center taller" {% if not transaction.last_reprint %}style="display: none;"{% endif %}>- - - R E - P R I N T E D - - -</div>
-<div id="cancel-text" class="text-center taller" {% if not transaction.is_cancelled %}style="display: none;"{% endif %}>- - - V O I D - - -</div>
-<div class="text-center taller pre wrap40">S a l e s   I n v o i c e</div>
+<div id="reprint-text" class="text-center tallest" {% if not transaction.last_reprint %}style="display: none;"{% endif %}>- - - R E - P R I N T E D - - -</div>
+<div id="cancel-text" class="text-center tallest" {% if not transaction.is_cancelled %}style="display: none;"{% endif %}>- - - V O I D - - -</div>
+<div class="text-center tallest pre wrap40">S a l e s   I n v o i c e</div>
 <div class="pre wrap40" {% if not transaction.is_cancelled %}style="display: none;"{% endif %}><div class="c_desc">Void Transaction No.:</div><div class="c_value">{{ transaction.sales_void.pk|seq_num }}</div></div>
 <div class="pre wrap40"><div class="c_desc"><span {% if not transaction.is_cancelled %}style="display: none;"{% endif %}>Reference </span>SI No.:</div><div class="c_value">{{ transaction.pk|seq_num }}</div>
 <div class="c_desc15">DATE/TIME:</div><div class="c_value25">{{ transaction.si_date|date:'m/d/Y'}} {{ transaction.si_time|date:'h:i:s A' }}</div>
@@ -114,9 +53,9 @@
 <div class="c_desc">Less: VAT</div><div class="c_value">-{{ transaction.sales.less_vat_total|currency }}</div>
 <div class="c_desc">  Sales without VAT</div><div class="c_value">{{ transaction.sales.sales_without_vat|currency }}  </div>{% endif %}
 <div class="c_desc">Less: {{ transaction.sales.discount_type.name }} DISC</div><div class="c_value">-{{ transaction.sales.less_discount_total|currency }}</div>{% endif %}
-<div class="c_desc taller">AMOUNT DUE:</div><div class="c_value taller">{{ transaction.sales.payable|currency }}</div>
+<div class="c_desc tallest">AMOUNT DUE:</div><div class="c_value tallest">{{ transaction.sales.payable|currency }}</div>
 {% for payment in payments %}<div class="c_desc">{{ payment.payment_mode }}:</div><div class="c_value">{{ payment.amount|currency }}</div>{% endfor %}
-<div class="c_desc taller">CHANGE:</div><div class="c_value taller">{{ transaction.sales.change|currency }}</div>
+<div class="c_desc tallest">CHANGE:</div><div class="c_value tallest">{{ transaction.sales.change|currency }}</div>
 ----------------------------------------
 <div class="c_desc">VATable Sales:</div><div class="c_value">{{ transaction.is_cancelled|yesno:'-, '}}{{ transaction.sales.vatable|currency }}</div>
 <div class="c_desc">VAT Amount:</div><div class="c_value">{{ transaction.is_cancelled|yesno:'-, '}}{{ transaction.sales.vat|currency }}</div>

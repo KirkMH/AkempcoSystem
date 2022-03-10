@@ -1,0 +1,80 @@
+.receipt {
+    text-transform: uppercase;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+.taller { transform: scaleY(1.2); }
+.tallest { transform: scaleY(1.5); }
+.wrap40 {
+    inline-size: 40ch;
+    overflow-wrap: break-word;
+}
+.pre {
+    font-family: monospace;
+    white-space: pre-wrap;
+}
+.text-center {
+    text-align: center;
+}
+.c_qty {
+    display: inline-block;
+    width: 4ch;
+    text-align: right;
+    vertical-align: top;
+}
+.c_item {
+    display: inline-block;
+    width: 23ch;
+    text-align: left;
+    vertical-align: top;
+}
+.c_amt {
+    display: inline-block;
+    width: 11ch;
+    text-align: right;
+    vertical-align: top;
+}
+.c_desc {
+    display: inline-block;
+    width: 28ch;
+    text-align: left;
+}
+.c_desc15 {
+    display: inline-block;
+    width: 15ch;
+    text-align: left;
+}
+.c_desc20 {
+    display: inline-block;
+    width: 20ch;
+    text-align: left;
+}
+.c_value {
+    display: inline-block;
+    width: 12ch;
+    text-align: right;
+}
+.c_value9 {
+    display: inline-block;
+    width: 9ch;
+    text-align: right;
+}
+.c_value16 {
+    display: inline-block;
+    width: 16ch;
+    text-align: right;
+}
+.c_value20 {
+    display: inline-block;
+    width: 20ch;
+    text-align: right;
+}
+.c_value25 {
+    display: inline-block;
+    width: 25ch;
+    text-align: right;
+}
+.btn-menu {
+    width: 100pt;
+    margin-left: 10pt;
+}

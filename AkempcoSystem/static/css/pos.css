@@ -1,0 +1,56 @@
+.btn-menu1 {
+    width: 120pt;
+}
+.btn-menu {
+    width: 100pt;
+    margin-left: 10pt;
+}
+.text-large {
+    font-size: larger;
+}
+.fixedButton{
+    position: fixed;
+    bottom: 50px;
+    right: 0px; 
+    padding: 20px;
+}
+.roundedFixedBtn{
+    height: 50px;
+    line-height: 35px;  
+    width: 50px;  
+    font-size: 2em;
+    font-weight: bold;
+    vertical-align: baseline;
+    border-radius: 50%;
+    text-align: center;
+    cursor: pointer;
+}
+/* Dropup content (Hidden by Default) */
+.dropup-content {
+    display: none;
+    position: absolute;
+    bottom: 80px;
+    min-width: 50px;
+    z-index: 1;
+}
+
+/* Links inside the dropup */
+.dropup-content a, .dropup-content button {
+    border-radius: 50%;
+    height: 50px;
+    font-size: 1.2em;
+    text-decoration: none;
+    display: block;
+    padding-top: 10px;
+    margin-bottom: 5px;
+}
+
+/* Show the dropup menu on hover */
+.fixedButton:hover .dropup-content {
+    display: block;
+}
+
+/* Change the background color of the dropup button when the dropup content is shown */
+.dropup:hover .dropbtn {
+    background-color: #2980B9;
+}
