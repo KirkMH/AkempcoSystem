@@ -1,7 +1,7 @@
 {% extends '../base.html' %}
 {% load static form_tags %}
 
-{% block page_title %}X-Reading{% endblock page_title %} 
+{% block page_title %}Z-Reading{% endblock page_title %} 
 
 {% block css %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/css/bootstrap-select.min.css"> 
@@ -11,7 +11,7 @@
 {% block breadcrumb %}
 <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
 <li class="breadcrumb-item"><a href="{% url 'pos' %}">Point-of-Sale</a></li>
-<li class="breadcrumb-item active">X-Reading</a></li>
+<li class="breadcrumb-item active">Z-Reading</a></li>
 {% endblock breadcrumb %}
 
 {% block main_content %}
@@ -20,7 +20,7 @@
         <div class="row">
             <div class="col-lg-12 col-md-12 text-center">
                 <button class="btn btn-primary btn-menu" id="print">Print</button>
-                <a class="btn btn-secondary btn-menu" href="{% url 'pos' %}">POS</a>
+                <a class="btn btn-secondary btn-menu" href="{% url 'dashboard' %}">Dashboard</a>
             </div>
         </div>
     </div>

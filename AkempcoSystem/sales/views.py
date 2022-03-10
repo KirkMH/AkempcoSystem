@@ -371,6 +371,16 @@ class SalesDiscountUpdateView(BSModalUpdateView):
     model = Sales
     form_class = DiscountForm
 
+    def post(self, request, *args, **kwargs):
+        my_form = self.form_class(self.request.POST)
+
+        if my_form.is_valid():
+            my_form.save()
+            return super().post(request, args, kwargs)
+        else:
+            messages.error(self.request, "Please fill-in all the required fields.")
+            return redirect('checkout', pk=self.kwargs['pk'])
+
     def get_success_url(self):
         print(self.object)
         self.object.apply_discount()

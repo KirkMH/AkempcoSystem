@@ -73,6 +73,10 @@ class DiscountForm(BSModalModelForm):
         
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['discount_type'].required = True
+        self.fields['customer_name'].required = True
+        self.fields['customer_address'].required = True
+        self.fields['customer_id_card'].required = True
 
         self.helper = FormHelper()
         self.helper.layout = Layout(

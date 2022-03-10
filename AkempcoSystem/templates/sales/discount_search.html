@@ -2,6 +2,7 @@
 {% load humanize %}
 {% load form_tags %}
 {% load crispy_forms_tags %}
+<link rel="stylesheet" href="{% static 'css/asterisk_on_required.css' %}">
 
 <form id="search_discount_form" method='post' class="form" role="form">
     <div class="modal-header">
@@ -12,6 +13,11 @@
         {% csrf_token %}
         
         <div class="row">
+            <div class="col-lg-12 col-md-12 col-sm-12">
+                <h4 class="card-title">Please fill in all the fields marked with an <label class="required">asterisk</label>.</h4>
+            </div>
+        </div>
+        <div class="row">
             <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 form-group">
                 {% crispy form %}
             </div>
@@ -19,7 +25,7 @@
         
         <div class="row">
             <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 form-group">
-                <label for="id_password">Manager's Password:</label>
+                <label for="id_password">Manager's Password<span class="asteriskField">*</span></label>
                 <input type="password" name="id_password" id="id_password" class="form-control">
             </div>
         </div>

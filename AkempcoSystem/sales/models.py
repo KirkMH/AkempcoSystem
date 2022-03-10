@@ -346,9 +346,10 @@ class SalesReport(models.Manager):
         xreading.items_sold = SalesItem.objects \
                     .filter(sales__in=sales, sales__status='Completed') \
                     .aggregate(val=Sum('quantity'))['val'] or 0
-        xreading.transaction_count = SalesItem.objects \
+        t_count = SalesItem.objects \
                     .filter(sales__in=sales, sales__status='Completed') \
                     .count() - 1
+        xreading.transaction_count = t_count if t_count >= 0 else 0
         xreading.void_count = SalesVoid.objects \
                     .filter(sales_invoice__sales__in=sales) \
                     .count()
@@ -390,8 +391,10 @@ class SalesReport(models.Manager):
     def generate_xreading(self, cashier):
         last = cashier.userdetail.last_login
         if last == None: return None
+        print(last)
         # query all Sales that happened from last login to now
-        sales = Sales.objects.filter(transaction_datetime__gte=last)
+        sales = Sales.objects.filter(salesinvoice__sales_datetime__gte=last)
+        print(f"x-reading sales: {sales}")
         return self.generate_report(sales, cashier)
         
 
@@ -401,7 +404,9 @@ class SalesReport(models.Manager):
             # do not continue with the transaction
             return False
 
-        sales = Sales.objects.filter(transaction_datetime__date=datetime.date(datetime.now()))
+        sales = Sales.objects.filter(
+            salesinvoice__sales_datetime__date=datetime.date(datetime.now())
+        )
         print(f"sales: {sales}")
         xreading = self.generate_report(sales, cashier)
         if xreading == None: return None
@@ -416,7 +421,7 @@ class SalesReport(models.Manager):
         beg_void = 0
         last_rec = ZReading.objects.last()
         if last_rec: 
-            beg_bal = last_rec.ending_balance or 0
+            beg_bal = last_rec.ending_bal or 0
             beg_trans_count = last_rec.transaction_count or 0
             beg_void = last_rec.void_sales or 0
 
@@ -770,9 +775,14 @@ class Sales(models.Model):
 
     def set_customer(self, who):
         self.customer = who
-        self.customer_name = who.name
-        self.customer_address = who.address
-        self.customer_tin = who.tin
+        if who:
+            self.customer_name = who.name
+            self.customer_address = who.address
+            self.customer_tin = who.tin
+        else:
+            self.customer_name = None
+            self.customer_address = None
+            self.customer_tin = None
         self.save()
 
     def get_customer(self):
