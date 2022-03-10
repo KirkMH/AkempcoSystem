@@ -96,9 +96,9 @@
                 <div class="row">
                     <div class="col-lg-5 col-md-12">
                         <div class="row mb-1">
-                            <div class="col-lg-3 col-md-6 text-large">SO #</div>
+                            <div class="col-lg-3 col-md-6 text-large">SI #</div>
                             <div class="col-lg-9 col-md-6 text-large">
-                                <input id="txtSI" type="text" class="form-control" value="{{ transaction.pk|seq_num }}" autocomplete="false" disabled>
+                                <input id="txtSI" type="text" class="form-control" value="{{ transaction.get_next_si|seq_num }}" autocomplete="false" disabled>
                             </div>
                         </div>
                         <div class="row mb-1">

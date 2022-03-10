@@ -582,9 +582,8 @@ class Sales(models.Model):
         return SalesItem.objects.filter(sales=self, product__is_buyer_info_needed=True).count() > 0
 
     def get_next_si(self):
-        si = SalesInvoice.objects.all()[:1]
+        si = SalesInvoice.objects.all().first()
         if si:
-            si = si.first()
             return si.pk + 1
         else:
             return 1
