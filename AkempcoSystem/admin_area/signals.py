@@ -11,6 +11,7 @@ def log_user_login(sender, request, user, **kwargs):
     log.user = user
     log.action_taken = 'logged in'
     log.save()
+    request.session['logged_user_pk'] = user.pk
  
  
 @receiver(user_login_failed)

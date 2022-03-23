@@ -24,6 +24,13 @@
   <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css">
 
   {% block css %}{% endblock css %}
+  
+  <!-- jQuery -->
+  <script src="{% static 'plugins/jquery/jquery.min.js' %}"></script>
+  <!-- jQuery UI 1.11.4 -->
+  <script src="{% static 'plugins/jquery-ui/jquery-ui.min.js' %}"></script>
+  
+  {% block extra_header %}{% endblock extra_header %}  
     
 </head>
 <body class="hold-transition sidebar-mini layout-fixed">
@@ -176,10 +183,6 @@
 </div>
 <!-- ./wrapper -->
 
-<!-- jQuery -->
-<script src="{% static 'plugins/jquery/jquery.min.js' %}"></script>
-<!-- jQuery UI 1.11.4 -->
-<script src="{% static 'plugins/jquery-ui/jquery-ui.min.js' %}"></script>
 <!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
 <script>
   $.widget.bridge('uibutton', $.ui.button)
@@ -195,6 +198,7 @@
 <script src="{% static 'js/component-selector.js' %}"></script>
 <!-- <script src="{% static 'js/notif-loader.js' %}"></script> -->
 <script src="{% static 'js/toastr-loader.js' %}"></script>
+<script src="{% static 'js/currency-format.js' %}"></script>
 
 <script>
   $(document).ready(function(){

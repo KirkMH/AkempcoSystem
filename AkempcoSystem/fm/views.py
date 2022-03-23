@@ -9,6 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.db.models import Q
 
+from django_serverside_datatable.views import ServerSideDatatableView
 from AkempcoSystem.decorators import user_is_allowed
 from admin_area.models import Feature
 from .models import *
@@ -42,30 +43,17 @@ def add_search_key(request, context):
 #   UOM
 ################################
 
+@login_required()
+@user_is_allowed(Feature.FM_UOM)
+def uom_list(request):
+    return render(request, 'fm/uom_list.html')
+
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.FM_UOM), name='dispatch')
-class UomListView(ListView):
-    model = UnitOfMeasure
-    context_object_name = 'uoms'
-    template_name = "fm/uom_list.html"
-    paginate_by = MAX_ITEMS_PER_PAGE
+class UomDTListView(ServerSideDatatableView):
+	queryset = UnitOfMeasure.objects.all()
+	columns = ['pk', 'uom_description', 'status']
 
-    def get_queryset(self):
-        # check if the user searched for something
-        key = get_index(self.request, "table_search")
-        object_list = self.model.objects.all()
-        if key:
-            object_list = object_list.filter(
-                Q(uom_description__icontains=key) |
-                Q(status__icontains=key)
-            )
-        return object_list
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        return add_search_key(self.request, context)    
-    
-    
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.FM_UOM), name='dispatch')
 class UomCreateView(CreateView):
@@ -105,29 +93,16 @@ class UomUpdateView(SuccessMessageMixin, UpdateView):
 #   Category
 ################################
 
+@login_required()
+@user_is_allowed(Feature.FM_CATEGORY)
+def category_list(request):
+    return render(request, 'fm/category_list.html')
+
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.FM_CATEGORY), name='dispatch')
-class CategoryListView(ListView):
-    model = Category
-    context_object_name = 'categories'
-    template_name = "fm/category_list.html"
-    paginate_by = MAX_ITEMS_PER_PAGE
-
-    def get_queryset(self):
-        # check if the user searched for something
-        key = get_index(self.request, "table_search")
-        object_list = self.model.objects.all()
-        if key:
-            object_list = object_list.filter(
-                Q(category_description__icontains=key) |
-                Q(status__icontains=key)
-            )
-        return object_list
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        return add_search_key(self.request, context)    
-    
+class CategoryDTListView(ServerSideDatatableView):
+	queryset = Category.objects.all()
+	columns = ['pk', 'category_description', 'status']
     
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.FM_UOM), name='dispatch')
@@ -167,33 +142,16 @@ class CategoryUpdateView(SuccessMessageMixin, UpdateView):
 #   Supplier
 ################################
 
+@login_required()
+@user_is_allowed(Feature.FM_SUPPLIER)
+def supplier_list(request):
+    return render(request, 'fm/supplier_list.html')
+
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.FM_SUPPLIER), name='dispatch')
-class SupplierListView(ListView):
-    model = Supplier
-    context_object_name = 'suppliers'
-    template_name = "fm/supplier_list.html"
-    paginate_by = MAX_ITEMS_PER_PAGE
-
-    def get_queryset(self):
-        # check if the user searched for something
-        key = get_index(self.request, "table_search")
-        object_list = self.model.objects.all()
-        if key:
-            object_list = object_list.filter(
-                Q(supplier_name__icontains=key) |
-                Q(address__icontains=key) |
-                Q(contact_person__icontains=key) |
-                Q(contact_number__icontains=key) |
-                Q(email__icontains=key) |
-                Q(status__icontains=key)
-            )
-        return object_list
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        return add_search_key(self.request, context)       
-
+class SupplierDTListView(ServerSideDatatableView):
+	queryset = Supplier.objects.all()
+	columns = ['pk', 'supplier_name', 'address', 'contact_person', 'contact_info', 'email', 'less_vat', 'status']
 
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.FM_SUPPLIER), name='dispatch')
@@ -240,6 +198,18 @@ class SupplierUpdateView(SuccessMessageMixin, UpdateView):
 ################################
 #   Product
 ################################
+
+@login_required()
+@user_is_allowed(Feature.FM_PRODUCT)
+def product_list(request):
+    return render(request, 'fm/product_list.html')
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.FM_PRODUCT), name='dispatch')
+class ProductDTListView(ServerSideDatatableView):
+	queryset = Product.objects.all()
+	columns = ['pk', 'barcode', 'full_description', 'category__category_description', 'wholesale_qty', 'is_consignment', 'status']
+
 
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.FM_PRODUCT), name='dispatch')

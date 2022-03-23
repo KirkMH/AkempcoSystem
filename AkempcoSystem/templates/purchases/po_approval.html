@@ -1,6 +1,10 @@
 {% extends '../base.html' %}
 {% load static form_tags %}
 
+{% block extra_header %}
+{% include '../includes/datatable.html' %}    
+{% endblock extra_header %}
+
 {% block css %}
     <link rel="stylesheet" href="{% static 'css/table_setup.css' %}">
     <style>
@@ -32,15 +36,11 @@
             <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
                 <a href="{% url 'purchase_suppliers_all' %}" class="btn btn-primary">View All</a>
             </div>
-            
-            <div class="col-lg-8 col-md-8 col-sm-8 col-xs-8">
-                {% include 'includes/search_tool.html' %}
-            </div>
             </div>
         </div>
     </form>
     <div class="card-body table-responsive">
-        <table class="table table-hover table-head-fixed table-sm">
+        <table id="dtApproval" class="table table-hover table-head-fixed table-sm">
             <thead>
                 <tr>
                     <th width="10%">Action</th>
@@ -94,9 +94,6 @@
             </tbody>
         </table>
     </div>
-    <div class="card-footer">
-        {% include 'includes/pagination.html' %}
-    </div>
 </div>
 {% endblock main_content %}
 
@@ -104,6 +101,10 @@
 {% block js %}
     <script>
         $(document).ready(function() {
+            $("#dtApproval").DataTable({
+                order: [[1, 'desc']],
+            });
+            
             $("#menu_trans").addClass("menu-open")
             $("#menu_trans_purchases").addClass("active")
         })

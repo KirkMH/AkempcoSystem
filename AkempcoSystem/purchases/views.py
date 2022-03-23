@@ -1,4 +1,4 @@
-from django.shortcuts import redirect, reverse, get_object_or_404
+from django.shortcuts import redirect, reverse, get_object_or_404, render
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.db.models import Q
 from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView, BSModalDeleteView
@@ -11,15 +11,13 @@ from AkempcoSystem.decorators import user_is_allowed
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 
+from django_serverside_datatable.views import ServerSideDatatableView
 from admin_area.models import Feature, Store
 from fm.views import get_index, add_search_key
 from fm.models import Product, Supplier
 from .models import PurchaseOrder, PO_Product, PO_PROCESS
 from .forms import PurchaseOrderForm, PO_ProductForm
 
-
-# for pagination
-MAX_ITEMS_PER_PAGE = 10
 
 def get_po_approval_count(user):
     count = 0
@@ -30,15 +28,39 @@ def get_po_approval_count(user):
 
 
 # Loads a list of PO for approval if necessary
+@login_required()
+@user_is_allowed(Feature.TR_PURCHASES)
+def purchasesupplier_list(request):
+    template = ""
+    count, step = get_po_approval_count(request.user)
+    if count > 0 and request.user.userdetail.userType != 'Purchaser':
+        return redirect('po_approval')
+    else:
+        return redirect('purchase_suppliers_all')
+
+
+# List of Suppliers to choose from
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
-class PurchaseSupplierListView(ListView):
+class POSupplierListView(ListView):
+    model = Supplier
     context_object_name = 'objects'
-    paginate_by = MAX_ITEMS_PER_PAGE
+    template_name = "purchases/purchase_supplier.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["is_po_approver"] = PO_PROCESS.is_po_approver(self.request.user)
+        return context
+            
+
+# List of Suppliers to choose from
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
+class ApprovalListView(ListView):
+    context_object_name = 'objects'
+    template_name = "purchases/po_approval.html"
 
     def get_queryset(self):
-        # check if the user searched for something
-        key = get_index(self.request, "table_search")
         count, step = get_po_approval_count(self.request.user)
         object_list = None
         if count > 0:
@@ -47,48 +69,8 @@ class PurchaseSupplierListView(ListView):
             elif self.request.user.userdetail.userType != 'Purchaser':
                 object_list = PurchaseOrder.objects.filter(process_step=step)
         if object_list == None:
-            object_list = Supplier.objects.all()
-        if key:
-            object_list = object_list.filter(
-                Q(supplier_name__icontains=key)
-            )
+            object_list = PurchaseOrder.objects.all()
         return object_list
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        return add_search_key(self.request, context)   
-
-    def get_template_names(self):
-        count, step = get_po_approval_count(self.request.user)
-        if count > 0 and self.request.user.userdetail.userType != 'Purchaser':
-            return ["purchases/po_approval.html"]
-        else:
-            return ["purchases/purchase_supplier.html"]
-            
-
-# List of Suppliers to choose from
-@method_decorator(login_required, name='dispatch')
-@method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
-class POSupplierListView(ListView):
-    model = Supplier
-    context_object_name = 'objects'
-    paginate_by = MAX_ITEMS_PER_PAGE
-    template_name = "purchases/purchase_supplier.html"
-
-    def get_queryset(self):
-        # check if the user searched for something
-        key = get_index(self.request, "table_search")
-        object_list = self.model.objects.all()
-        if key:
-            object_list = object_list.filter(
-                Q(supplier_name__icontains=key)
-            )
-        return object_list
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["is_po_approver"] = PO_PROCESS.is_po_approver(self.request.user)
-        return add_search_key(self.request, context)    
 
 
 # PO List of selected supplier

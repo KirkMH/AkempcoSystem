@@ -10,6 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib.auth.hashers import check_password # for overriding validation
 
+from django_serverside_datatable.views import ServerSideDatatableView
 from django.contrib.auth.models import User
 from fm.views import get_index, add_search_key
 from fm.models import Product
@@ -27,32 +28,16 @@ MAX_ITEMS_PER_PAGE = 10
 #   Creditor FM
 ################################
 
+@login_required()
+@user_is_allowed(Feature.FM_CREDITOR)
+def creditor_list(request):
+    return render(request, 'sales/creditor_list.html')
+
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.FM_CREDITOR), name='dispatch')
-class CreditorListView(ListView):
-    model = Creditor
-    context_object_name = 'creditors'
-    template_name = "sales/creditor_list.html"
-    paginate_by = MAX_ITEMS_PER_PAGE
-
-    def get_queryset(self):
-        # check if the user searched for something
-        key = get_index(self.request, "table_search")
-        object_list = self.model.objects.all()
-        if key:
-            object_list = object_list.filter(
-                Q(name__icontains=key) |
-                Q(address__icontains=key) |
-                Q(creditor_type__icontains=key) |
-                Q(credit_limit__icontains=key) |
-                Q(status__icontains=key)
-            )
-        return object_list
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        return add_search_key(self.request, context)    
-    
+class CreditorDTListView(ServerSideDatatableView):
+	queryset = Creditor.objects.all()
+	columns = ['pk', 'name', 'address', 'creditor_type', 'credit_limit', 'active']
     
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.FM_CREDITOR), name='dispatch')

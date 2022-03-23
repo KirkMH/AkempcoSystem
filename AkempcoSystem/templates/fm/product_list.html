@@ -1,6 +1,10 @@
 {% extends '../base.html' %}
 {% load static form_tags %}
 
+{% block extra_header %}
+{% include '../includes/datatable.html' %}    
+{% endblock extra_header %}
+
 {% block page_title %}Product list{% endblock page_title %}
 
 {% block breadcrumb %}
@@ -16,53 +20,24 @@
             <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                 <a href="{% url 'new_product' %}" class="btn btn-primary">New</a>
             </div>
-            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                {% include 'includes/search_tool.html' %}
-            </div>
             </div>
         </div>
     </form>
     <div class="card-body table-responsive">
-        <table class="table table-hover table-head-fixed table-sm">
+        <table id="dtProduct" class="table table-hover table-head-fixed table-sm">
             <thead>
                 <tr>
                     <th class="text-center" width="10%">Action</th>
                     <th class="text-center">Barcode</th>
-                    <th class="text-center">Short Name</th>
+                    <th class="text-center">Description</th>
                     <th class="text-center">Category</th>
                     <th class="text-center" width="15%">Wholesale Qty</th>
                     <th class="text-center">Consigned?</th>
                     <th class="text-center">Status</th>
                 </tr>
             </thead>
-            <tbody>
-                    
-                {% if not products %}
-                    <tr><td colspan="7" class="text-center">No data found.</td></tr>
-                {% else %}
-                    
-                {% for product in products %}
-                    <tr>
-                        <td class="text-center">
-                            <a href="{% url 'product_detail' product.pk %}" title="View details"><i class="far fa-eye"></i></a>
-                            <a href="{% url 'edit_product' product.pk %}" title="Edit"><i class="far fa-edit"></i></a>
-                        </td>
-                        <td>{{ product.barcode }}</td>
-                        <td>{{ product.short_name }}</td>
-                        <td>{{ product.category.category_description }}</td>
-                        <td class="text-center">{{ product.wholesale_qty }}</td>
-                        <td class="text-center">{{ product.is_consigned }}</td>
-                        <td class="text-center">{{ product.status }}</td>
-                    </tr>
-                {% endfor %}
-
-                {% endif %}
-            </tbody>
+            <tbody></tbody>
         </table>
-    </div>
-        
-    <div class="card-footer">
-        {% include 'includes/pagination.html' %}
     </div>
 </div>
 {% endblock main_content %}
@@ -71,6 +46,37 @@
 {% block js %}
     <script>
         $(document).ready(function() {
+            $("#dtProduct").DataTable({
+                serverSide: true,
+                sAjaxSource: "{% url 'product_dtlist' %}", 
+                columns: [
+                    {   
+                        data: 0,
+                        render: function (data) {
+                            let links = '<a href="product/' + data + '/detail" title="Detail"><i class="far fa-eye"></i></a> | '+
+                                        '<a href="product/' + data + '/edit" title="Edit"><i class="far fa-edit"></i></a>';
+
+                            return links;
+                        },
+                        className: 'text-center'
+                    },
+                    {name: "barcode", data: 1},
+                    {name: "description", data: 2},
+                    {name: "category", data: 3},
+                    {name: "wholesale_qty", data: 4, className: 'text-center'},
+                    {
+                        name: "consigned", 
+                        data: 5,
+                        render: function(data) {
+                            return (data === true) ? 'Yes' : 'No'
+                        },
+                        className: 'text-center'
+                    },
+                    {name: "status", data: 6},
+                ],
+                order: [[2, 'asc']],
+            });
+            
             $("#menu_fm").addClass("menu-open")
             $("#menu_fm_product").addClass("active")
         })

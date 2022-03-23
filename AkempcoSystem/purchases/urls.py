@@ -3,8 +3,9 @@ from . import views
 
 
 urlpatterns = [
-    path('', views.PurchaseSupplierListView.as_view(), name='purchase_suppliers'),
-    path('all', views.POSupplierListView.as_view(), name='purchase_suppliers_all'),
+    path('list', views.purchasesupplier_list, name='purchase_suppliers'),
+    path('list/all/supplier', views.POSupplierListView.as_view(), name='purchase_suppliers_all'),
+    path('list/approval', views.ApprovalListView.as_view(), name='po_approval'),
     path('supplier/<int:pk>/po', views.PurchaseSupplierDetailView.as_view(), name='po_list'),
     path('supplier/<int:pk>/po/create', views.POCreateView.as_view(), name='po_create'),
     path('po/<int:pk>/edit', views.POUpdateView.as_view(), name='po_edit'),

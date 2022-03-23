@@ -1,6 +1,10 @@
 {% extends '../base.html' %}
 {% load static form_tags %}
 
+{% block extra_header %}
+{% include '../includes/datatable.html' %}    
+{% endblock extra_header %}
+
 {% block page_title %}List of Members and Creditors{% endblock page_title %}
 
 {% block breadcrumb %}
@@ -16,14 +20,11 @@
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                     <a href="{% url 'new_cred' %}" class="btn btn-primary">New</a>
                 </div>
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                    {% include 'includes/search_tool.html' %}
-                </div>
                 </div>
             </div>
         </form>
         <div class="card-body table-responsive">
-            <table class="table table-hover table-head-fixed table-sm">
+            <table id="dtCreditor" class="table table-hover table-head-fixed table-sm">
                 <thead>
                     <tr>
                         <th class="text-center" width="10%">Action</th>
@@ -31,40 +32,11 @@
                         <th>Address</th>
                         <th class="text-center">Type</th>
                         <th class="text-right">Credit Limit</th>
-                        <th class="text-center">Active</th>
+                        <th class="text-center">Status</th>
                     </tr>
                 </thead>
-                <tbody>
-                    
-                    {% if not creditors %}
-                        <tr><td colspan="6" class="text-center">No data found.</td></tr>
-                    {% else %}
-                        
-                    {% for cred in creditors %}
-                        <tr>
-                            <td class="text-center"><a href="{% url 'edit_cred' cred.pk %}" title="Edit"><i class="far fa-edit"></i></a></td>
-                            <td>{{ cred.name }}</td>
-                            <td>{{ cred.address }}</td>
-                            <td class="text-center">
-                                <span class="badge {% if cred.creditor_type == 'Member' %}badge-primary{% else %}badge-dark{% endif %}">{{ cred.creditor_type }}</span>
-                            </td>
-                            <td class="text-right">{{ cred.credit_limit|peso }}</td>
-                            <td class="text-center">
-                                {% if cred.active %}
-                                    <span class="badge badge-pill badge-success">Yes</span>
-                                {% else %}
-                                    <span class="badge badge-pill badge-danger">No</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                        
-                    {% endif %}
-                </tbody>
+                <tbody></tbody>
             </table>
-        </div>
-        <div class="card-footer">
-            {% include 'includes/pagination.html' %}
         </div>
     </div>
 
@@ -74,6 +46,47 @@
 {% block js %}
     <script>
         $(document).ready(function() {
+            $("#dtCreditor").DataTable({
+                serverSide: true,
+                sAjaxSource: "{% url 'cred_dtlist' %}", 
+                columns: [
+                    {   
+                        data: 0,
+                        render: function (data) {
+                            return '<a href="creditor/' + data + '/edit" title="Edit"><i class="far fa-edit"></i></a>';
+                        },
+                        className: 'text-center'
+                    },
+                    {name: "name", data: 1},
+                    {name: "address", data: 2},
+                    {
+                        name: "type", 
+                        data: 3,
+                        className: 'text-center',
+                        render: function (data) {
+                            return (data === 'Member') ? '<span class="badge badge-pill badge-primary">Member</span>' : '<span class="badge badge-pill badge-dark">Group</span>';
+                        }
+                    },
+                    {
+                        name: "credit_limit", 
+                        data: 4, 
+                        className: 'text-right',
+                        render: function (data) {
+                            return peso.format(data);
+                        }
+                    },
+                    {
+                        name: "status", 
+                        data: 5,
+                        className: 'text-center',
+                        render: function (data) {
+                            return (data === true) ? '<span class="badge badge-pill badge-success">Active</span>' : '<span class="badge badge-pill badge-danger">Inactive</span>';
+                        }
+                    },
+                ],
+                order: [[1, 'asc']],
+            });
+            
             $("#menu_fm").addClass("menu-open")
             $("#menu_fm_cred").addClass("active")
         })

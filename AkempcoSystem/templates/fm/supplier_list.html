@@ -1,6 +1,10 @@
 {% extends '../base.html' %}
 {% load static %}
 
+{% block extra_header %}
+{% include '../includes/datatable.html' %}    
+{% endblock extra_header %}
+
 {% block page_title %}Supplier list{% endblock page_title %}
 
 {% block breadcrumb %}
@@ -16,14 +20,11 @@
             <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                 <a href="{% url 'new_supplier' %}" class="btn btn-primary">New</a>
             </div>
-            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                {% include 'includes/search_tool.html' %}
-            </div>
             </div>
         </div>
     </form>
     <div class="card-body table-responsive">
-        <table class="table table-hover table-head-fixed table-sm">
+        <table id="dtSupplier" class="table table-hover table-head-fixed table-sm">
                 <thead>
                     <tr>
                         <th class="text-center">Action</th>
@@ -36,35 +37,8 @@
                         <th>Status</th>
                     </tr>
                 </thead>
-                <tbody>
-                    
-                    {% if not suppliers %}
-                        <tr><td colspan="8" class="text-center">No data found.</td></tr>
-                    {% else %}
-                        
-                    {% for supplier in suppliers %}
-                        <tr>
-                            <td class="text-center">
-                                <a href="{% url 'supplier_detail' supplier.pk %}" title="View details"><i class="far fa-eye"></i></a>
-                                <a href="{% url 'edit_supplier' supplier.pk %}" title="Edit"><i class="far fa-edit"></i></a>
-                            </td>
-                            <td>{{ supplier.supplier_name }}</td>
-                            <td>{{ supplier.address }}</td>
-                            <td>{{ supplier.contact_person }}</td>
-                            <td>{{ supplier.contact_info }}</td>
-                            <td>{{ supplier.email }}</td>
-                            <td class="text-center">{{ supplier.less_vat|yesno:"Yes, No" }}</td>
-                            <td>{{ supplier.status }}</td>
-                        </tr>
-                    {% endfor %}
-
-                    {% endif %}
-                </tbody>
+                <tbody></tbody>
             </table>
-        </div>
-        
-        <div class="card-footer">
-            {% include 'includes/pagination.html' %}
         </div>
     </div>
     
@@ -74,6 +48,38 @@
 {% block js %}
     <script>
         $(document).ready(function() {
+            $("#dtSupplier").DataTable({
+                serverSide: true,
+                sAjaxSource: "{% url 'supplier_dtlist' %}", 
+                columns: [
+                    {   
+                        data: 0,
+                        render: function (data) {
+                            let links = '<a href="supplier/' + data + '/detail" title="Detail"><i class="far fa-eye"></i></a> | '+
+                                        '<a href="supplier/' + data + '/edit" title="Edit"><i class="far fa-edit"></i></a>';
+
+                            return links;
+                        },
+                        className: 'text-center'
+                    },
+                    {name: "name", data: 1},
+                    {name: "address", data: 2},
+                    {name: "contact_person", data: 3},
+                    {name: "contact_info", data: 4},
+                    {name: "email", data: 5},
+                    {
+                        name: "deducts_vat", 
+                        data: 6,
+                        render: function(data) {
+                            return (data === true) ? 'Yes' : 'No'
+                        },
+                        className: 'text-center'
+                    },
+                    {name: "status", data: 7},
+                ],
+                order: [[1, 'asc']],
+            });
+            
             $("#menu_fm").addClass("menu-open")
             $("#menu_fm_supplier").addClass("active")
         })

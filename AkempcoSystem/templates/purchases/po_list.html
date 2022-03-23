@@ -32,10 +32,6 @@
             <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
                 <a href="{% url 'po_create' supplier.pk %}" class="btn btn-primary">New Purchase Order</a>
             </div>
-            
-            <div class="col-lg-8 col-md-8 col-sm-8 col-xs-8">
-                {% include 'includes/search_tool.html' %}
-            </div>
             </div>
         </div>
     </form>
@@ -91,9 +87,6 @@
                     
             </tbody>
         </table>
-    </div>
-    <div class="card-footer">
-        {% include 'includes/pagination.html' %}
     </div>
 </div>
 {% endblock main_content %}
