@@ -1,0 +1,239 @@
+{% extends 'member/base.html' %}
+{% load static form_tags %}
+
+
+{% block wrapper %}
+
+  <!-- Preloader -->
+  <div class="preloader flex-column justify-content-center align-items-center">
+    <img class="animation__shake" src="{% static 'img/logo.png' %}" alt="AKEMPCO SaInSys" height="60" width="60">
+  </div>
+
+{% endblock wrapper %}
+  
+{% block dashboard %}active{% endblock dashboard %}
+  
+{% block page_title %}Member Dashboard{% endblock page_title %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="#">Home</a></li>
+    <li class="breadcrumb-item active">Dashboard</li>
+{% endblock breadcrumb %}
+    
+
+{% block main_content %}   
+
+    <!-- Main content -->
+    <section class="content">
+      <div class="container-fluid">
+        <!-- Small boxes (Stat box) -->
+        <div class="row">
+          <div class="col-lg-3 col-6">
+            <!-- small box -->
+            <div class="small-box bg-info">
+              <div class="inner">
+                <h3>{{ transaction_count }}</h3>
+                <p>Transaction Count</p>
+              </div>
+              <div class="icon">
+                <i class="ion ion-bag"></i>
+              </div>
+              <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+          </div>
+          <!-- ./col -->
+          <div class="col-lg-3 col-6">
+            <!-- small box -->
+            <div class="small-box bg-success">
+              <div class="inner">
+                <h3><sup style="font-size: 20px; margin-right: 10px;">₱</sup>{{ total_amount|currency }}</h3>
+                <p>Total Amount</p>
+              </div>
+              <div class="icon">
+                <i class="fas fa-money-check"></i>
+              </div>
+              <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+          </div>
+          <div class="col-lg-3 col-6">
+            <!-- small box -->
+            <div class="small-box bg-danger">
+              <div class="inner">
+                <h3><sup style="font-size: 20px; margin-right: 10px;">₱</sup>{{ payable|currency }}</h3>
+                <p>Payable</p>
+              </div>
+              <div class="icon">
+                <i class="fas fa-money-bill"></i>
+              </div>
+              <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+          </div>
+          <!-- ./col -->
+          <!-- ./col -->
+          <div class="col-lg-3 col-6">
+            <!-- small box -->
+            <div class="small-box bg-warning">
+              <div class="inner">
+                <h3>{{ charge_ratio|currency }}<sup style="font-size: 20px">%</sup></h3>
+                <p>Charged Purchase Ratio</p>
+              </div>
+              <div class="icon">
+                <i class="ion ion-pie-graph"></i>
+              </div>
+              <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+          </div>
+          <!-- ./col -->
+        </div>
+        <!-- /.row -->
+        <!-- Main row -->
+        <div class="row">
+          <!-- Left col -->
+          <section class="col-lg-6 connectedSortable">
+            <div class="card card-primary border border-primary">
+              <div class="card-header border-0">
+                <h3 class="card-title">Transaction History</h3>
+                <div class="card-tools">
+                  <a href="#" class="btn btn-tool btn-sm">
+                    <i class="fas fa-bars"></i>
+                  </a>
+                </div>
+              </div>
+              <div class="card-body table-responsive p-0">
+                <table class="table table-striped table-valign-middle">
+                  <thead>
+                  <tr>
+                    <th>SI Number</th>
+                    <th>Sales Date/Time</th>
+                    <th class="text-center">Item Count</th>
+                    <th class="text-right">Total</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                    
+                    {% if not transactions %}
+                      <tr><td colspan="4">No transactions yet.</td></tr>
+                    {% else %}
+                      
+                      {% for trans in transactions %}
+                        <tr>
+                          <td>{{ trans.pk|seq_num }}</td>
+                          <td>{{ trans.sales_datetime|date:'M d, Y H:i'}} </td>
+                          <td class="text-center">{{ trans.sales.item_count }}</td>
+                          <td class="text-right">{{ trans.sales.total|peso }}</td>
+                        </tr>
+                      {% endfor %}
+                        
+                    {% endif %}
+                  </tbody>
+                </table>
+              </div>
+              <div class="card-footer">
+                <div><a href="#">Load more...</a></div>
+              </div>
+            </div>
+            <!-- /.card -->
+          </section>
+          <!-- /.Left col -->
+          <!-- right col (We are only adding the ID to make the widgets sortable)-->
+          
+          <section class="col-lg-6 connectedSortable">
+            <div class="card card-success border border-success">
+              <div class="card-header border-0">
+                <h3 class="card-title">Payment History</h3>
+                <div class="card-tools">
+                  <a href="#" class="btn btn-tool btn-sm">
+                    <i class="fas fa-bars"></i>
+                  </a>
+                </div>
+              </div>
+              <div class="card-body table-responsive p-0">
+                <table id="dtPayment" class="table table-striped table-valign-middle">
+                  <thead>
+                  <tr>
+                    <th>Date Posted</th>
+                    <th>Amount</th>
+                    <th>Remaining Balance</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr>
+                    <td>
+                      Some Product
+                    </td>
+                    <td>&#8369; 13.00</td>
+                    <td>
+                      123,234 Sold
+                    </td>
+                    
+                  </tr>
+                  <tr>
+                    <td>
+                      Another Product
+                    </td>
+                    <td>&#8369; 29.00</td>
+                    <td>
+                      12,000 Sold
+                    </td>
+                    
+                  </tr>
+                  <tr>
+                    <td>
+                      Amazing Product
+                    </td>
+                    <td>&#8369; 230.00</td>
+                    <td>
+                      198 Sold
+                    </td>
+                    
+                  </tr>
+                  <tr>
+                    <td>
+                      Perfect Item
+                      <span class="badge bg-danger">NEW</span>
+                    </td>
+                    <td>&#8369; 199.00</td>
+                    <td>
+                      87 Sold
+                    </td>
+                    
+                  </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="card-footer">
+                <div><a href="#">Load more...</a></div>
+              </div>
+            </div>
+            <!-- /.card -->
+          </section>
+          <!-- right col -->
+        </div>
+        <!-- /.row (main row) -->
+      </div><!-- /.container-fluid -->
+    </section>
+    <!-- /.content -->
+    
+{% endblock main_content %}
+
+
+{% block js %}
+<!-- ChartJS -->
+<script src="{% static 'plugins/chart.js/Chart.min.js' %}"></script>
+<!-- daterangepicker -->
+<script src="{% static 'plugins/moment/moment.min.js' %}"></script>
+<script src="{% static 'plugins/daterangepicker/daterangepicker.js' %}"></script>
+<!-- Tempusdominus Bootstrap 4 -->
+<script src="{% static 'plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js' %}"></script>
+<!-- AdminLTE for demo purposes -->
+<script src="{% static 'dist/js/demo.js' %}"></script>
+<!-- AdminLTE dashboard demo (This is only for demo purposes) -->
+<script src="{% static 'dist/js/pages/dashboard.js' %}"></script>
+
+<script>
+  $(document).ready(function() {
+      $("#menu_dashboard").addClass("active")
+  })
+</script>
+{% endblock js %}
+  

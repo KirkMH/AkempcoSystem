@@ -69,6 +69,16 @@ class Creditor(models.Model):
 
         return total_charges
 
+    @property
+    def transaction_count(self):
+        sales = Sales.objects.filter(customer=self, status='Completed')
+        return sales.count() if sales else 0
+
+    @property
+    def total_transaction_amount(self):
+        sales = Sales.objects.filter(customer=self, status='Completed').values_list('pk', flat=True)
+        total = SalesItem.objects.filter(sales__in=sales).aggregate(val=Sum(F('unit_price') * F('quantity')))['val']
+        return total if total else 0
         
     # TODO: total payments
     @property
@@ -82,6 +92,11 @@ class Creditor(models.Model):
         total_payments = self.total_payments
 
         return self.credit_limit - total_charges - total_payments
+
+    def get_latest_10_transactions(self):
+        sales = Sales.objects.filter(customer=self, status='Completed').values_list('pk', flat=True)
+        transactions = SalesInvoice.objects.filter(sales__in=sales).order_by('-sales_datetime')[:10]
+        return transactions
 
 
     def __str__(self):
