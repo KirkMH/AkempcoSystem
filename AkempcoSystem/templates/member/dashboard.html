@@ -1,4 +1,4 @@
-{% extends 'member/base.html' %}
+{% extends './base.html' %}
 {% load static form_tags %}
 
 
@@ -129,7 +129,7 @@
                 </table>
               </div>
               <div class="card-footer">
-                <div><a href="#">Load more...</a></div>
+                <div><a href="{% url 'transaction_history' %}">Load more...</a></div>
               </div>
             </div>
             <!-- /.card -->

@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.db.models import Sum, F
 
 from sales.models import Sales, SalesPayment, SalesItem, SalesInvoice
 
@@ -91,6 +92,11 @@ class Creditor(models.Model):
     def get_latest_10_transactions(self):
         sales = Sales.objects.filter(customer=self, status='Completed').values_list('pk', flat=True)
         transactions = SalesInvoice.objects.filter(sales__in=sales).order_by('-sales_datetime')[:10]
+        return transactions
+
+    def get_all_transactions(self):
+        sales = Sales.objects.filter(customer=self, status='Completed').values_list('pk', flat=True)
+        transactions = SalesInvoice.objects.filter(sales__in=sales).order_by('-sales_datetime')
         return transactions
 
 

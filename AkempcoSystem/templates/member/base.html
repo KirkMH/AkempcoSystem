@@ -55,7 +55,7 @@
         <a class="nav-link" href="{% url 'dashboard_member' %}">Home</a>
       </li>
       <li class="nav-item my-auto">
-        <a class="nav-link" href="#">Transaction History</a>
+        <a class="nav-link" href="{% url 'transaction_history' %}">Transaction History</a>
       </li>
       <li class="nav-item my-auto">
         <a class="nav-link" href="#">Charged Purchases</a>
@@ -96,7 +96,7 @@
   <!-- /.navbar -->
 
   <!-- Content Wrapper. Contains page content -->
-  <div class="content-wrapper mt-3">
+  <div class="content-wrapper" style="margin-top: 80px;">
     <!-- Content Header (Page header) -->
     <div class="content-header">
       <div class="container-fluid">

@@ -908,6 +908,13 @@ class SalesInvoice(models.Model):
     def is_cancelled(self):
         return SalesVoid.objects.filter(sales_invoice=self).exists()
 
+    def get_payment_modes(self):
+        return list(self.sales.salespayment_set.order_by().values_list('payment_mode', flat=True).distinct())
+
+    def get_payment_modes_as_string(self):
+        modes = self.get_payment_modes()
+        return ', '.join(modes)
+
     def reprint(self, cashier):
         self.last_reprint = datetime.now()
         self.reprint_by = cashier
