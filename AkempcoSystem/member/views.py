@@ -1,7 +1,66 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse_lazy
+from django_serverside_datatable.views import ServerSideDatatableView
+from django.views.generic import ListView, CreateView, UpdateView, DetailView
+from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView
+from django.contrib.messages.views import SuccessMessageMixin
+
 from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+from AkempcoSystem.decorators import user_is_allowed
 
 from sales.models import SalesItem, SalesPayment, SalesInvoice
+from admin_area.models import Feature
+from .models import Creditor
+from .forms import *
+
+################################
+#   Creditor FM
+################################
+
+@login_required()
+@user_is_allowed(Feature.FM_CREDITOR)
+def creditor_list(request):
+    return render(request, 'member/creditor_list.html')
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.FM_CREDITOR), name='dispatch')
+class CreditorDTListView(ServerSideDatatableView):
+	queryset = Creditor.objects.all()
+	columns = ['pk', 'name', 'address', 'creditor_type', 'credit_limit', 'active']
+    
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.FM_CREDITOR), name='dispatch')
+class CreditorCreateView(CreateView):
+    model = Creditor
+    form_class = NewCreditorForm
+    template_name = 'member/creditor_form.html'
+
+    def post(self, request, *args, **kwargs):
+        form = NewCreditorForm(request.POST)
+        if form.is_valid():
+            cred = form.save()
+            cred.save()
+            messages.success(request, cred.name + " was created successfully.")
+            if "another" in request.POST:
+                return redirect('new_cred')
+            else:
+                return redirect('cred_list')
+        
+        else:
+            return render(request, 'member/creditor_form.html', {'form': form})
+        
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.FM_CREDITOR), name='dispatch')
+class CreditorUpdateView(SuccessMessageMixin, UpdateView):
+    model = Creditor
+    context_object_name = 'creditor'
+    form_class = UpdateCreditorForm
+    template_name = "member/creditor_form.html"
+    pk_url_kwarg = 'pk'
+    success_url = reverse_lazy('cred_list')
+    success_message = "%(name)s was updated successfully."
 
 
 @login_required()

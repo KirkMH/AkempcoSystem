@@ -24,55 +24,6 @@ from .forms import *
 MAX_ITEMS_PER_PAGE = 10
 
 
-################################
-#   Creditor FM
-################################
-
-@login_required()
-@user_is_allowed(Feature.FM_CREDITOR)
-def creditor_list(request):
-    return render(request, 'sales/creditor_list.html')
-
-@method_decorator(login_required, name='dispatch')
-@method_decorator(user_is_allowed(Feature.FM_CREDITOR), name='dispatch')
-class CreditorDTListView(ServerSideDatatableView):
-	queryset = Creditor.objects.all()
-	columns = ['pk', 'name', 'address', 'creditor_type', 'credit_limit', 'active']
-    
-@method_decorator(login_required, name='dispatch')
-@method_decorator(user_is_allowed(Feature.FM_CREDITOR), name='dispatch')
-class CreditorCreateView(CreateView):
-    model = Creditor
-    form_class = NewCreditorForm
-    template_name = 'sales/creditor_form.html'
-
-    def post(self, request, *args, **kwargs):
-        form = NewCreditorForm(request.POST)
-        if form.is_valid():
-            cred = form.save()
-            cred.save()
-            messages.success(request, cred.name + " was created successfully.")
-            if "another" in request.POST:
-                return redirect('new_cred')
-            else:
-                return redirect('cred_list')
-        
-        else:
-            return render(request, 'sales/creditor_form.html', {'form': form})
-        
-
-@method_decorator(login_required, name='dispatch')
-@method_decorator(user_is_allowed(Feature.FM_CREDITOR), name='dispatch')
-class CreditorUpdateView(SuccessMessageMixin, UpdateView):
-    model = Creditor
-    context_object_name = 'creditor'
-    form_class = UpdateCreditorForm
-    template_name = "sales/creditor_form.html"
-    pk_url_kwarg = 'pk'
-    success_url = reverse_lazy('cred_list')
-    success_message = "%(name)s was updated successfully."
-
-
 @login_required()
 @user_is_allowed(Feature.TR_POS)
 def creditor_search(request, pk):

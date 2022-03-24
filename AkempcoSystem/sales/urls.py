@@ -2,11 +2,6 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('creditor', views.creditor_list, name='cred_list'),
-    path('creditor/dt', views.CreditorDTListView.as_view(), name='cred_dtlist'),
-    path('creditor/new/', views.CreditorCreateView.as_view(), name='new_cred'),
-    path('creditor/<int:pk>/edit/', views.CreditorUpdateView.as_view(), name='edit_cred'),
-
     path('pos', views.pos_view, name='pos'),
     path('pos/<int:pk>/transaction', views.pos_view, name='load_pos'),
     path('pos/<int:pk>/add', views.add_to_cart, name='addToCart'),
