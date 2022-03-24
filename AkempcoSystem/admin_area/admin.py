@@ -7,7 +7,8 @@ from django.utils.translation import gettext_lazy as _
 from .models import UserDetail, Store
 from purchases.models import PurchaseOrder
 from stocks.models import WarehouseStock, StoreStock
-from sales.models import Discount, Creditor, Sales, SalesPayment
+from sales.models import Discount, Sales, SalesPayment
+from member.models import Creditor
 
 
 admin.site.site_header = 'AKEMPCO System Administrator'

@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from fm.models import Product
 from purchases.models import PurchaseOrder
-from sales.models import Creditor
+from member.models import Creditor
 from .models import Feature, UserType
 
 

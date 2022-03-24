@@ -108,7 +108,7 @@ class UserDetail(models.Model):
         default=None
     )
     linked_creditor_acct = models.ForeignKey(
-        "sales.Creditor",
+        "member.Creditor",
         verbose_name=_("If Member/Creditor, link account to"),
         on_delete=models.SET_NULL,
         null=True,
