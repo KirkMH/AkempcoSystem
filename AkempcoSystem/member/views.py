@@ -149,3 +149,16 @@ class PaymentCreateView(CreateView):
             return redirect('payable_list')
         else:
             return render(request, 'member/payment_form.html', {'form': form})
+
+    
+@login_required()
+def payment_history(request):
+    # for transaction history
+    member = request.user.userdetail.linked_creditor_acct
+    payments = member.get_all_payments()
+
+    # pass to template
+    context = {
+        'payments': payments
+    }
+    return render(request, 'member/payment_history.html', context)

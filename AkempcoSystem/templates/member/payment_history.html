@@ -9,11 +9,11 @@
     <link rel="stylesheet" href="{% static 'css/table_setup.css' %}">
 {% endblock css %}
     
-{% block page_title %}Member's Transaction History{% endblock page_title %}
+{% block page_title %}Member's Payment History{% endblock page_title %}
 
 {% block breadcrumb %}
     <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-    <li class="breadcrumb-item active">Transaction History</li>
+    <li class="breadcrumb-item active">Payment History</li>
 {% endblock breadcrumb %}
 
 {% block main_content %}
@@ -28,31 +28,23 @@
     <div class="invoice p-3 mb-3">
         <!-- title row -->
         <div class="row mb-4">
-            <div class="col-12 text-center"><h2>Transaction History</h2></div>
+            <div class="col-12 text-center"><h2>Payment History</h2></div>
         </div>
         <!-- table row -->
         <div class="row mb-4">
-            <div class="col-12 table-responsive">
-                <table id="dtTransaction" class="table table-striped table-sm">
+            <div class="col-lg-6 col-sm-12 mx-auto table-responsive">
+                <table id="dtPayments" class="table table-striped table-sm">
                     <thead>
                         <tr>
-                            <th>&nbsp;</th>
-                            <th>SI Number</th>
-                            <th>Sales Date/Time</th>
-                            <th class="text-center">Item Count</th>
-                            <th>Mode of Payment</th>
-                            <th class="text-right">Total</th>
+                            <th>Date Posted</th>
+                            <th class="text-right">Amount Paid</th>
                         </tr>
                     </thead>
                     <tbody style="font-size: 11pt;">
-                        {% for trans in transactions %}
+                        {% for payment in payments %}
                         <tr>
-                            <td class="text-center"><a href="#" class="view-receipt" title="View Receipt" data-form-url="{% url 'open_transaction' trans.pk %}"><i class="far fa-eye"></i></a></td>
-                            <td class="text-center">{{ trans.pk|seq_num }}</td>
-                            <td>{{ trans.sales_datetime|date:'F d, Y H:i'}} </td>
-                            <td class="text-center">{{ trans.sales.item_count }}</td>
-                            <td>{{ trans.get_payment_modes_as_string }} </td>
-                            <td class="text-right">{{ trans.sales.total|peso }}</td>
+                            <td>{{ payment.date_posted|date:'F d, Y'}} </td>
+                            <td class="text-right">{{ payment.amount|peso }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -64,7 +56,7 @@
 
         <!-- this row will not appear when printing -->
         <div class="row no-print mt-4">
-            <div class="col-12">
+            <div class="col-12 text-center">
                 <button type="button" class="btn btn-primary" onclick="window.print();">
                     <i class="fas fa-print"></i>&nbsp;Print
                 </button>
@@ -84,19 +76,9 @@
 
     <script>
         $(document).ready(function() {
-            $("#dtTransaction").DataTable({
-                order: [[1, 'desc']],
+            $("#dtPayments").DataTable({
+                order: [[0, 'desc']],
             });
-            
-
-            function viewReceipt() {
-                $(".view-receipt").each(function () {
-                    $(this).modalForm({
-                        formURL: $(this).data("form-url")
-                    });
-                });
-            }
-            viewReceipt();
         })
     </script>
 {% endblock js %}
