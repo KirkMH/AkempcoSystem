@@ -37,3 +37,15 @@ class NewPaymentForm(forms.ModelForm):
     class Meta:
         model = CreditorPayment
         fields = ['amount']
+
+
+
+############################
+#       Upload Form
+############################
+class UploadForm(forms.Form):
+    required_css_class = 'required'
+    payment_file = forms.FileField(
+        label='CSV file to upload:', 
+        allow_empty_file=False, 
+        required=True)

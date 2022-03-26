@@ -5,31 +5,17 @@
   <link rel="stylesheet" href="{% static 'css/asterisk_on_required.css' %}">
 {% endblock css %}
 
-{% block page_title %}
-
-{% if creditor %}
-Edit Creditor
-{% else %}
-New Creditor
-{% endif %}
-    
-{% endblock page_title %}
+{% block page_title %}Upload CSV File{% endblock page_title %}
 
 {% block breadcrumb %}
     <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-    <li class="breadcrumb-item"><a href="{% url 'cred_list' %}">Creditor</a></li>
-    <li class="breadcrumb-item active">
-    {% if creditor %}
-    Edit
-    {% else %}
-    New
-    {% endif %}
-    </li>
+    <li class="breadcrumb-item"><a href="{% url 'cred_list' %}">Member</a></li>
+    <li class="breadcrumb-item active">Upload Payment</li>
 {% endblock breadcrumb %}
 
 {% block main_content %}
     <div class="card m-4">
-        <form method="post" novalidate>
+        <form method="post" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
 
             <div class="card-header">
@@ -43,13 +29,8 @@ New Creditor
             </div>
             
             <div class="card-footer">
-                
-                {% if not creditor %}
-                <button type="submit" class="btn btn-primary" name="another">Save and add another</button>
-                {% endif %}
-                    
                 <button type="submit" class="btn btn-success" name="save">Save</button>
-                <a href="{% url 'cred_list' %}" class="btn btn-default">Cancel</a>
+                <a href="{% url 'payable_list' %}" class="btn btn-default">Cancel</a>
             </div>
         </form>
     </div>

@@ -14,6 +14,6 @@ urlpatterns = [
     path('payment', views.PayableListView.as_view(), name='payable_list'),
     path('payment/<int:pk>/new', views.PaymentCreateView.as_view(), name='new_payment'),
     path('payment/history', views.payment_history, name='payment_history'),
-
-    path('download', views.download_csv, name='download_csv'),
+    path('payment/download', views.download_csv, name='download_csv'),
+    path('payment/upload', views.upload_csv, name='upload_csv'),
 ]
