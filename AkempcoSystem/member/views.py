@@ -78,6 +78,7 @@ def dashboard_member_view(request):
 
     # for transaction history
     transactions = member.get_latest_10_transactions()
+    payments = member.get_latest_10_payments()
 
     # pass to template
     context = {
@@ -85,7 +86,8 @@ def dashboard_member_view(request):
         'total_amount': total_transaction_amount,
         'payable': total_charges - total_payments,
         'charge_ratio': ratio,
-        'transactions': transactions
+        'transactions': transactions,
+        'payments': payments
     }
     return render(request, 'member/dashboard.html', context)
     

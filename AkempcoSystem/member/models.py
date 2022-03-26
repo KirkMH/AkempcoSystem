@@ -102,6 +102,12 @@ class Creditor(models.Model):
         transactions = SalesInvoice.objects.filter(sales__in=sales).order_by('-sales_datetime')
         return transactions
 
+    def get_latest_10_payments(self):
+        return CreditorPayment.objects.filter(creditor=self)[:10]
+
+    def get_all_payments(self):
+        return CreditorPayment.objects.filter(creditor=self)
+
 
     def __str__(self):
         return self.name + ": " + str(self.remaining_credit) + " of " + str(self.credit_limit)

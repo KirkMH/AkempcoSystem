@@ -110,7 +110,6 @@
                   </tr>
                   </thead>
                   <tbody>
-                    
                     {% if not transactions %}
                       <tr><td colspan="4">No transactions yet.</td></tr>
                     {% else %}
@@ -118,7 +117,7 @@
                       {% for trans in transactions %}
                         <tr>
                           <td>{{ trans.pk|seq_num }}</td>
-                          <td>{{ trans.sales_datetime|date:'M d, Y H:i'}} </td>
+                          <td>{{ trans.sales_datetime|date:'F d, Y H:i'}} </td>
                           <td class="text-center">{{ trans.sales.item_count }}</td>
                           <td class="text-right">{{ trans.sales.total|peso }}</td>
                         </tr>
@@ -152,52 +151,22 @@
                   <thead>
                   <tr>
                     <th>Date Posted</th>
-                    <th>Amount</th>
-                    <th>Remaining Balance</th>
+                    <th class="text-right">Amount</th>
                   </tr>
                   </thead>
                   <tbody>
-                  <tr>
-                    <td>
-                      Some Product
-                    </td>
-                    <td>&#8369; 13.00</td>
-                    <td>
-                      123,234 Sold
-                    </td>
-                    
-                  </tr>
-                  <tr>
-                    <td>
-                      Another Product
-                    </td>
-                    <td>&#8369; 29.00</td>
-                    <td>
-                      12,000 Sold
-                    </td>
-                    
-                  </tr>
-                  <tr>
-                    <td>
-                      Amazing Product
-                    </td>
-                    <td>&#8369; 230.00</td>
-                    <td>
-                      198 Sold
-                    </td>
-                    
-                  </tr>
-                  <tr>
-                    <td>
-                      Perfect Item
-                      <span class="badge bg-danger">NEW</span>
-                    </td>
-                    <td>&#8369; 199.00</td>
-                    <td>
-                      87 Sold
-                    </td>
-                    
-                  </tr>
+                    {% if not payments %}
+                      <tr><td colspan="2">No payments yet.</td></tr>
+                    {% else %}
+                      
+                      {% for payment in payments %}
+                        <tr>
+                          <td>{{ payment.date_posted|date:'F d, Y'}} </td>
+                          <td class="text-right">{{ payment.amount|peso }}</td>
+                        </tr>
+                      {% endfor %}
+                        
+                    {% endif %}
                   </tbody>
                 </table>
               </div>
