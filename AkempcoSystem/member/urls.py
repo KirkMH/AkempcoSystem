@@ -10,4 +10,7 @@ urlpatterns = [
     path('', views.dashboard_member_view, name='dashboard_member'),
     path('history/transactions', views.transaction_history, name='transaction_history'),
     path('history/transactions/<int:pk>/open', views.open_transaction, name='open_transaction'),
+
+    path('payment', views.PayableListView.as_view(), name='payable_list'),
+    path('payment/<int:pk>/new', views.PaymentCreateView.as_view(), name='new_payment'),
 ]

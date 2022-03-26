@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Sum, F
 
+from django.contrib.auth.models import User
 from sales.models import Sales, SalesPayment, SalesItem, SalesInvoice
 
 
@@ -79,15 +80,17 @@ class Creditor(models.Model):
     # TODO: total payments
     @property
     def total_payments(self):
-        return 0
+        return CreditorPayment.objects.filter(creditor=self).aggregate(val=Sum('amount'))['val'] or 0
 
     
     @property
     def remaining_credit(self):
-        total_charges = self.total_charges
-        total_payments = self.total_payments
+        return self.credit_limit - self.payable
 
-        return self.credit_limit - total_charges - total_payments
+    @property
+    def payable(self):
+        return self.total_charges - self.total_payments
+
 
     def get_latest_10_transactions(self):
         sales = Sales.objects.filter(customer=self, status='Completed').values_list('pk', flat=True)
@@ -106,3 +109,32 @@ class Creditor(models.Model):
 
     class Meta:
         ordering = ['name']
+
+
+class CreditorPayment(models.Model):
+    creditor = models.ForeignKey(
+        Creditor,
+        verbose_name=_('Creditor'),
+        on_delete=models.CASCADE
+    )
+    amount = models.DecimalField(
+        _("Amount Paid"), 
+        max_digits=10, 
+        decimal_places=2
+    )
+    date_posted = models.DateField(
+        _("Date Posted"),
+        auto_now_add=True
+    )
+    posted_by = models.ForeignKey(
+        User,
+        verbose_name=_('Posted by'),
+        on_delete=models.CASCADE
+    )
+
+    def __str__(self):
+        return f"{self.creditor.name} paid {self.amount} posted on {self.date_posted}"
+
+    class Meta:
+        ordering = ['-date_posted']
+    

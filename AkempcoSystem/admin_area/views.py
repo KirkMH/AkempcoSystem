@@ -7,6 +7,8 @@ from purchases.models import PurchaseOrder
 from member.models import Creditor
 from .models import Feature, UserType
 
+def is_ajax(request):
+    return request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
 
 def component_permissions(request):
     perms = request.user.userdetail.get_permissions()

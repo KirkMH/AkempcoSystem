@@ -4,11 +4,13 @@ from django_serverside_datatable.views import ServerSideDatatableView
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
 from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView
 from django.contrib.messages.views import SuccessMessageMixin
+from django.contrib import messages
 
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from AkempcoSystem.decorators import user_is_allowed
 
+from admin_area.views import is_ajax
 from sales.models import SalesItem, SalesPayment, SalesInvoice
 from admin_area.models import Feature
 from .models import Creditor
@@ -110,3 +112,38 @@ def open_transaction(request, pk):
         'payments': payments
     }
     return render(request, 'member/sales_invoice.html', context)
+
+
+@method_decorator(login_required, name='dispatch')
+class PayableListView(ListView):
+    context_object_name = 'creditors'
+    template_name = "member/payable_list.html"
+    model = Creditor
+	
+    def get_queryset(self):
+        return super().get_queryset().filter(active=True)
+
+    
+class PaymentCreateView(CreateView):
+    model = CreditorPayment
+    form_class = NewPaymentForm
+    template_name = 'member/payment_form.html'
+    success_url = reverse_lazy('payable_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["creditor"] = get_object_or_404(Creditor, pk=self.kwargs['pk'])
+        return context
+
+
+    def post(self, request, *args, **kwargs):
+        form = NewPaymentForm(request.POST)
+        if form.is_valid():
+            payment = form.save(commit=False)
+            payment.creditor = get_object_or_404(Creditor, pk=kwargs['pk'])
+            payment.posted_by = request.user
+            payment.save()
+            messages.success(request, payment.creditor.name + "'s payment was posted successfully.")        
+            return redirect('payable_list')
+        else:
+            return render(request, 'member/payment_form.html', {'form': form})

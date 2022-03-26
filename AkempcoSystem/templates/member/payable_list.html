@@ -1,0 +1,84 @@
+{% extends '../base.html' %}
+{% load static form_tags %}
+
+{% block extra_header %}
+{% include '../includes/datatable.html' %}    
+{% endblock extra_header %}
+
+{% block page_title %}List of Members and Creditors{% endblock page_title %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item active">Members</li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+<div class="modal fade" tabindex="-1" role="dialog" id="modal">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content"></div>
+    </div>
+</div>
+
+<div class="card m-4">
+    <form method="get">
+        <div class="card-header">
+            <div class="row">
+            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                <a href="#" class="btn btn-primary">Download as CSV</a>
+                <a href="#" class="btn btn-warning">Upload Payment CSV</a>
+            </div>
+            </div>
+        </div>
+    </form>
+    <div class="card-body table-responsive">
+        <table id="dtCreditor" class="table table-hover table-head-fixed table-sm">
+            <thead>
+                <tr>
+                    <th class="text-center" width="10%">Action</th>
+                    <th>Name</th>
+                    <th>Address</th>
+                    <th class="text-center">Type</th>
+                    <th class="text-right">Credit Limit</th>
+                    <th class="text-center">Payable</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+                {% if not creditors %}
+                    <tr><td colspan="6" class="text-center">No data found in table.</td></tr>
+                {% else %}
+                    
+                    {% for cred in creditors %}
+                        <tr>
+                            <td class="text-center"><a href="{% url 'new_payment' cred.pk %}" class="add-payment" title="Add Payment"><i class="fas fa-money-bill"></i></a></td>
+                            <td>{{ cred.name }}</td>
+                            <td>{{ cred.address }}</td>
+                            <td class="text-center">{{ cred.creditor_type }}</td>
+                            <td class="text-right">{{ cred.credit_limit|peso }}</td>
+                            <td class="text-right">{{ cred.payable|peso }}</td>
+                        </tr>
+                    {% endfor %}
+
+                {% endif %}
+                    
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock main_content %}
+
+
+{% block js %}
+    <script>
+        $(document).ready(function() {
+            $("#dtCreditor").DataTable({
+                order: [[1, 'asc']],
+            });
+
+            $("#menu_trans").addClass("menu-open")
+            $("#menu_trans_payment").addClass("active")
+        })
+    </script>
+{% endblock js %}
+    

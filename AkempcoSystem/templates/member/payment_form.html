@@ -1,0 +1,65 @@
+{% extends '../base.html' %}
+{% load static form_tags %}
+
+{% block page_title %}Payment Form{% endblock page_title %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item"><a href="{% url 'payable_list' %}">Members</a></li>
+<li class="breadcrumb-item active">Payment</li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+<div class="card m-4">
+    <form id="payment-form" method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="card-header">
+            <h3 class="card-title">Payment of {{ creditor.name }}:</h3>
+        </div>
+
+        <div class="card-body">
+            <div class="col-6">
+                <div class="form-group">
+                    <label for="id_payable">Payable:</label>
+                    <input class="form-control" type="text" value="{{ creditor.payable|peso }}" disabled>
+                </div>
+                {% include '../includes/form.html' %}
+            </div>
+        </div>
+        
+        <div class="card-footer text-right">
+            <button type="submit" class="btn btn-success" name="save">Save</button>
+            <a href="{% url 'payable_list' %}" role="button" class="btn btn-default">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock main_content %}
+
+
+{% block js %}
+<!-- bootboxjs -->
+<script src="{% static 'js/bootbox.all.min.js' %}"></script>
+<script>
+    $(document).ready(function() {
+        $("#menu_trans").addClass("menu-open")
+        $("#menu_trans_payment").addClass("active")
+
+        $('#payment-form').submit(function() {
+            const payable = parseFloat("{{ creditor.payable }}");
+            const paid = parseFloat($('#id_amount').val());
+            var continueSubmitting = true;
+
+            if (paid > payable) {
+                bootbox.confirm("Paid amount exceeds payable amount. Do you wish to proceed?", function(result){ 
+                    if (!result) {
+                        continueSubmitting = false;
+                    }
+                });
+            }
+
+            return continueSubmitting;
+        })
+    })
+</script>
+{% endblock js %}

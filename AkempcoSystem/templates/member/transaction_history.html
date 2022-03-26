@@ -87,9 +87,6 @@
 
             function viewReceipt() {
                 $(".view-receipt").each(function () {
-                    $(this).click(function() {
-                        console.log($(this).data('form-url'));
-                    })
                     $(this).modalForm({
                         formURL: $(this).data("form-url")
                     });

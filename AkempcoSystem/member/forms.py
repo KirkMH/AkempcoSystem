@@ -1,9 +1,10 @@
 from django import forms
 from bootstrap_modal_forms.forms import BSModalModelForm
+from bootstrap_modal_forms.utils import is_ajax
 from django.utils.translation import gettext_lazy as _
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Submit, Row, Column
-from .models import Creditor
+from .models import *
 
 
 TRUE_FALSE_CHOICES = (
@@ -27,3 +28,12 @@ class UpdateCreditorForm(forms.ModelForm):
     class Meta:
         model = Creditor
         fields = '__all__'
+
+############################
+#       CreditorPayment
+############################
+class NewPaymentForm(forms.ModelForm):
+    required_css_class = 'required'
+    class Meta:
+        model = CreditorPayment
+        fields = ['amount']
