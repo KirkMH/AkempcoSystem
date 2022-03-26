@@ -1,3 +1,5 @@
+import csv
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django_serverside_datatable.views import ServerSideDatatableView
@@ -162,3 +164,23 @@ def payment_history(request):
         'payments': payments
     }
     return render(request, 'member/payment_history.html', context)
+
+
+#################################
+### Downloading CSV File
+#################################
+
+def download_csv(request):
+    # Create the HttpResponse object with the appropriate CSV header.
+    response = HttpResponse(
+        content_type='text/csv',
+        headers={'Content-Disposition': 'attachment; filename="payment.csv"'},
+    )
+
+    writer = csv.writer(response)
+    writer.writerow(['Name', 'Payable Amount', 'Amount Paid'])
+    creditors = Creditor.objects.filter(active=True)
+    for cred in creditors:
+        writer.writerow([cred.name, cred.payable])
+
+    return response
