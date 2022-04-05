@@ -186,6 +186,7 @@ class POProductCreateView(BSModalCreateView):
         context = super().get_context_data(**kwargs)
         po = get_object_or_404(PurchaseOrder, pk=self.kwargs['pk'])
         context["form"].fields["product"].queryset = Product.objects.filter(status='ACTIVE', suppliers=po.supplier, category=po.category)
+        context['action'] = "Add"
         return context
 
     def post(self, request, *args, **kwargs):
@@ -199,7 +200,8 @@ class POProductCreateView(BSModalCreateView):
             po_prod.ordered_quantity = ordered_quantity + prod_qty
             po_prod.purchase_order = po
             po_prod.save()
-
+            po_prod.compute_fields()
+            po.fill_in_other_po_fields()
         else:
             messages.error(self.request, 'Please fill-in all the required fields.')
             
@@ -218,20 +220,19 @@ class POProductUpdateView(BSModalUpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        po = get_object_or_404(PurchaseOrder, pk=self.kwargs['pk'])
+        po = self.object.purchase_order
         context["form"].fields["product"].queryset = Product.objects.filter(status='ACTIVE', suppliers=po.supplier, category=po.category)
+        context['action'] = 'Edit'
         return context
-
-    def get_object(self):
-        item_pk = self.kwargs['item_pk']
-        return PO_Product.objects.get(pk=item_pk)
 
     def get_success_url(self):
         return reverse('po_products', 
-                        kwargs={'pk' : self.kwargs['pk']})
+                        kwargs={'pk' : self.object.purchase_order.pk})
 
     def form_valid(self, form):
         prod = self.get_object().product.full_description
+        self.object.compute_fields()
+        self.object.purchase_order.fill_in_other_po_fields()
         return super().form_valid(form)
     
 
@@ -241,16 +242,14 @@ class POProductDeleteView(BSModalDeleteView):
     model = PO_Product
     success_url = "/"
 
-    def get_object(self):
-        item_pk = self.kwargs['item_pk']
-        return PO_Product.objects.get(pk=item_pk)
-
     def get(self, request, *args, **kwargs):
         return self.post(request, *args, **kwargs)
 
     def get_success_url(self):
+        po = self.object.purchase_order
+        po.fill_in_other_po_fields()
         return reverse('po_products', 
-                        kwargs={'pk' : self.kwargs['pk']})
+                        kwargs={'pk' : po.pk})
 
 
 

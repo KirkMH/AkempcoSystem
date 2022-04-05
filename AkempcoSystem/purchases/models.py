@@ -189,6 +189,32 @@ class PurchaseOrder(models.Model):
         verbose_name=_('Is this PO contains cancelled items?'),
         default=False
     )
+    # other computed fields
+    item_count = models.PositiveIntegerField(
+        _("Item Count"),
+        default=0
+    )
+    total_po_amount = models.DecimalField(
+        _("Total PO Amount"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0
+    )
+    received_item_count = models.PositiveIntegerField(
+        _("Received Item Count"),
+        default=0
+    )
+    total_received_amount = models.DecimalField(
+        _("Total Received Amount"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0
+    )
+    status = models.CharField(
+        _("Status"), 
+        max_length=50,
+        default='Pending'
+    )
 
     def __str__(self):
         return "PO # {:08}".format(self.pk)
@@ -197,11 +223,15 @@ class PurchaseOrder(models.Model):
         products = PO_Product.objects.filter(purchase_order=self)
         self.is_open = False
         for prod in products:
-            print(prod.is_closed())
             if not prod.is_closed():
                 self.is_open = True
                 break
+            prod.compute_fields()
+
         self.save()
+        self.supplier.fill_in_other_fields()
+        # trigger methods that update computed fields
+        self.fill_in_other_po_fields()
 
     def is_for_approval(self, user):
         if self.process_step >= 2 and self.process_step <= 4:
@@ -210,22 +240,46 @@ class PurchaseOrder(models.Model):
         else:
             return False
 
-    def get_item_count(self):
-        return PO_Product.objects.filter(purchase_order=self).count()
+    def fill_in_other_po_fields(self):
+        a = self.compute_item_count()
+        b = self.compute_total_po_amount()
+        c = self.set_status()
+        print(f"count={a}, total={b}, status={c}")
 
-    def get_total_po_amount(self):
-        return PO_Product.objects.filter(purchase_order=self).aggregate(total=Sum( F('unit_price') * F('ordered_quantity')))['total']
+    def compute_item_count(self):
+        val = PO_Product.objects.filter(purchase_order=self).count()
+        self.item_count = val
+        self.save()
+        return val
 
-    def get_total_received_amount(self):
-        return PO_Product.objects.filter(purchase_order=self).aggregate(total=Sum( F('unit_price') * F('received_qty')))['total']
+    def compute_total_po_amount(self):
+        val = PO_Product.objects.filter(purchase_order=self).aggregate(total=Sum( F('unit_price') * F('ordered_quantity')))['total']
+        self.total_po_amount = val
+        self.save()
+        return val
 
-    def get_received_items_count(self):
+    def compute_total_received_amount(self):
+        val = PO_Product.objects.filter(purchase_order=self).aggregate(total=Sum( F('unit_price') * F('received_qty')))['total']
+        self.total_received_amount = val
+        self.save()
+        return val
+
+    def compute_received_items_count(self):
         products = PO_Product.objects.filter(purchase_order=self)
         count = 0
         for prod in products:
             if prod.has_received():
                 count = count + 1
+        self.received_item_count = count
+        self.save()
         return count
+
+    def set_status(self):
+        if self.is_approved():
+            self.status = 'Open' if self.is_open else 'Closed'
+        else:
+            self.status = self.get_user_step()
+        self.save()
 
     def get_product_ordered(self, product):
         po_prod = PO_Product.objects.filter(purchase_order=self, product=product)
@@ -236,11 +290,24 @@ class PurchaseOrder(models.Model):
         else:
             return 0
 
+    def set_supplier_last_po(self):
+        self.supplier.last_po = self
+        self.supplier.save()
+
     def submit(self, user):
         self.prepared_by = user
         self.prepared_at = datetime.now()
         self.process_step = 2
         self.save()
+        # Supplier fields
+        self.set_supplier_last_po()
+        self.supplier.fill_in_other_fields()
+        # trigger methods that update computed fields
+        self.fill_in_other_po_fields()
+        # fill out computed fields in PO_Product
+        products = PO_Product.objects.filter(purchase_order=self)
+        for prod in products:
+            prod.compute_fields()
 
     def approve(self, user):
         # set approver and timestamp
@@ -260,7 +327,7 @@ class PurchaseOrder(models.Model):
         # set next part of process
         step = self.process_step
         self.process_step = step + 1
-        
+        self.set_status()
         self.save()
 
     def reject(self, user, reason):
@@ -269,6 +336,8 @@ class PurchaseOrder(models.Model):
         self.rejected_at = datetime.now()
         self.reject_reason = reason
         self.save()
+        self.set_status()
+        self.supplier.fill_in_other_fields()
 
     def is_checkable(self):
         return (self.process_step > 1 and self.process_step < 5)
@@ -303,12 +372,6 @@ class PurchaseOrder(models.Model):
 
     def is_rejected(self):
         return (self.process_step == 6)
-
-    def get_status(self):
-        if self.is_approved():
-            return 'Open' if self.is_open else 'Closed'
-        else:
-            return self.get_user_step()
 
     def get_status_css_class(self):
         if self.is_approved() and self.is_open:
@@ -374,12 +437,18 @@ class PurchaseOrder(models.Model):
                 prod.received_qty = prod.received_qty + prod.receive_now
                 prod.receive_now = 0
                 prod.save()
+                prod.compute_fields()   # required for filling out of computed fields
 
         self.received_by = user
         self.received_date = datetime.now()
         self.is_receiving_now = False
         self.save()
         self.update_status()
+        # trigger methods that update computed fields
+        self.compute_received_items_count()
+        self.compute_total_received_amount()
+        self.supplier.fill_in_other_fields()
+
 
     def split_to_backorder(self, child_po):
         products = PO_Product.objects.filter(purchase_order=self)
@@ -401,6 +470,9 @@ class PurchaseOrder(models.Model):
         # update status of each PO (parent closed, child open)
         self.update_status()
         child_po.update_status()
+        # Supplier fields
+        self.supplier.last_po = child_po
+        self.supplier.save()
 
     def cancel_undelivered(self):
         # run over the PO Products, cancelling undelivered items
@@ -416,6 +488,7 @@ class PurchaseOrder(models.Model):
         self.update_status()
         self.has_cancelled_items = True
         self.save()
+        self.supplier.fill_in_other_fields()
 
     def clone(self, user):
         new_po = PurchaseOrder.objects.create(
@@ -426,6 +499,7 @@ class PurchaseOrder(models.Model):
             prepared_by=user 
         )
         new_po.save()
+
         products = PO_Product.objects.filter(purchase_order=self)
         for p in products:
             p.pk = None
@@ -433,6 +507,13 @@ class PurchaseOrder(models.Model):
             p.receive_qty = 0
             p.receive_now = False
             p.save()
+            p.compute_fields()
+            
+        new_po.update_status()
+        # Supplier fields
+        self.supplier.last_po = new_po
+        self.supplier.save()
+
         return new_po
 
     class Meta:
@@ -468,25 +549,40 @@ class PO_Product(models.Model):
         _("Receive Now"),
         default=0
     )
+    # other computed fields
+    undelivered_qty = models.PositiveIntegerField(
+        _("Undelivered Quantity"),
+        default=0
+    )
+    has_received = models.BooleanField(
+        _("Has Received?"),
+        default=False
+    )
+    po_subtotal = models.DecimalField(
+        _("PO Subtotal"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0
+    )
+    received_subtotal = models.DecimalField(
+        _("Received Subtotal"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0
+    )
 
-    @property
-    def undelivered_qty(self):
-        return (self.ordered_quantity - self.received_qty)
+    def compute_fields(self):
+        self.undelivered_qty = self.ordered_quantity - self.received_qty
+        self.po_subtotal = self.unit_price * self.ordered_quantity
+        self.has_received = (self.received_qty > 0)
+        self.received_subtotal = self.unit_price * self.received_qty
+        self.save()
 
     def __str__(self):
         return self.product.full_description + ": " + str(self.ordered_quantity) + " " + self.product.uom.uom_description
 
     def is_closed(self):
         return (self.ordered_quantity == self.received_qty)
-
-    def has_received(self):
-        return (self.received_qty > 0)
-
-    def get_po_subtotal(self):
-        return self.unit_price * self.ordered_quantity
-
-    def get_received_subtotal(self):
-        return self.unit_price * self.received_qty
 
     def set_for_price_review(self):
         prod = self.product

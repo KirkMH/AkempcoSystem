@@ -13,8 +13,8 @@ urlpatterns = [
     path('po/<int:pk>/products', views.PODetailView.as_view(), name='po_products'),
                                                                                                                                                                                                       
     path('po/<int:pk>/products/add', views.POProductCreateView.as_view(), name='product_add'),
-    path('po/<int:pk>/products/<int:item_pk>/edit', views.POProductUpdateView.as_view(), name='product_edit'),
-    path('po/<int:pk>/products/<int:item_pk>/delete', views.POProductDeleteView.as_view(), name='product_delete'),
+    path('po/products/<int:pk>/edit', views.POProductUpdateView.as_view(), name='product_edit'),
+    path('po/products/<int:pk>/delete', views.POProductDeleteView.as_view(), name='product_delete'),
     path('po/<int:pk>/submit', views.submit_po, name='submit_po'),
     path('po/<int:pk>/approve', views.approve_po, name='approve_po'),
     path('po/<int:pk>/reject', views.reject_po, name='reject_po'),

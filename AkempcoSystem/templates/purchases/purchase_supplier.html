@@ -45,10 +45,10 @@
                                 <a href="{% url 'po_list' supplier.pk %}" title="View supplier"><i class="far fa-eye"></i></a>
                             </td>
                             <td>{{ supplier.supplier_name }}</td>
-                            <td>{{ supplier.get_last_po.pk|seq_num|default:'-' }}</td>
-                            <td>{{ supplier.get_last_po.po_date|date:"F d, Y"|default:'-' }}</td>
-                            <td class="text-center">{{ supplier.get_number_of_open_po }}</td>
-                            <td class="text-center">{{ supplier.get_completion_rate|percentage }}</td>
+                            <td>{{ supplier.last_po.pk|seq_num|default:'-' }}</td>
+                            <td>{{ supplier.last_po.po_date|date:"F d, Y"|default:'-' }}</td>
+                            <td class="text-center">{{ supplier.open_po_count }}</td>
+                            <td class="text-center">{{ supplier.completion_rate|percentage }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>

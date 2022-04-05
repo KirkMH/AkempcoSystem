@@ -5,7 +5,7 @@
 
 <form id="add_product_form" method='post' class="form" role="form">
     <div class="modal-header">
-        <h3 class="modal-title">Add Product</h3>
+        <h3 class="modal-title">{{action}} Product</h3>
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
     </div>
     <div class="modal-body">
@@ -88,10 +88,12 @@ $(document).ready(function() {
                 data: {'pk': pk},
                 dataType: 'json',
                 success: function(data) {
+                    const action = '{{action}}';
                     // inventory uom, supplier price
                     $('#id_unit_price').val(data.supplier_price)
                     $('#uom').text(data.inv_uom.toLowerCase() + '(s)')
-                    $('#id_ordered_quantity').val(data.should_order)
+                    if (action == 'Add')
+                        $('#id_ordered_quantity').val(data.should_order)
                 }
             })
         }

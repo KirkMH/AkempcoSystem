@@ -149,34 +149,42 @@ class Supplier(models.Model):
         choices=STATUS,
         default=ACTIVE
     )
+    last_po = models.OneToOneField(
+        "purchases.PurchaseOrder", 
+        related_name='last_po',
+        verbose_name=_("Last Purchase Order"), 
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    po_count = models.PositiveIntegerField(
+        _("Number of Purchase Orders"),
+        default=0
+    )
+    open_po_count = models.PositiveIntegerField(
+        _("Number of Open Purchase Orders"),
+        default=0
+    )
+    completion_rate = models.FloatField(
+        _("Completion Rate"),
+        default=0
+    )
 
     def __str__(self):
         return self.supplier_name
 
-    def get_last_po(self):
-        try:
-            return PurchaseOrder.objects.filter(supplier=self).order_by('-pk')[:1].get()
-        except:
-            return None
-
-    def get_number_of_open_po(self):
-        try:
-            return PurchaseOrder.objects.filter(supplier=self).filter(is_open=True, process_step__lt=6).count()
-        except:
-            return 0
-
-    def get_po_count(self):
-        try:
-            return PurchaseOrder.objects.filter(supplier=self, process_step__lt=6).count()
-        except:
-            return 0
+    def fill_in_other_fields(self):
+        self.open_po_count = PurchaseOrder.objects.filter(supplier=self).filter(is_open=True, process_step__lt=6).count() or 0
+        self.po_count = PurchaseOrder.objects.filter(supplier=self, process_step__lt=6).count() or 0
+        if self.po_count > 0:
+            closed_ctr = self.po_count - self.open_po_count
+            self.completion_rate = closed_ctr / self.po_count
+        self.save()
 
     def get_completion_rate(self):
         try:
-            open_ctr = self.get_number_of_open_po()
-            po_ctr = self.get_po_count()
-            closed_ctr = po_ctr - open_ctr
-            return closed_ctr / po_ctr
+            open_ctr = self.open_po_count
+            po_ctr = self.po_count
         except:
             return 0
 
