@@ -83,21 +83,23 @@
                 </thead>
                 <tbody>
                 {% for item in po_list %}
+                {% if item.ordered_quantity > 0 %}
                     <tr>
                         <td class="text-center">{{ item.product.barcode }}</td>
                         <td>{{ item.product.full_description }}</td>
                         <td class="text-center">{{ item.ordered_quantity }}</td>
                         <td class="text-center">{{ item.product.uom }}{{ item.ordered_quantity|pluralize }}</td>
                         <td class="text-right">{{ item.unit_price|peso }}</td>
-                        <td class="text-right">{{ item.get_po_subtotal|peso }}</td>
+                        <td class="text-right">{{ item.po_subtotal|peso }}</td>
                     </tr>
+                {% endif %}
                 {% endfor %}
 
                     <tr class="table-primary">
                         <td class="text-left">TOTAL</td>
-                        <td>{{ po.get_item_count }} item{{ po.get_item_count|pluralize }}</td>
+                        <td>{{ po.item_count }} item{{ po.item_count|pluralize }}</td>
                         <td colspan="3" class="text-center"></td>
-                        <td class="text-right">{{ po.get_total_po_amount|peso }}</td>
+                        <td class="text-right">{{ po.total_po_amount|peso }}</td>
                     </tr>
                 </tbody>
             </table>

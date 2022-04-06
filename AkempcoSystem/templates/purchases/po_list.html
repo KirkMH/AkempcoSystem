@@ -58,7 +58,7 @@
                     <tr>
                         <td class="text-center">
                             
-                            {% if item.get_status == 'Open' %}
+                            {% if item.status == 'Open' %}
                             <a href="{% url 'po_products' item.pk %}" title="Manage PO"><i class="fas fa-check-double"></i></a>                                
                             {% else %}
                             <a href="{% url 'po_products' item.pk %}" title="View PO"><i class="far fa-eye"></i></a>
@@ -70,7 +70,7 @@
                         <td>{{ item.category }}</td>
                         <td class="text-center">{{ item.item_count }}</td>
                         <td class="text-right">{{ item.total_po_amount|peso }}</td>
-                        <td class="{{ item.get_status_css_class}}">{{ item.get_status }}</td>
+                        <td class="{{ item.get_status_css_class}}">{{ item.status }}</td>
                     </tr>
                 {% endfor %}
 

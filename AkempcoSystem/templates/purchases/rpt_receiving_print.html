@@ -82,16 +82,16 @@
                         <td class="text-center">{{ item.received_qty }}</td>
                         <td class="text-center">{{ item.product.uom }}{{ item.received_qty|pluralize }}</td>
                         <td class="text-right">{{ item.unit_price|peso }}</td>
-                        <td class="text-right">{{ item.get_received_subtotal|peso }}</td>
+                        <td class="text-right">{{ item.received_subtotal|peso }}</td>
                     </tr>
                 {% endif %}
                 {% endfor %}
 
                     <tr class="table-primary">
                         <td class="text-left">TOTAL</td>
-                        <td>{{ po.get_item_count }} item{{ po.get_item_count|pluralize }}</td>
+                        <td>{{ po.item_count }} item{{ po.item_count|pluralize }}</td>
                         <td colspan="3" class="text-center"></td>
-                        <td class="text-right">{{ po.get_total_received_amount|peso }}</td>
+                        <td class="text-right">{{ po.total_received_amount|peso }}</td>
                     </tr>
                 </tbody>
             </table>

@@ -83,15 +83,9 @@ class PurchaseSupplierDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        po = PurchaseOrder.objects.filter(supplier=self.object)
-        key = get_index(self.request, "table_search")
-        if key:
-            po = po.filter(
-                Q(pk__icontains=key) |
-                Q(category__category_description__icontains=key)
-            )
-        context["po"] = po
-        return add_search_key(self.request, context)
+        context["po"] = PurchaseOrder.objects.filter(supplier=self.object)
+        print(context["po"])
+        return context
 
 
 # Create new PO

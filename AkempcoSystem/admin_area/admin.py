@@ -5,7 +5,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User, Group
 from django.utils.translation import gettext_lazy as _
 from .models import UserDetail, Store
-from purchases.models import PurchaseOrder
+from purchases.models import PurchaseOrder, PO_Product
 from stocks.models import WarehouseStock, StoreStock
 from sales.models import Discount, Sales, SalesPayment
 from member.models import Creditor
@@ -71,6 +71,7 @@ admin.site.register(Store, StoreAdmin)
 admin.site.register(WarehouseStock)
 admin.site.register(StoreStock)
 admin.site.register(PurchaseOrder)
+admin.site.register(PO_Product)
 admin.site.register(Discount, DiscountAdmin)
 admin.site.register(Creditor)
 admin.site.register(Sales)

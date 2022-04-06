@@ -101,7 +101,7 @@
                     {% if user.userdetail.userType == 'Purchaser' %}
                     <button type="button" class="btn btn-dark mb-2 btn-menu" id="clone_po" name="clone_po">Clone PO</button>
                     {% endif %}
-                    {% if po.get_status == 'Open' %}
+                    {% if po.status == 'Open' %}
                     <button type="button" class="btn btn-dark mb-2 btn-menu" id="receive_inv" name="receive_inv">Receive Inventory</button>
                     {% if po.received_item_count > 0 %}
                     <a href="{% url 'view_undelivered' po.pk %}" class="btn btn-dark mb-2 btn-menu" role="button">View Undelivered</a>
@@ -140,6 +140,7 @@
                     <tr><td colspan="7" style="text-align: center;">No products added yet.</td></tr>
                 {% else %}
                     {% for item in products %}
+                    {% if item.ordered_quantity > 0 %}
                         <tr>
                             {% if po.process_step < 3 and user.userdetail.userType == 'Purchaser' and po.received_item_count == 0 %}
                             <td class="text-center">
@@ -171,6 +172,7 @@
                             <td class="text-right">{{ item.unit_price|peso }}</td>
                             <td class="text-right">{{ item.po_subtotal|peso }}</td>
                         </tr>
+                    {% endif %}
                     {% endfor %}
 
                     <tr class="table-primary">

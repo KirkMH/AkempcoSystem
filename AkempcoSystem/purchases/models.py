@@ -246,6 +246,10 @@ class PurchaseOrder(models.Model):
         c = self.set_status()
         print(f"count={a}, total={b}, status={c}")
 
+    def fill_in_other_received_fields(self):
+        self.compute_received_items_count()
+        self.compute_total_received_amount()
+
     def compute_item_count(self):
         val = PO_Product.objects.filter(purchase_order=self).count()
         self.item_count = val
@@ -268,7 +272,7 @@ class PurchaseOrder(models.Model):
         products = PO_Product.objects.filter(purchase_order=self)
         count = 0
         for prod in products:
-            if prod.has_received():
+            if prod.has_received:
                 count = count + 1
         self.received_item_count = count
         self.save()
@@ -462,14 +466,20 @@ class PurchaseOrder(models.Model):
                 new_prod.received_qty = 0
                 new_prod.receive_now = 0
                 new_prod.save()
+                new_prod.compute_fields()
                 # adjust current record
                 prod.ordered_quantity = prod.received_qty
                 prod.receive_now = 0
+                prod.compute_fields()
                 prod.save()
 
         # update status of each PO (parent closed, child open)
         self.update_status()
+        self.fill_in_other_po_fields()
+        self.fill_in_other_received_fields()
         child_po.update_status()
+        child_po.fill_in_other_po_fields()
+        child_po.fill_in_other_received_fields()
         # Supplier fields
         self.supplier.last_po = child_po
         self.supplier.save()
@@ -504,8 +514,9 @@ class PurchaseOrder(models.Model):
         for p in products:
             p.pk = None
             p.purchase_order = new_po
-            p.receive_qty = 0
+            p.received_qty = 0
             p.receive_now = False
+            p.has_received = False
             p.save()
             p.compute_fields()
             
@@ -568,7 +579,7 @@ class PO_Product(models.Model):
         _("Received Subtotal"), 
         max_digits=11, 
         decimal_places=2,
-        default=0
+        default=0 
     )
 
     def compute_fields(self):
@@ -579,7 +590,7 @@ class PO_Product(models.Model):
         self.save()
 
     def __str__(self):
-        return self.product.full_description + ": " + str(self.ordered_quantity) + " " + self.product.uom.uom_description
+        return f"PO# {self.purchase_order.pk}: {self.product.full_description} - {self.ordered_quantity} {self.product.uom.uom_description}"
 
     def is_closed(self):
         return (self.ordered_quantity == self.received_qty)
@@ -591,4 +602,6 @@ class PO_Product(models.Model):
 
 
     class Meta:
-        ordering = ['product']
+        ordering = ['-purchase_order', 'product']
+        verbose_name = 'PO Product'
+        verbose_name_plural = 'PO Products'
