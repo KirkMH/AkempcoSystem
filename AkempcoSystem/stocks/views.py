@@ -133,6 +133,7 @@ class RVProductCreateView(BSModalCreateView):
             rv_prod.rv = rv
             rv_prod.requested_by = self.request.user
             rv_prod.save()
+            rv.set_item_count()
 
         else:
             messages.error(self.request, 'Please fill-in all the required fields.')
@@ -146,6 +147,7 @@ def delete_rv_product(request, pk):
     rv_pk = 0
     try:
         rv = get_object_or_404(RV_Product, pk=pk)
+        rv.set_item_count()
         prod = rv.product.full_description
         rv_pk = rv.rv.pk
         rv.delete()
@@ -168,6 +170,7 @@ class RVProductUpdateView(BSModalUpdateView):
         return context
 
     def get_success_url(self):
+        self.object.rv.set_item_count()
         rv_pk = self.object.rv.pk
         return reverse('rv_products', 
                         kwargs={'pk' : rv_pk})

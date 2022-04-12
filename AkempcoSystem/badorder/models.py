@@ -188,6 +188,9 @@ class BadOrder(models.Model):
             hist.remarks = 'Bad order: ' + item.reason
             hist.performed_by = self.reported_by
             hist.save()
+
+            # update product stocks
+            item.product.set_stock_count() # update product stocks
             
         # update fields of this record
         self.approved_by = user

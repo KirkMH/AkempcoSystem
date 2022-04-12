@@ -315,8 +315,8 @@ def select_product(request):
         data = {
             'supplier_price': supplier_price,
             'inv_uom': inv_uom,
-            'w_stock': product.get_warehouse_stock_count(),
-            's_stock': product.get_store_stock_count(),
+            'w_stock': product.warehouse_stocks,
+            's_stock': product.store_stocks,
             'should_order': product.get_qty_should_order()
         }
         return JsonResponse(data, safe=False)

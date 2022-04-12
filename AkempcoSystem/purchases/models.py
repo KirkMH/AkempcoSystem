@@ -55,16 +55,11 @@ class PurchaseOrder(models.Model):
         null=True,
         blank=True,
     )
-    po_total = models.DecimalField(
-        _("Total Amount"), 
-        max_digits=11, 
-        decimal_places=2,
-        default=0
-    )
     parent_po = models.PositiveIntegerField(
         _("Parent PO"),
         help_text="When PO is split for back-order, this is the source PO.",
         null=True,
+        blank=True,
         default=None
     )
     # approval details
@@ -229,6 +224,7 @@ class PurchaseOrder(models.Model):
             prod.compute_fields()
 
         self.save()
+        print(f"self.is_open: {self.is_open}")
         self.supplier.fill_in_other_fields()
         # trigger methods that update computed fields
         self.fill_in_other_po_fields()
@@ -331,6 +327,7 @@ class PurchaseOrder(models.Model):
         # set next part of process
         step = self.process_step
         self.process_step = step + 1
+        self.update_status()
         self.set_status()
         self.save()
 
@@ -340,6 +337,7 @@ class PurchaseOrder(models.Model):
         self.rejected_at = datetime.now()
         self.reject_reason = reason
         self.save()
+        self.update_status()
         self.set_status()
         self.supplier.fill_in_other_fields()
 
@@ -405,7 +403,6 @@ class PurchaseOrder(models.Model):
         products = PO_Product.objects.filter(purchase_order=self)
         for prod in products:
             # save to warehouse stocks
-            print(f"prod.receive_now: {prod.receive_now}")
             if prod.receive_now > 0:
                 product = prod.product
                 ws = WarehouseStock()
@@ -436,12 +433,14 @@ class PurchaseOrder(models.Model):
                 hist.remarks = 'Received delivered stocks.'
                 hist.performed_by = user
                 hist.save()
+                hist.set_current_balance()
                 
                 # update received_qty and clear receive_now
                 prod.received_qty = prod.received_qty + prod.receive_now
                 prod.receive_now = 0
                 prod.save()
                 prod.compute_fields()   # required for filling out of computed fields
+                prod.product.set_stock_count() # update product stocks
 
         self.received_by = user
         self.received_date = datetime.now()

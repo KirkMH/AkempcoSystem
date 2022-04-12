@@ -334,6 +334,18 @@ class Product(models.Model):
         _("For price review?"),
         default=False
     )
+    warehouse_stocks = models.PositiveIntegerField(
+        _("Warehouse Stocks"),
+        default=0
+    )
+    store_stocks = models.PositiveIntegerField(
+        _("Store Stocks"),
+        default=0
+    )
+    total_stocks = models.PositiveIntegerField(
+        _("Total Stocks"),
+        default=0
+    )
     # objects = models.Manager()
     # misc_qs = ProductManager()
 
@@ -353,20 +365,18 @@ class Product(models.Model):
     def is_buyer_info_required(self):
         return 'Yes' if self.is_buyer_info_needed else 'No'
 
-    def get_store_stock_count(self):
-        stocks = StoreStock.availableStocks.filter(product=self).aggregate(total=Sum('remaining_stocks'))['total']
-        if stocks is None: stocks = 0
-        return stocks
+    def set_stock_count(self):
+        s_stocks = StoreStock.availableStocks.filter(product=self).aggregate(total=Sum('remaining_stocks'))['total']
+        if s_stocks is None: s_stocks = 0
 
-    def get_warehouse_stock_count(self):
-        stocks = WarehouseStock.availableStocks.filter(product=self).aggregate(total=Sum('remaining_stocks'))['total']
-        if stocks is None: stocks = 0
-        return stocks
+        w_stocks = WarehouseStock.availableStocks.filter(product=self).aggregate(total=Sum('remaining_stocks'))['total']
+        if w_stocks is None: w_stocks = 0
 
-    def get_total_stock_count(self):
-        store = self.get_store_stock_count()
-        warehouse = self.get_warehouse_stock_count()
-        return store + warehouse
+        self.store_stocks = s_stocks
+        self.warehouse_stocks = w_stocks
+        self.total_stocks = s_stocks + w_stocks
+        self.save()
+
 
     def get_on_order_qty(self):
         qty = PO_Product.objects.filter(
@@ -378,18 +388,18 @@ class Product(models.Model):
         return qty if qty else 0
 
     def is_critical_level(self):
-        total = self.get_total_stock_count()
+        total = self.total_stocks
         return self.reorder_point >= total
 
     def is_overstock(self):
-        stocks = self.get_total_stock_count()
+        stocks = self.total_stocks
         on_order = self.get_on_order_qty()
         total = stocks + on_order
         print(total > self.ceiling_qty)
         return total > self.ceiling_qty
 
     def get_qty_should_order(self):
-        stocks = self.get_total_stock_count()
+        stocks = self.total_stocks
         on_order = self.get_on_order_qty()
         total = stocks + on_order
         should_order = 0
@@ -398,7 +408,7 @@ class Product(models.Model):
         return should_order
 
     def get_qty_to_reduce(self):
-        stocks = self.get_total_stock_count()
+        stocks = self.total_stocks
         on_order = self.get_on_order_qty()
         total = stocks + on_order
         reduce_by = 0
@@ -519,6 +529,7 @@ class Product(models.Model):
         hist.remarks = 'Purchased.'
         hist.performed_by = cashier
         hist.save()
+        hist.set_current_balance()
 
         return cogs
 
