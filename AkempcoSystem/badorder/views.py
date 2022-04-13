@@ -150,7 +150,9 @@ class BOProductCreateView(BSModalCreateView):
             form.instance.quantity = new_qty + old_qty
             form.instance.bad_order = bo
             form.instance.requested_by = self.request.user
-            form.save()
+            boi = form.save()
+            boi.fill_in_other_fields()
+            bo.fill_in_other_fields()
 
         else:
             messages.error(self.request, 'Please fill-in all the required fields.')
@@ -167,7 +169,9 @@ def delete_bo_product(request, pk):
         boi = get_object_or_404(BadOrderItem, pk=pk)
         bo_pk = boi.bad_order.pk
         prod = boi.product.full_description
+        bo = boi.bad_order
         boi.delete()
+        bo.fill_in_other_fields()
         messages.success(request, prod + " was removed from the bad order record.")
     except:
         messages.error(request, "There was an error removing the product from the bad order record.")
@@ -187,7 +191,10 @@ class BOProductUpdateView(BSModalUpdateView):
         return context
 
     def get_success_url(self):
-        bo_pk = self.object.bad_order.pk
+        self.object.fill_in_other_fields()
+        bo = self.object.bad_order
+        bo.fill_in_other_fields()
+        bo_pk = bo.pk
         return reverse('bo_products', 
                         kwargs={'pk' : bo_pk})
 

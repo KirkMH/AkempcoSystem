@@ -416,8 +416,13 @@ class Product(models.Model):
             reduce_by = total - self.ceiling_qty
         return reduce_by
 
+    def get_earliest_supplier_price_with_stock(self):
+        stock = WarehouseStock.availableStocks.filter(product=self).order_by('pk').first()
+        supplier_price = stock.supplier_price
+        return supplier_price
+
     def get_latest_supplier_price(self):
-        po = PO_Product.objects.filter(product=self).order_by('-pk').first()
+        po = PO_Product.objects.filter(product=self, purchase_order__status='Closed').order_by('-pk').first()
         return po.unit_price
 
     def compute_prices(self, price):

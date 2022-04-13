@@ -95,6 +95,7 @@
                     {% endif %}
                     <th width="15%">Barcode</th>
                     <th width="30%">Description</th>
+                    <th class="text-right">Unit Cost</th>
                     <th class="text-center">Quantity</th>
                     <th width="10%">Units</th>
                     <th>Reason</th>
@@ -119,6 +120,7 @@
                         {% endif %}
                         <td>{{ item.product.barcode }}</td>
                         <td>{{ item.product.full_description }}</td>
+                        <td class="text-right">{{ item.product.get_earliest_supplier_price_with_stock|peso }}</td>
                         <td class="text-center">{{ item.quantity }}</td>
                         <td class="text-center">{{ item.product.uom }}{{ item.quantity|pluralize }}</td>
                         <td>{{ item.reason }}</td>
