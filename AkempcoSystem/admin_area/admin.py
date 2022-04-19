@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from .models import UserDetail, Store
 from purchases.models import PurchaseOrder, PO_Product
 from stocks.models import WarehouseStock, StoreStock
-from sales.models import Discount, Sales, SalesPayment
+from sales.models import *
 from member.models import Creditor
 
 
@@ -75,6 +75,12 @@ admin.site.register(PO_Product)
 admin.site.register(Discount, DiscountAdmin)
 admin.site.register(Creditor)
 admin.site.register(Sales)
+class SalesItemAdmin(admin.ModelAdmin):
+    list_display = ('sales', 'product', 'unit_price', 'quantity', 'is_wholesale', 'less_vat', 'less_discount', 'subtotal', 'total')
+admin.site.register(SalesItem, SalesItemAdmin)
+admin.site.register(SalesItemCogs)
+admin.site.register(SalesInvoice)
+admin.site.register(SalesVoid)
 admin.site.register(SalesPayment)
 
 # remove Group

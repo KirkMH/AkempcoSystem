@@ -184,12 +184,12 @@ class SalesPaymentCreateView(BSModalCreateView):
 
                 pay_mode.sales = sales
                 pay_mode.amount = amount
-                pay_mode.save()
                 if sales.change > 0:
                     pay_mode.value = amount - sales.change
                 else:
                     pay_mode.value = amount
                 pay_mode.save()
+            sales.fill_in_other_fields()
 
         else:
             messages.error(self.request, 'Please fill-in all the required fields.')
