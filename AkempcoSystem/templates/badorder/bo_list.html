@@ -1,6 +1,10 @@
 {% extends '../base.html' %}
 {% load static form_tags %}
 
+{% block extra_header %}
+{% include '../includes/datatable.html' %}    
+{% endblock extra_header %}
+
 {% block page_title %}Bad Orders{% endblock page_title %}
 
 {% block breadcrumb %}
@@ -16,20 +20,15 @@
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                     <a href="{% url 'new_bo' %}" class="btn btn-primary">New</a>
                 </div>
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                    {% include 'includes/search_tool.html' %}
-                </div>
                 </div>
             </div>
         </form>
         <div class="card-body table-responsive">
-            <table class="table table-hover table-head-fixed table-sm">
+            <table id="dtBo" class="table table-hover table-head-fixed table-sm">
                 <thead>
                     <tr>
                         <th class="text-center" width="10%">Action</th>
-                        {% if user.userdetail.userType == 'Audit Committee' %}
-                        <th>Location</th>
-                        {% endif %}
+                        <th class="for_audit">Location</th>
                         <th>Supplier</th>
                         <th>Date Discovered</th>
                         <th class="text-center">Item Count</th>
@@ -39,43 +38,8 @@
                     </tr>
                 </thead>
                 <tbody>
-                    
-                    {% if not badorders %}
-                        <tr><td colspan="6" class="text-center">No data found.</td></tr>
-                    {% else %}
-                        
-                    {% for bo in badorders %}
-                        <tr>
-                            <td class="text-center">
-                                {% if bo.is_updatable and user.userdetail.userType == 'Warehouse Staff' %}
-                                    <a href="{% url 'bo_products' bo.pk %}" title="Edit"><i class="far fa-edit"></i></a>
-                                {% elif bo.is_for_approval and user.userdetail.userType == 'Audit Committee' %}
-                                    <a href="{% url 'bo_products' bo.pk %}" title="Manage BO"><i class="fas fa-check-double"></i></a>
-                                {% elif bo.is_approved %}
-                                     <a href="{% url 'bo_products' bo.pk %}" title="Action Taken"><i class="fas fa-fist-raised"></i></a>
-                                {% else %}
-                                     <a href="{% url 'bo_products' bo.pk %}" title="View"><i class="fas fa-eye"></i></a>
-                                {% endif %}
-                                
-                            </td>
-                            {% if user.userdetail.userType == 'Audit Committee' %}
-                            <td>{{ bo.in_warehouse|yesno:'Warehouse,Store,-' }}</td>
-                            {% endif %}
-                            <td>{{ bo.supplier.supplier_name }}</td>
-                            <td>{{ bo.date_discovered|date:'F d, Y' }}</td>
-                            <td class="text-center">{{ bo.number_of_items }}</td>
-                            <td class="text-right">{{ bo.grand_total|peso }}</td>
-                            <td>{{ bo.action_taken }}</td>
-                            <td>{{ bo.get_status }}</td>
-                        </tr>
-                    {% endfor %}
-                        
-                    {% endif %}
                 </tbody>
             </table>
-        </div>
-        <div class="card-footer">
-            {% include 'includes/pagination.html' %}
         </div>
     </div>
 
@@ -85,6 +49,84 @@
 {% block js %}
     <script>
         $(document).ready(function() {
+            const userType = "{{ user.userdetail.userType }}";
+            $("#dtBo").DataTable({
+                serverSide: true,
+                sAjaxSource: "{% url 'bo_dtlist' %}", 
+                columns: [
+                    {   
+                        name: "links",
+                        data: 0,
+                        render: function (data) {
+                            let links = '<a href="' + data + '/products" title="View"><i class="fas fa-eye"></i></a>';
+
+                            return links;
+                        },
+                        className: 'text-center'
+                    },
+                    {   
+                        name: "supplier_name",
+                        data: 1,
+                        render: function (data) {
+                            let loc = 'Store';
+                            if (data)
+                                loc = 'Warehouse';
+                            
+                            return loc;
+                        },
+                        className: 'text-center'
+                    },
+                    {name: "supplier_name", data: 2},
+                    {
+                        name: "date_discovered",
+                        data: 3,
+                        render: function (data) {
+                            return $.datepicker.formatDate('MM d, yyyy', new Date(data));
+                        }
+                    },
+                    {name: "number_of_items", data: 4, className: 'text-center'},
+                    {
+                        name: "grand_total", 
+                        data: 5, 
+                        className: 'text-right',
+                        render: function (data) {
+                            return peso.format(data);
+                        }
+                    },
+                    {name: "action_taken", data: 6},
+                    {
+                        name: "status", 
+                        data: 7,
+                        render: function (data) {
+                            let status = "";
+                            if (data === 1)
+                                status = "Pending";
+                            else if (data === 2)
+                                status = "For Approval";
+                            else if (data === 3)
+                                status = "Open";
+                            else if (data === 4)
+                                status = "Closed";
+                            else
+                                status = "Rejected";
+
+                            return status;
+                        }
+                    },
+                ],
+                order: [[2, 'asc']],
+                initComplete: function () {
+                    var api = this.api();
+                    
+                    if ( userType !== 'Audit Committee' ) {
+                        // Hide Office column
+                        api.column(1).visible( false );
+                    }
+                }
+            });
+            if (userType !== 'Audit Committee')
+                $('.for_audit').hide();
+
             $("#menu_fm").addClass("menu-open")
             $("#menu_trans_bo").addClass("active")
         })

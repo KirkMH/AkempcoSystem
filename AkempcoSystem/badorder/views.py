@@ -10,58 +10,26 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.db.models import Q
 
-from fm.views import get_index, add_search_key
+from django_serverside_datatable.views import ServerSideDatatableView
 from AkempcoSystem.decorators import user_is_allowed
 from admin_area.models import Feature, Store
 from .models import *
 from .forms import *
 
 
-# used by pagination
-MAX_ITEMS_PER_PAGE = 10
 
-
-################################
-#   Creditor FM
-################################
+@login_required()
+@user_is_allowed(Feature.TR_BO)
+def bo_list(request):
+    return render(request, "badorder/bo_list.html")
 
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_BO), name='dispatch')
-class BOListView(ListView):
-    model = BadOrder
-    context_object_name = 'badorders'
-    template_name = "badorder/bo_list.html"
-    paginate_by = MAX_ITEMS_PER_PAGE
-
-    def get_queryset(self):
-        # check if the user searched for something
-        key = get_index(self.request, "table_search")
-        object_list = self.model.objects.all()
-        if key:
-            key = key.lower()
-            loc = None
-            if key == 'warehouse':
-                loc = True
-            elif key == 'store':
-                loc = False
-            if loc is not None:
-                object_list = object_list.filter(
-                    Q(supplier__supplier_name__icontains=key) |
-                    Q(in_warehouse=loc)
-                )
-            else:
-                object_list = object_list.filter(
-                    Q(supplier__supplier_name__icontains=key)
-                )
-        if self.request.user.userdetail.userType == 'Warehouse Staff':
-            object_list = object_list.filter(in_warehouse=True)
-        elif self.request.user.userdetail.userType == 'Storekeeper':
-            object_list = object_list.filter(in_warehouse=False)
-        return object_list
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        return add_search_key(self.request, context)    
+class BODTListView(ServerSideDatatableView):
+	queryset = BadOrder.objects.all()
+	columns = ['pk', 'in_warehouse', 'supplier__supplier_name', 
+        'date_discovered', 'number_of_items', 'grand_total', 
+        'action_taken', 'process_step']
     
     
 @method_decorator(login_required, name='dispatch')

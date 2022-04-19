@@ -2,7 +2,8 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.BOListView.as_view(), name='bo_list'),
+    path('', views.bo_list, name='bo_list'),
+    path('dt', views.BODTListView.as_view(), name='bo_dtlist'),
     path('create', views.BadOrderCreateView.as_view(), name='new_bo'),
 
     # pk = BadOrder pk
