@@ -27,7 +27,7 @@ class UpdateCreditorForm(forms.ModelForm):
 
     class Meta:
         model = Creditor
-        fields = '__all__'
+        exclude = ('total_charges', 'transaction_count', 'total_transaction_amount', 'total_payments', 'remaining_credit', 'payable')
 
 ############################
 #       CreditorPayment

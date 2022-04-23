@@ -50,46 +50,67 @@ class Creditor(models.Model):
         help_text="Is this member/creditor still active?",
         default=True
     )
+    total_charges = models.DecimalField(
+        _("Total Charges"), 
+        max_digits=10, 
+        decimal_places=2,
+        default=0
+    )
+    transaction_count = models.PositiveIntegerField(
+        _("Transaction Count"), 
+        default=0
+    )
+    total_transaction_amount = models.DecimalField(
+        _("Total Transaction Amount"), 
+        max_digits=10, 
+        decimal_places=2,
+        default=0
+    )
+    total_payments = models.DecimalField(
+        _("Total Payments"), 
+        max_digits=10, 
+        decimal_places=2,
+        default=0
+    )
+    remaining_credit = models.DecimalField(
+        _("Remaining Credit"), 
+        max_digits=10, 
+        decimal_places=2,
+        default=0
+    )
+    payable = models.DecimalField(
+        _("Payable"), 
+        max_digits=10, 
+        decimal_places=2,
+        default=0
+    )
 
     objects = models.Manager()
     members = MemberCreditors()
     groups = GroupCreditors()
 
-    @ property
-    def total_charges(self):
-        total_charges = 0
+    def fill_in_other_fields(self):
+        charges = 0
         sales = Sales.objects.filter(customer=self, status='Completed').values_list('pk', flat=True)
         records = SalesPayment.objects.all()
         if records and sales:
             records = records.filter(sales__in=list(sales), payment_mode='Charge')
-            total_charges = records.aggregate(s_amt=Sum('amount'))['s_amt']
+            charges = records.aggregate(s_amt=Sum('amount'))['s_amt']
+        self.total_charges = charges
 
-        return total_charges
-
-    @property
-    def transaction_count(self):
         sales = Sales.objects.filter(customer=self, status='Completed')
-        return sales.count() if sales else 0
+        self.transaction_count = sales.count() if sales else 0
 
-    @property
-    def total_transaction_amount(self):
         sales = Sales.objects.filter(customer=self, status='Completed').values_list('pk', flat=True)
         total = SalesItem.objects.filter(sales__in=sales).aggregate(val=Sum(F('unit_price') * F('quantity')))['val']
-        return total if total else 0
+        self.total_transaction_amount = total if total else 0
         
-    # TODO: total payments
-    @property
-    def total_payments(self):
-        return CreditorPayment.objects.filter(creditor=self).aggregate(val=Sum('amount'))['val'] or 0
+        self.total_payments = CreditorPayment.objects.filter(creditor=self).aggregate(val=Sum('amount'))['val'] or 0
 
-    
-    @property
-    def remaining_credit(self):
-        return self.credit_limit - self.payable
-
-    @property
-    def payable(self):
-        return self.total_charges - self.total_payments
+        self.payable = self.total_charges - self.total_payments
+        
+        self.remaining_credit = self.credit_limit - self.payable
+        self.save()
 
 
     def get_latest_10_transactions(self):

@@ -710,6 +710,7 @@ class Sales(models.Model):
         invoice.sales = self
         invoice.details = details
         invoice.save()
+        invoice.fill_in_other_fields()
         # adjust store stocks accordingly
         items = SalesItem.objects.filter(sales=self)
         if items:
@@ -948,6 +949,17 @@ class SalesInvoice(models.Model):
         null=True,
         blank=True,
         default=None)
+    is_cancelled = models.BooleanField(
+        _("Is Cancelled?"),
+        default=False
+    )
+    payment_modes = models.CharField(
+        _("Payment Modes"), 
+        max_length=50,
+        blank=True,
+        null=True,
+        default=None
+    )
 
     @property
     def si_date(self):
@@ -957,16 +969,16 @@ class SalesInvoice(models.Model):
     def si_time(self):
         return self.sales_datetime.time()
 
-    @property
-    def is_cancelled(self):
-        return SalesVoid.objects.filter(sales_invoice=self).exists()
+    def fill_in_other_fields(self):
+        self.is_cancelled = SalesVoid.objects.filter(sales_invoice=self).exists()
+
+        modes = self.get_payment_modes()
+        self.payment_modes = ', '.join(modes)
+
+        self.save()
 
     def get_payment_modes(self):
         return list(self.sales.salespayment_set.order_by().values_list('payment_mode', flat=True).distinct())
-
-    def get_payment_modes_as_string(self):
-        modes = self.get_payment_modes()
-        return ', '.join(modes)
 
     def reprint(self, cashier):
         self.last_reprint = datetime.now()

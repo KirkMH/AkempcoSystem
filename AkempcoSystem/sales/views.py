@@ -14,6 +14,7 @@ from django_serverside_datatable.views import ServerSideDatatableView
 from django.contrib.auth.models import User
 from fm.views import get_index, add_search_key
 from fm.models import Product
+from member.models import Creditor
 from AkempcoSystem.decorators import user_is_allowed
 from admin_area.models import Feature, Store, UserDetail
 from .models import *

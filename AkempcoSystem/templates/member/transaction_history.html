@@ -45,16 +45,6 @@
                         </tr>
                     </thead>
                     <tbody style="font-size: 11pt;">
-                        {% for trans in transactions %}
-                        <tr>
-                            <td class="text-center"><a href="#" class="view-receipt" title="View Receipt" data-form-url="{% url 'open_transaction' trans.pk %}"><i class="far fa-eye"></i></a></td>
-                            <td class="text-center">{{ trans.pk|seq_num }}</td>
-                            <td>{{ trans.sales_datetime|date:'F d, Y H:i'}} </td>
-                            <td class="text-center">{{ trans.sales.item_count }}</td>
-                            <td>{{ trans.get_payment_modes_as_string }} </td>
-                            <td class="text-right">{{ trans.sales.total|peso }}</td>
-                        </tr>
-                        {% endfor %}
                     </tbody>
                 </table>
             </div>
@@ -85,18 +75,52 @@
     <script>
         $(document).ready(function() {
             $("#dtTransaction").DataTable({
+                serverSide: true,
+                sAjaxSource: "{% url 'transaction_history_dt' %}", 
+                columns: [
+                    {   
+                        name: 'links',
+                        data: 0,
+                        render: function (data) {
+                            const url = "history/" + data + "/open";
+                            return '<a href="#" class="view-receipt" title="View Receipt" data-form-url="' + url + '"><i class="far fa-eye"></i></a>';
+                        },
+                        className: 'text-center'
+                    },
+                    { 
+                        name: 'pk', 
+                        data: 0,
+                        render: function (data) {
+                            return String(data).padStart(12, '0');
+                        }
+                    },
+                    { 
+                        name: 'date_time', 
+                        data: 1,
+                        render: function (data) {
+                            return $.datepicker.formatDate('MM d, yyyy', new Date(data));
+                        }
+                    },
+                    { name: 'item_count', data: 2, className: 'text-center'},
+                    { name: 'payment_modes', data: 3},
+                    {
+                        name: "total", 
+                        data: 4, 
+                        className: 'text-right',
+                        render: function (data) {
+                            return peso.format(data);
+                        }
+                    },
+                ],
                 order: [[1, 'desc']],
-            });
-            
-
-            function viewReceipt() {
-                $(".view-receipt").each(function () {
-                    $(this).modalForm({
-                        formURL: $(this).data("form-url")
+                initComplete: function () {
+                    $(".view-receipt").each(function () {
+                        $(this).modalForm({
+                            formURL: $(this).data("form-url")
+                        });
                     });
-                });
-            }
-            viewReceipt();
+                }
+            });
         })
     </script>
 {% endblock js %}

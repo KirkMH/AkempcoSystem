@@ -31,7 +31,7 @@ def creditor_list(request):
 @method_decorator(user_is_allowed(Feature.FM_CREDITOR), name='dispatch')
 class CreditorDTListView(ServerSideDatatableView):
 	queryset = Creditor.objects.all()
-	columns = ['pk', 'name', 'address', 'creditor_type', 'credit_limit', 'active']
+	columns = ['pk', 'name', 'address', 'creditor_type', 'credit_limit', 'active', 'payable']
     
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.FM_CREDITOR), name='dispatch')
@@ -66,6 +66,11 @@ class CreditorUpdateView(SuccessMessageMixin, UpdateView):
     success_url = reverse_lazy('cred_list')
     success_message = "%(name)s was updated successfully."
 
+    def form_valid(self, form):
+        cred = form.save()
+        cred.fill_in_other_fields()
+        return super().form_valid(form)
+
 
 @login_required()
 def dashboard_member_view(request):
@@ -93,17 +98,18 @@ def dashboard_member_view(request):
     }
     return render(request, 'member/dashboard.html', context)
     
-@login_required()
-def transaction_history(request):
-    # for transaction history
-    member = request.user.userdetail.linked_creditor_acct
-    transactions = member.get_all_transactions()
+@method_decorator(login_required, name='dispatch')
+class TransactionHistoryDTListView(ServerSideDatatableView):
+	
+    def get(self, request, *args, **kwargs):
+        member = request.user.userdetail.linked_creditor_acct
+        self.queryset = member.get_all_transactions()
+        self.columns = ['pk', 'sales_datetime', 'sales__item_count', 'payment_modes', 'sales__total']
+        return super().get(request, *args, **kwargs)
+    
 
-    # pass to template
-    context = {
-        'transactions': transactions
-    }
-    return render(request, 'member/transaction_history.html', context)
+def transaction_history(request):
+    return render(request, 'member/transaction_history.html')
 
     
 def open_transaction(request, pk):
@@ -118,15 +124,13 @@ def open_transaction(request, pk):
     return render(request, 'member/sales_invoice.html', context)
 
 
-@method_decorator(login_required, name='dispatch')
-class PayableListView(ListView):
-    context_object_name = 'creditors'
-    template_name = "member/payable_list.html"
-    model = Creditor
-	
-    def get_queryset(self):
-        return super().get_queryset().filter(active=True)
+#########################################
+### Member Payable/Payment Transactions
+#########################################
 
+@login_required()
+def payable_listview(request):
+    return render(request, "member/payable_list.html")
     
 class PaymentCreateView(CreateView):
     model = CreditorPayment
@@ -144,9 +148,11 @@ class PaymentCreateView(CreateView):
         form = NewPaymentForm(request.POST)
         if form.is_valid():
             payment = form.save(commit=False)
-            payment.creditor = get_object_or_404(Creditor, pk=kwargs['pk'])
+            creditor = get_object_or_404(Creditor, pk=kwargs['pk'])
+            payment.creditor = creditor
             payment.posted_by = request.user
             payment.save()
+            creditor.fill_in_other_fields()
             messages.success(request, payment.creditor.name + "'s payment was posted successfully.")        
             return redirect('payable_list')
         else:
