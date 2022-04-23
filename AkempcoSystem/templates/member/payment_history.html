@@ -77,6 +77,25 @@
     <script>
         $(document).ready(function() {
             $("#dtPayments").DataTable({
+                serverSide: true,
+                sAjaxSource: "{% url 'transaction_history_dt' %}", 
+                columns: [
+                    { 
+                        name: 'date_posted', 
+                        data: 1,
+                        render: function (data) {
+                            return $.datepicker.formatDate('MM d, yy', new Date(data));
+                        }
+                    },
+                    {
+                        name: "amount", 
+                        data: 2, 
+                        className: 'text-right',
+                        render: function (data) {
+                            return peso.format(data);
+                        }
+                    },
+                ],
                 order: [[0, 'desc']],
             });
         })

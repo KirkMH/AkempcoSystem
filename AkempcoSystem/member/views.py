@@ -161,15 +161,16 @@ class PaymentCreateView(CreateView):
     
 @login_required()
 def payment_history(request):
-    # for transaction history
-    member = request.user.userdetail.linked_creditor_acct
-    payments = member.get_all_payments()
+    return render(request, 'member/payment_history.html')
 
-    # pass to template
-    context = {
-        'payments': payments
-    }
-    return render(request, 'member/payment_history.html', context)
+@method_decorator(login_required, name='dispatch')
+class PaymentHistoryDTListView(ServerSideDatatableView):
+	
+    def get(self, request, *args, **kwargs):
+        member = request.user.userdetail.linked_creditor_acct
+        self.queryset = member.get_all_payments()
+        self.columns = ['pk', 'date_posted', 'amount']
+        return super().get(request, *args, **kwargs)
 
 
 #################################
