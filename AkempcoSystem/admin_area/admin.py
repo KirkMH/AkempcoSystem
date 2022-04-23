@@ -8,7 +8,7 @@ from .models import UserDetail, Store
 from purchases.models import PurchaseOrder, PO_Product
 from stocks.models import WarehouseStock, StoreStock
 from sales.models import *
-from member.models import Creditor
+from member.models import Creditor, CreditorPayment
 
 
 admin.site.site_header = 'AKEMPCO System Administrator'
@@ -74,6 +74,7 @@ admin.site.register(PurchaseOrder)
 admin.site.register(PO_Product)
 admin.site.register(Discount, DiscountAdmin)
 admin.site.register(Creditor)
+admin.site.register(CreditorPayment)
 admin.site.register(Sales)
 class SalesItemAdmin(admin.ModelAdmin):
     list_display = ('sales', 'product', 'unit_price', 'quantity', 'is_wholesale', 'less_vat', 'less_discount', 'subtotal', 'total')
