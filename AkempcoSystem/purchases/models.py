@@ -441,6 +441,7 @@ class PurchaseOrder(models.Model):
                 prod.save()
                 prod.compute_fields()   # required for filling out of computed fields
                 prod.product.set_stock_count() # update product stocks
+                prod.product.set_latest_supplier_price()
 
         self.received_by = user
         self.received_date = datetime.now()
@@ -587,6 +588,7 @@ class PO_Product(models.Model):
         self.has_received = (self.received_qty > 0)
         self.received_subtotal = self.unit_price * self.received_qty
         self.save()
+        self.product.set_latest_supplier_price()
 
     def __str__(self):
         return f"PO# {self.purchase_order.pk}: {self.product.full_description} - {self.ordered_quantity} {self.product.uom.uom_description}"

@@ -4,6 +4,7 @@ from django.views.generic import ListView, CreateView, DetailView
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.db.models import Q
+from django_serverside_datatable.views import ServerSideDatatableView
 
 from AkempcoSystem.decorators import user_is_allowed
 from django.contrib.auth.decorators import login_required
@@ -21,59 +22,37 @@ from .forms import NewProductPricingForm
 MAX_ITEMS_PER_PAGE = 10
 
 
+@login_required
+@user_is_allowed(Feature.TR_PRICING)
+def product_pricing_list(request):
+    context = {'type': 'selected'}
+    return render(request, "pricing/pricing_review.html", context)
+
 # List of Product with prices for approval
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_PRICING), name='dispatch')
-class ProductPricingListView(ListView):
-    model = Product
-    context_object_name = 'products'
-    paginate_by = MAX_ITEMS_PER_PAGE
-    template_name = "pricing/pricing_review.html"
+class ProductPricingDTListView(ServerSideDatatableView):
+    queryset = Product.objects.filter(
+        Q(for_price_review=True) |
+        Q(selling_price=0)
+    )
+    columns = ['pk', 'full_description', 'latest_supplier_price', 'selling_price', 'wholesale_price', 'wholesale_qty']
 
-    def get_queryset(self):
-        # check if the user searched for something
-        key = get_index(self.request, "table_search")
-        object_list = self.model.objects.filter(
-            Q(for_price_review=True) |
-            Q(selling_price=0)
-        )
-        if key:
-            object_list = object_list.filter(full_description__icontains=key)
-        return object_list
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["type"] = "selected"
-        return add_search_key(self.request, context)
-
+@login_required
+@user_is_allowed(Feature.TR_PRICING)
+def all_product_pricing_list(request):
+    context = {'type': 'all'}
+    return render(request, "pricing/pricing_review.html", context)
 
 # List of all products with their prices
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_PRICING), name='dispatch')
-class AllProductPricingListView(ListView):
+class AllProductPricingDTListView(ServerSideDatatableView):
     model = Product
-    context_object_name = 'products'
-    paginate_by = MAX_ITEMS_PER_PAGE
-    template_name = "pricing/pricing_review.html"
-
-    def get_queryset(self):
-        # check if the user searched for something
-        key = get_index(self.request, "table_search")
-        object_list = None
-        if key:
-            object_list = self.model.objects.filter(
-                Q(full_description__icontains=key)
-            )
-        else:
-            object_list = self.model.objects.all()
-
-        return object_list
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["type"] = "all"
-        return add_search_key(self.request, context)
-
+    columns = ['pk', 'full_description', 'latest_supplier_price', 'selling_price', 'wholesale_price', 'wholesale_qty']
+    
+    
         
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_PRICING), name='dispatch')

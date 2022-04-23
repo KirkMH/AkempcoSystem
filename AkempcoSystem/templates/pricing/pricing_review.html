@@ -1,6 +1,10 @@
 {% extends '../base.html' %}
 {% load static form_tags %}
 
+{% block extra_header %}
+{% include '../includes/datatable.html' %}    
+{% endblock extra_header %}
+
 {% block page_title %}Price Management
 <div class="text-muted">
 {% if type == 'selected' %}
@@ -33,7 +37,7 @@ All Products
         </div>
     </form>
     <div class="card-body table-responsive">
-        <table class="table table-hover table-head-fixed table-sm">
+        <table id="dtReview" class="table table-hover table-head-fixed table-sm">
                 <thead>
                     <tr>
                         <th class="text-center">Action</th>
@@ -45,32 +49,10 @@ All Products
                     </tr>
                 </thead>
                 <tbody>
-                    
-                    {% if not products %}
-                        <tr><td colspan="6" class="text-center">It seems all product prices are up-to-date.</td></tr>
-                    {% else %}
-                        {% for item in products %}
-                        <tr>
-                            <td class="text-center">
-                                <a href="{% url 'pricing_form' item.pk %}" title="Details"><i class="fas fa-info-circle"></i></a>
-                            </td>
-                            <td>{{ item.full_description }}</td>
-                            <td class="text-right">{{ item.get_latest_supplier_price|peso }}</td>
-                            <td class="text-right {% if item.selling_price == 0 %}bg-warning{% endif %}">{{ item.selling_price|peso }}</td>
-                            <td class="text-right">{{ item.wholesale_price|peso }}</td>
-                            <td class="text-center">{{ item.wholesale_qty }}</td>
-                        </tr>
-                        {% endfor %}
-                    {% endif %}
-                        
-                    
                 </tbody>
             </table>
         </div>
         
-        <div class="card-footer">
-            {% include 'includes/pagination.html' %}
-        </div>
     </div>
     
 {% endblock main_content %}
@@ -79,6 +61,61 @@ All Products
 {% block js %}
     <script>
         $(document).ready(function() {
+            const src = "{{ type }}" == 'selected' ? 
+                            "{% url 'price_review_dt' %}" :
+                            "{% url 'price_all_dt' %}";
+            $("#dtReview").DataTable({
+                serverSide: true,
+                sAjaxSource: src, 
+                columns: [
+                    {   
+                        name: 'links',
+                        data: 0,
+                        render: function (data) {
+                            return '<a href="product/' + data + '/entry" title="Details"><i class="fas fa-info-circle"></i></a>';
+                        },
+                        className: 'text-center'
+                    },
+                    { 
+                        name: 'full_description', 
+                        data: 1
+                    },
+                    {
+                        name: "latest_supplier_price", 
+                        data: 2, 
+                        className: 'text-right',
+                        render: function (data) {
+                            return peso.format(data);
+                        }
+                    },
+                    {
+                        name: "selling_price", 
+                        data: 3, 
+                        className: 'text-right',
+                        render: function (data) {
+                            if (data > 0)
+                                return peso.format(data);
+                            else
+                                return '<span style="background-color: #f00;">' + peso.format(data) + '</span>';
+                        }
+                    },
+                    {
+                        name: "wholesale_price", 
+                        data: 4, 
+                        className: 'text-right',
+                        render: function (data) {
+                            return peso.format(data);
+                        }
+                    },
+                    {
+                        name: "wholesale_qty", 
+                        data: 5, 
+                        className: 'text-center'
+                    },
+                ],
+                order: [[1, 'asc']],
+            });
+
             $("#menu_trans").addClass("menu-open")
             $("#menu_trans_pricing").addClass("active")
         })

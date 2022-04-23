@@ -316,11 +316,13 @@ class Product(models.Model):
     price_updated_on = models.DateField(
         _("Price updated on"),
         null=True,
+        blank=True,
         default=None 
     )
     cancelled_at = models.DateTimeField(
         _("Cancelled at"),
         null=True,
+        blank=True,
         default=None 
     )
     suppliers = models.ManyToManyField(Supplier)
@@ -345,6 +347,14 @@ class Product(models.Model):
     total_stocks = models.PositiveIntegerField(
         _("Total Stocks"),
         default=0
+    )
+    latest_supplier_price = models.DecimalField(
+        _("Latest Supplier Price"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0,
+        null=True,
+        blank=True
     )
     # objects = models.Manager()
     # misc_qs = ProductManager()
@@ -421,9 +431,10 @@ class Product(models.Model):
         supplier_price = stock.supplier_price
         return supplier_price
 
-    def get_latest_supplier_price(self):
+    def set_latest_supplier_price(self):
         po = PO_Product.objects.filter(product=self, purchase_order__status='Closed').order_by('-pk').first()
-        return po.unit_price
+        self.latest_supplier_price = po.unit_price if po else 0
+        self.save()
 
     def compute_prices(self, price):
         store = Store.objects.all().order_by('-pk').first()
