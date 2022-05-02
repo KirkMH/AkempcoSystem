@@ -73,7 +73,7 @@
                     
             </div>
             
-            {% if po.get_received_items_count > 0 %}
+            {% if po.received_item_count > 0 %}
             <div class="col-lg-1 invoice-col"><abbr title="Receiving Reference Number">Ref. No.:</abbr></div>
             <div class="col-lg-5 invoice-col font-weight-bold">{{ po.reference_number }}</div>
             {% endif %}
@@ -101,14 +101,14 @@
                     {% if user.userdetail.userType == 'Purchaser' %}
                     <button type="button" class="btn btn-dark mb-2 btn-menu" id="clone_po" name="clone_po">Clone PO</button>
                     {% endif %}
-                    {% if po.get_status == 'Open' %}
+                    {% if po.status == 'Open' %}
                     <button type="button" class="btn btn-dark mb-2 btn-menu" id="receive_inv" name="receive_inv">Receive Inventory</button>
-                    {% if po.get_received_items_count > 0 %}
+                    {% if po.received_item_count > 0 %}
                     <a href="{% url 'view_undelivered' po.pk %}" class="btn btn-dark mb-2 btn-menu" role="button">View Undelivered</a>
                     {% endif %}
                         
                     {% endif %}
-                    {% if po.get_received_items_count > 0 %}
+                    {% if po.received_item_count > 0 %}
                     <br>
                     <a href="{% url 'print_variance' po.pk %}" class="btn btn-dark mb-2 btn-menu" role="button">Print Variance Report</a>
                     <a href="{% url 'print_receiving' po.pk %}" class="btn btn-dark mb-2 btn-menu" role="button">Print Receiving Report</a>
@@ -120,13 +120,13 @@
         <table class="table table-sm table-hover">
             <thead>
                 <tr>
-                    {% if po.process_step < 3 and user.userdetail.userType == 'Purchaser' and po.get_received_items_count == 0 %}
+                    {% if po.process_step < 3 and user.userdetail.userType == 'Purchaser' and po.received_item_count == 0 %}
                     <th width="9%">Action</th>
                     {% endif %}
                     <th width="15%">Barcode</th>
                     <th width="30%">Description</th>
                     <th width="9%">Ordered Qty</th>
-                    {% if po.get_received_items_count > 0 %}
+                    {% if po.received_item_count > 0 %}
                     <th width="9%">Received Qty</th>
                     {% endif %}
                     <th width="10%">Units</th>
@@ -140,14 +140,15 @@
                     <tr><td colspan="7" style="text-align: center;">No products added yet.</td></tr>
                 {% else %}
                     {% for item in products %}
+                    {% if item.ordered_quantity > 0 %}
                         <tr>
-                            {% if po.process_step < 3 and user.userdetail.userType == 'Purchaser' and po.get_received_items_count == 0 %}
+                            {% if po.process_step < 3 and user.userdetail.userType == 'Purchaser' and po.received_item_count == 0 %}
                             <td class="text-center">
                                 
-                                <a href="#" class="update-item" data-form-url="{% url 'product_edit' po.pk item.pk %}">
+                                <a href="#" class="update-item" data-form-url="{% url 'product_edit' item.pk %}">
                                     <i class="far fa-edit"></i>
                                 </a>| 
-                                <a href="#" class="delete-item" data-product-name="{{ item.product.full_description }}" data-form-url="{% url 'product_delete' po.pk item.pk %}">
+                                <a href="#" class="delete-item" data-product-name="{{ item.product.full_description }}" data-form-url="{% url 'product_delete' item.pk %}">
                                     <i class="far fa-trash-alt"></i>
                                 </a>
                             </td>
@@ -157,20 +158,21 @@
                             <td class="text-center">
                                 {{ item.ordered_quantity }}
                                 
-                                {% if po.process_step > 1 and item.product.is_overstock and po.get_received_items_count == 0 %}
+                                {% if po.process_step > 1 and item.product.is_overstock and po.received_item_count == 0 %}
                                 <a href="#" class="badge badge-warning rounded-pill badge-notification" data-toggle="tooltip" title="This may cause overstocking. Consider reducing stocks by {{ item.product.get_qty_to_reduce }} {{ item.product.uom.uom_description|lower }}{{ item.product.get_qty_to_reduce|pluralize }}.">!</a>
-                                {% elif po.process_step == 1 and item.ordered_quantity > item.product.get_qty_should_order and po.get_received_items_count == 0 %}
+                                {% elif po.process_step == 1 and item.ordered_quantity > item.product.get_qty_should_order and po.received_item_count == 0 %}
                                 <a href="#" class="badge badge-warning rounded-pill badge-notification" data-toggle="tooltip" title="This may cause overstocking. Consider ordering {{ item.product.get_qty_should_order }} only.">!</a>
                                 {% endif %}
                                     
                             </td>
-                            {% if po.get_received_items_count > 0 %}
+                            {% if po.received_item_count > 0 %}
                             <td class="text-center">{{ item.received_qty }}</td>
                             {% endif %}
                             <td class="text-center">{{ item.product.uom }}{{ item.ordered_quantity|pluralize }}</td>
                             <td class="text-right">{{ item.unit_price|peso }}</td>
-                            <td class="text-right">{{ item.get_po_subtotal|peso }}</td>
+                            <td class="text-right">{{ item.po_subtotal|peso }}</td>
                         </tr>
+                    {% endif %}
                     {% endfor %}
 
                     <tr class="table-primary">
@@ -179,9 +181,9 @@
                         {% else %}
                         <td class="text-left">TOTAL</td>
                         {% endif %}
-                        <td>{{ po.get_item_count }} item{{ po.get_item_count|pluralize }}</td>
-                        <td colspan="{% if po.get_received_items_count > 0 %}4{% else %}3{% endif %}" class="text-center"></td>
-                        <td class="text-right">{{ po.get_total_po_amount|peso }}</td>
+                        <td>{{ po.item_count }} item{{ po.item_count|pluralize }}</td>
+                        <td colspan="{% if po.received_item_count > 0 %}4{% else %}3{% endif %}" class="text-center"></td>
+                        <td class="text-right">{{ po.total_po_amount|peso }}</td>
                     </tr>
                 {% endif %}
                     

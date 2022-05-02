@@ -43,24 +43,6 @@
                 </tr>
             </thead>
             <tbody>
-                
-                {% if not creditors %}
-                    <tr><td colspan="6" class="text-center">No data found in table.</td></tr>
-                {% else %}
-                    
-                    {% for cred in creditors %}
-                        <tr>
-                            <td class="text-center"><a href="{% url 'new_payment' cred.pk %}" class="add-payment" title="Add Payment"><i class="fas fa-money-bill"></i></a></td>
-                            <td>{{ cred.name }}</td>
-                            <td>{{ cred.address }}</td>
-                            <td class="text-center">{{ cred.creditor_type }}</td>
-                            <td class="text-right">{{ cred.credit_limit|peso }}</td>
-                            <td class="text-right">{{ cred.payable|peso }}</td>
-                        </tr>
-                    {% endfor %}
-
-                {% endif %}
-                    
             </tbody>
         </table>
     </div>
@@ -73,6 +55,37 @@
     <script>
         $(document).ready(function() {
             $("#dtCreditor").DataTable({
+                serverSide: true,
+                sAjaxSource: "{% url 'cred_dtlist' %}", 
+                columns: [
+                    {   
+                        name: 'links',
+                        data: 0,
+                        render: function (data) {
+                            return '<a href="payment/' + data + '/new" class="add-payment" title="Add Payment"><i class="fas fa-money-bill"></i></a>';
+                        },
+                        className: 'text-center'
+                    },
+                    { name: 'name', data: 1},
+                    { name: 'address', data: 2},
+                    { name: 'creditor_type', data: 3},
+                    {
+                        name: "credit_limit", 
+                        data: 4, 
+                        className: 'text-right',
+                        render: function (data) {
+                            return peso.format(data);
+                        }
+                    },
+                    {
+                        name: "payable", 
+                        data: 6, 
+                        className: 'text-right',
+                        render: function (data) {
+                            return peso.format(data);
+                        }
+                    },
+                ],
                 order: [[1, 'asc']],
             });
 

@@ -14,6 +14,7 @@ from django_serverside_datatable.views import ServerSideDatatableView
 from django.contrib.auth.models import User
 from fm.views import get_index, add_search_key
 from fm.models import Product
+from member.models import Creditor
 from AkempcoSystem.decorators import user_is_allowed
 from admin_area.models import Feature, Store, UserDetail
 from .models import *
@@ -184,12 +185,12 @@ class SalesPaymentCreateView(BSModalCreateView):
 
                 pay_mode.sales = sales
                 pay_mode.amount = amount
-                pay_mode.save()
                 if sales.change > 0:
                     pay_mode.value = amount - sales.change
                 else:
                     pay_mode.value = amount
                 pay_mode.save()
+            sales.fill_in_other_fields()
 
         else:
             messages.error(self.request, 'Please fill-in all the required fields.')

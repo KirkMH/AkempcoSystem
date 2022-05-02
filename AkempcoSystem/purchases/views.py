@@ -73,26 +73,25 @@ class ApprovalListView(ListView):
         return object_list
 
 
+@login_required
+@user_is_allowed(Feature.TR_PURCHASES)
+def supplier_orders(request, pk):
+    request.session['po_supplier_id'] = pk
+    return render(request, "purchases/po_list.html", {'supplier_pk': pk})
+
+
 # PO List of selected supplier
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
-class PurchaseSupplierDetailView(DetailView):
-    model = Supplier
-    context_object_name = 'supplier'
-    template_name = "purchases/po_list.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        po = PurchaseOrder.objects.filter(supplier=self.object)
-        key = get_index(self.request, "table_search")
-        if key:
-            po = po.filter(
-                Q(pk__icontains=key) |
-                Q(category__category_description__icontains=key)
-            )
-        context["po"] = po
-        return add_search_key(self.request, context)
-
+class PurchaseSupplierDTView(ServerSideDatatableView):
+    
+    def get(self, request, *args, **kwargs):
+        pk = request.session.get('po_supplier_id', 0)
+        supplier = get_object_or_404(Supplier, pk=pk)
+        self.queryset = PurchaseOrder.objects.filter(supplier=supplier)
+        self.columns = ['pk', 'po_date', 'category__category_description', 'item_count', 'total_po_amount', 'status']
+        return super().get(request, *args, **kwargs)
+        
 
 # Create new PO
 @method_decorator(login_required, name='dispatch')
@@ -186,6 +185,7 @@ class POProductCreateView(BSModalCreateView):
         context = super().get_context_data(**kwargs)
         po = get_object_or_404(PurchaseOrder, pk=self.kwargs['pk'])
         context["form"].fields["product"].queryset = Product.objects.filter(status='ACTIVE', suppliers=po.supplier, category=po.category)
+        context['action'] = "Add"
         return context
 
     def post(self, request, *args, **kwargs):
@@ -199,7 +199,8 @@ class POProductCreateView(BSModalCreateView):
             po_prod.ordered_quantity = ordered_quantity + prod_qty
             po_prod.purchase_order = po
             po_prod.save()
-
+            po_prod.compute_fields()
+            po.fill_in_other_po_fields()
         else:
             messages.error(self.request, 'Please fill-in all the required fields.')
             
@@ -218,20 +219,19 @@ class POProductUpdateView(BSModalUpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        po = get_object_or_404(PurchaseOrder, pk=self.kwargs['pk'])
+        po = self.object.purchase_order
         context["form"].fields["product"].queryset = Product.objects.filter(status='ACTIVE', suppliers=po.supplier, category=po.category)
+        context['action'] = 'Edit'
         return context
-
-    def get_object(self):
-        item_pk = self.kwargs['item_pk']
-        return PO_Product.objects.get(pk=item_pk)
 
     def get_success_url(self):
         return reverse('po_products', 
-                        kwargs={'pk' : self.kwargs['pk']})
+                        kwargs={'pk' : self.object.purchase_order.pk})
 
     def form_valid(self, form):
         prod = self.get_object().product.full_description
+        self.object.compute_fields()
+        self.object.purchase_order.fill_in_other_po_fields()
         return super().form_valid(form)
     
 
@@ -241,16 +241,14 @@ class POProductDeleteView(BSModalDeleteView):
     model = PO_Product
     success_url = "/"
 
-    def get_object(self):
-        item_pk = self.kwargs['item_pk']
-        return PO_Product.objects.get(pk=item_pk)
-
     def get(self, request, *args, **kwargs):
         return self.post(request, *args, **kwargs)
 
     def get_success_url(self):
+        po = self.object.purchase_order
+        po.fill_in_other_po_fields()
         return reverse('po_products', 
-                        kwargs={'pk' : self.kwargs['pk']})
+                        kwargs={'pk' : po.pk})
 
 
 
@@ -322,8 +320,8 @@ def select_product(request):
         data = {
             'supplier_price': supplier_price,
             'inv_uom': inv_uom,
-            'w_stock': product.get_warehouse_stock_count(),
-            's_stock': product.get_store_stock_count(),
+            'w_stock': product.warehouse_stocks,
+            's_stock': product.store_stocks,
             'should_order': product.get_qty_should_order()
         }
         return JsonResponse(data, safe=False)

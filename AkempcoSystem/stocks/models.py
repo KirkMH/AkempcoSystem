@@ -131,19 +131,31 @@ class RequisitionVoucher(models.Model):
         _("Process Step"),
         default=1 #Pending
     )
+    item_count = models.PositiveIntegerField(
+        _("Item Count"),
+        default=0
+    )
+    status = models.CharField(
+        _("Status"), 
+        max_length=15,
+        default=RV_PROCESS.STEPS[0][1]
+    )
 
     def __str__(self):
         return 'RV# ' + str(self.pk) + ': ' + self.get_status()
     
-    def get_item_count(self):
-        count = RV_Product.objects.filter(rv=self).count()
-        return 0 if count is None else count
+    def set_item_count(self):
+        count = RV_Product.objects.filter(rv=self).count() or 0
+        self.item_count = count
+        self.save()
 
-    def get_status(self):
+    def set_status(self):
+        status = None
         for step in RV_PROCESS.STEPS:
             if self.process_step == step[0]:
-                return step[1]
-        return None
+                status = step[1]
+        self.status = status
+        self.save()
 
     def is_pending(self):
         return self.process_step == 1
@@ -172,32 +184,28 @@ class RequisitionVoucher(models.Model):
     def submit(self):
         self.process_step = 2
         self.save()
+        self.set_item_count()
+        self.set_status()
 
     def approve(self, user):
         self.approved_by = user
         self.approved_at = datetime.now()
         self.process_step = 3
         self.save()
+        self.set_status()
 
     def release(self, user):
         self.released_by = user
         self.released_at = datetime.now()
         self.process_step = 4
         self.save()
+        self.set_status()
 
     def move_to_store(self, user, whs_pk, qty):
         whs = WarehouseStock.objects.get(pk=whs_pk)
         # deduct qty from wh's remaining stocks
         whs.remaining_stocks = whs.remaining_stocks - qty
         whs.save()
-        # record in history
-        hist = ProductHistory()
-        hist.product = whs.product
-        hist.location = 0
-        hist.quantity = 0 - qty
-        hist.remarks = 'Transfered to the store.'
-        hist.performed_by = self.released_by
-        hist.save()
         # create a new store record
         ss = StoreStock()
         ss.requisition_voucher = self
@@ -207,17 +215,12 @@ class RequisitionVoucher(models.Model):
         ss.quantity = qty
         ss.remaining_stocks = qty
         ss.save()
-        # record in history
-        hist.pk = None
-        hist.location = 1
-        hist.quantity = qty
-        hist.remarks = 'Received from the warehouse.'
-        hist.save()
 
     def receive(self, user):
         self.received_by = user
         self.received_at = datetime.now()
         self.process_step = 5
+        self.set_status()
         self.save()
         # get list of requested products
         reqs = RV_Product.objects.filter(rv=self)
@@ -238,17 +241,39 @@ class RequisitionVoucher(models.Model):
                     qty = qty - stocks
                     # transfer only the remaining_stocks of this record
                     self.move_to_store(user, wh.pk, stocks)
+            
+            # record in history
+            hist = ProductHistory()
+            hist.product = r.product
+            hist.location = 0 # warehouse
+            hist.quantity = 0 - r.quantity
+            hist.remarks = 'Transfered to the store.'
+            hist.performed_by = self.released_by
+            hist.save()
+            hist.set_current_balance()
+            # record in history
+            hist.pk = None
+            hist.location = 1 # store
+            hist.quantity = r.quantity
+            hist.remarks = 'Received from the warehouse.'
+            hist.save()
+            hist.set_current_balance()
+            #update product stocks
+            r.product.set_stock_count() # update product stocks
 
 
     def reject(self, user, reason):
         self.rejected_by = user
         self.rejected_at = datetime.now()
         self.process_step = 6
+        self.set_status()
         self.save()
 
     def clone(self, user):
         new_rv = RequisitionVoucher.objects.create(
-            requested_by=user
+            requested_by=user,
+            process_step=1,
+            status='Pending'
         )
         new_rv.save()
         products = RV_Product.objects.filter(rv=self)
@@ -369,12 +394,16 @@ class ProductHistory(models.Model):
         verbose_name=_("Performed By"), 
         on_delete=models.CASCADE
     )
+    balance = models.IntegerField(
+        _("Current Balance"),
+        default=0
+    )
     objects = models.Manager()
     for_warehouse = ProducHistoryManagerForWarehouse()
     for_store = ProducHistoryManagerForStore()
 
     class Meta:
-        ordering = ['-pk', 'product']
+        ordering = ['-performed_on', 'product']
 
     def __str__(self):
         return  'Product: ' + self.product.full_description + '\n' + \
@@ -382,13 +411,17 @@ class ProductHistory(models.Model):
                 'Quantity: ' + str(self.quantity) + '\n' + \
                 'Remarks: ' + self.remarks + '\n'    
 
-    def running_total(self):
-        print(self.location)
-        print(f"  {self.pk}")
-        ph = ProductHistory.for_warehouse.filter(pk__lte=self.pk, location=self.location, product=self.product)
-        print(f"  count: {ph.count()}")
-        return ProductHistory.for_warehouse.filter(pk__lte=self.pk, location=self.location, product=self.product).aggregate(total=Sum('quantity'))['total']
-        # if self.location == 0:
-        #     return ProductHistory.for_warehouse.filter(pk__lte=self.pk).aggregate(total=Sum('quantity'))['total']
-        # else:
-        #     return ProductHistory.for_store.filter(pk__lte=self.pk).aggregate(total=Sum('quantity'))['total']
+    def set_current_balance(self):
+        last_entry = ProductHistory.objects.filter(
+                product=self.product,
+                location=self.location,
+                pk__lt=self.pk
+            ).order_by('-pk')[:1]
+
+        last_qty = 0
+        if last_entry:
+            last_entry = last_entry.first()
+            last_qty = last_entry.quantity
+        self.balance = last_qty + self.quantity
+        self.save()
+        self.product.set_stock_count()

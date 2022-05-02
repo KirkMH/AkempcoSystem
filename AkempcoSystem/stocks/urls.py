@@ -2,8 +2,10 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.StockListView.as_view(), name='stock_list'),
-    path('rv', views.RVListView.as_view(), name='rv_list'),
+    path('', views.stock_list, name='stock_list'),
+    path('dt', views.StockDTListView.as_view(), name='stock_dtlist'),    
+    path('rv', views.rv_list, name='rv_list'),
+    path('rv/dt', views.RVDTListView.as_view(), name='rv_dtlist'),
     path('rv/new', views.create_new_rv, name='new_rv'),
     path('rv/<int:pk>/cancel', views.delete_rv, name='cancel_rv'),
     path('rv/<int:pk>/print', views.PrintRVDetailView.as_view(), name='print_rv'),

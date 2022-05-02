@@ -18,10 +18,6 @@ from .forms import *
 import random
 import json
 
-
-# used by pagination
-MAX_ITEMS_PER_PAGE = 10
-
 # function to retrieve the search key
 def get_index(request, index):
     key = None

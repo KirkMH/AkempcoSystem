@@ -52,7 +52,7 @@
         </div>
         <div class="row invoice-info">
             <div class="col-lg-1 invoice-col">Status:</div>
-            <div class="col-lg-5 invoice-col font-weight-bold">{{ rv.get_status }}</div>
+            <div class="col-lg-5 invoice-col font-weight-bold">{{ rv.status }}</div>
         </div>
     </div>
     <div class="card-body">
@@ -107,8 +107,8 @@
                         <td>{{ item.product.barcode }}</td>
                         <td>{{ item.product.full_description }}</td>
                         {% if not rv.is_closed %}
-                        <td class="text-center text-muted">{{ item.product.get_store_stock_count }}</td>
-                        <td class="text-center text-muted">{{ item.product.get_warehouse_stock_count }}</td>
+                        <td class="text-center text-muted">{{ item.product.store_stocks }}</td>
+                        <td class="text-center text-muted">{{ item.product.warehouse_stocks }}</td>
                         {% endif %}
                         <td class="text-center">{{ item.quantity }}</td>
                         <td class="text-center">{{ item.product.uom }}{{ item.quantity|pluralize }}</td>

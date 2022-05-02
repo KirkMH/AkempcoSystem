@@ -1,6 +1,10 @@
 {% extends '../base.html' %}
 {% load static form_tags %}
 
+{% block extra_header %}
+{% include '../includes/datatable.html' %}    
+{% endblock extra_header %}
+
 {% block css %}
     <link rel="stylesheet" href="{% static 'css/table_setup.css' %}">
 {% endblock css %}
@@ -26,16 +30,10 @@ Stock Management
                 <button type="submit" class="btn btn-primary">New Requisition Voucher</button>
             </form>
         </div>
-        
-        <div class="col-lg-8 col-md-8 col-sm-8 col-xs-8">
-            <form method="get">
-            {% include 'includes/search_tool.html' %}
-            </form>
-        </div>
         </div>
     </div>
     <div class="card-body table-responsive">
-        <table class="table table-hover table-head-fixed table-sm">
+        <table id="dtRV" class="table table-hover table-head-fixed table-sm">
             <thead>
                 <tr>
                     <th width="15%" class="text-center">Action</th>
@@ -57,9 +55,9 @@ Stock Management
                             <a href="{% url 'rv_products' item.pk %}" title="View RV"><i class="far fa-eye"></i></a>
                         </td>
                         <td>{{ item.pk|seq_num }}</td>
-                        <td class="text-center">{{ item.get_item_count }}</td>
+                        <td class="text-center">{{ item.item_count }}</td>
                         <td>{{ item.requested_at|date:'F d, Y' }}</td>
-                        <td class="{% if item.is_open %}bg-info{% elif item.is_rejected %}text-danger{% endif %}">{{ item.get_status }}</td>
+                        <td class="{% if item.is_open %}bg-info{% elif item.is_rejected %}text-danger{% endif %}">{{ item.status }}</td>
                     </tr>
                 {% endfor %}
 
@@ -68,9 +66,6 @@ Stock Management
             </tbody>
         </table>
     </div>
-    <div class="card-footer">
-        {% include 'includes/pagination.html' %}
-    </div>
 </div>
 {% endblock main_content %}
 
@@ -78,6 +73,50 @@ Stock Management
 {% block js %}
     <script>
         $(document).ready(function() {
+            $("#dtRV").DataTable({
+                serverSide: true,
+                sAjaxSource: "{% url 'rv_dtlist' %}", 
+                columns: [
+                    {
+                        name: 'links',
+                        data: 0,
+                        className: 'text-center',
+                        render: function(data) {
+                            return '<a href="rv/' + data + '/products" title="View RV"><i class="far fa-eye"></i></a>';
+                        }
+                    },
+                    { 
+                        name: 'pk', 
+                        data: 0,
+                        render: function (data) {
+                            return String(data).padStart(12, '0');
+                        }
+                    },
+                    { name: 'item_count', data: 1, className: 'text-center'},
+                    { 
+                        name: 'requested_at', 
+                        data: 2,
+                        render: function (data) {
+                            return $.datepicker.formatDate('MM d, yy', new Date(data));
+                        }
+                    },
+                    {   
+                        name: 'total',
+                        data: null,
+                        render: function (data) {
+                            let color = '';
+                            if (data[4] > 1 && data[4] < 5)
+                                color = 'text-success';
+                            else if (data[4] == 6) // rejected
+                                color = 'text-muted';
+                            return '<span class="' + color + '">' + data[3] + '</span>';
+                        },
+                        className: 'text-center'
+                    },
+                ],
+                order: [[1, 'desc']],
+            });
+
             $("#menu_trans").addClass("menu-open")
             $("#menu_trans_stocks").addClass("active")
         })

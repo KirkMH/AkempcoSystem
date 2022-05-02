@@ -74,18 +74,18 @@
                         <td>{{ item.po_date|date:"F d, Y" }}</td>
                         <td>{{ item.supplier.supplier_name }}</td>
                         <td>{{ item.category }}</td>
-                        <td class="text-center">{{ item.get_item_count }}</td>
+                        <td class="text-center">{{ item.item_count }}</td>
                         <td class="text-right">
                             
                             {% if item.is_open %}
-                                {{ item.get_total_po_amount|peso }}
+                                {{ item.total_po_amount|peso }}
                             {% else %}
-                                {{ item.get_total_po_amount|peso }}
+                                {{ item.total_po_amount|peso }}
                             {% endif %}
                                 
 
                         </td>
-                        <td class="{{ item.get_status_css_class}}">{{ item.get_status }}</td>
+                        <td class="{{ item.get_status_css_class}}">{{ item.status }}</td>
                     </tr>
                 {% endfor %}
 

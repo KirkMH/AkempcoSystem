@@ -119,19 +119,30 @@ class XReading(models.Model):
         verbose_name=_("Created By"),
         on_delete=models.CASCADE
     )
+    total_sales = models.DecimalField(
+        _("Total Sales"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0
+    )
+    gross_sales = models.DecimalField(
+        _("Gross Sales"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0
+    )
+    vd_total_sales = models.DecimalField(
+        _("VAT Detail Total"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0
+    )
 
-    @property
-    def total_sales(self):
-        val = TenderReport.objects.filter(xreading=self).aggregate(val=Sum('amount'))['val']
-        return val if val else 0
-
-    @property
-    def gross_sales(self):
-        return self.total_sales + self.vat_removed + self.discounts
-
-    @property
-    def vd_total_sales(self):
-        return self.vatable + self.vat + self.vatex + self.zero_rated
+    def fill_in_other_fields(self):
+        self.total_sales = TenderReport.objects.filter(xreading=self).aggregate(val=Sum('amount'))['val']
+        self.gross_sales = self.total_sales + self.vat_removed + self.discounts
+        self.vd_total_sales = self.vatable + self.vat + self.vatex + self.zero_rated
+        self.save()
 
     def __str__(self):
         return f"X-Reading #{self.pk} Total Sales: PhP{self.total_sales} at {self.created_at}"
@@ -313,7 +324,9 @@ class SalesReport(models.Manager):
         # query all Sales that happened from last login to now
         sales = Sales.objects.filter(salesinvoice__sales_datetime__gte=last)
         print(f"x-reading sales: {sales}")
-        return self.generate_report(sales, cashier)
+        rpt = self.generate_report(sales, cashier)
+        rpt.fill_in_other_fields()
+        return rpt
         
 
     def generate_zreading(self, cashier):
@@ -426,79 +439,111 @@ class Sales(models.Model):
         choices=STATUS_LIST,
         default=WIP
     )
+    discount = models.DecimalField(
+        _("Discount"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0
+    )
+    less_discount_total = models.DecimalField(
+        _("Less Discount Total"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0
+    )
+    less_vat_total = models.DecimalField(
+        _("Less VAT Total"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0
+    )
+    total = models.DecimalField(
+        _("Grand Total, disregarding discounts"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0
+    )
+    with_discount_total = models.DecimalField(
+        _("Grand Total, considering discounts"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0
+    )
+    sales_without_vat = models.DecimalField(
+        _("Sales Without VAT"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0
+    )
+    item_count = models.PositiveSmallIntegerField(
+        _("Item Count"),
+        default=0
+    )
+    vatable = models.DecimalField(
+        _("Vatable"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0
+    )
+    vat = models.DecimalField(
+        _("VAT"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0
+    )
+    zero_rated = models.DecimalField(
+        _("Zero Rated"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0
+    )
+    vat_exempt = models.DecimalField(
+        _("VAT Exempt"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0
+    )
+    payable = models.DecimalField(
+        _("Payable"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0
+    )
+    tendered = models.DecimalField(
+        _("Tendered Amount"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0
+    )
+    change = models.DecimalField(
+        _("Change Amount"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0
+    )
     objects = models.Manager()
     reports = SalesReport()
     
     def __str__(self):
         return str(self.pk) + ": PhP " + str(self.payable)
 
-    @property
-    def discount(self):
-        return self.less_discount_total + self.less_vat_total
-
-    @property
-    def less_discount_total(self):
-        val = SalesItem.objects.filter(sales=self).aggregate(val=Sum('less_discount'))['val']
-        return val if val else 0
-
-    @property
-    def less_vat_total(self):
-        val = SalesItem.objects.filter(sales=self).aggregate(val=Sum('less_vat'))['val']
-        return val if val else 0
-
-    # grand total, without consideration to discounts
-    @property
-    def total(self):
-        val = SalesItem.objects.filter(sales=self).aggregate(val=Sum(F('unit_price') * F('quantity')))['val']
-        return val if val else 0
-
-    # total of items with applied discount
-    @property
-    def with_discount_total(self):
-        val = SalesItem.objects.filter(sales=self, less_discount__gt=0).aggregate(val=Sum(F('unit_price') * F('quantity')))['val']
-        return val if val else 0
-
-    @property
-    def sales_without_vat(self):
-        return self.with_discount_total - self.less_vat_total
-
-    @property
-    def item_count(self):
-        val = SalesItem.objects.filter(sales=self).aggregate(val=Sum('quantity'))['val']
-        return val if val else 0
-
-    @property
-    def vatable(self):
-        val = SalesItem.objects.filter(sales=self, vatable__isnull=False).aggregate(val=Sum('vatable'))['val']
-        return val if val else 0
-       
-    @property
-    def vat(self):
-        val = SalesItem.objects.filter(sales=self, vat_amount__isnull=False).aggregate(val=Sum('vat_amount'))['val']
-        return val if val else 0
-
-    @property
-    def zero_rated(self):
-        val = SalesItem.objects.filter(sales=self, zero_rated__isnull=False).aggregate(val=Sum('zero_rated'))['val']
-        return val if val else 0
-
-    @property
-    def vat_exempt(self):
-        val = SalesItem.objects.filter(sales=self, vat_exempt__isnull=False).aggregate(val=Sum('vat_exempt'))['val']
-        return val if val else 0
-
-    @property
-    def payable(self):
-        return decimal.Decimal(self.total) - self.less_discount_total - self.less_vat_total
-
-    @property
-    def tendered(self):
-        val = SalesPayment.objects.filter(sales=self).aggregate(val=Sum('amount'))['val']
-        return val if val else 0
-
-    @property
-    def change(self):
-        return self.tendered - self.payable
+    def fill_in_other_fields(self):
+        self.less_discount_total = SalesItem.objects.filter(sales=self).aggregate(val=Sum('less_discount'))['val'] or 0
+        self.less_vat_total = SalesItem.objects.filter(sales=self).aggregate(val=Sum('less_vat'))['val'] or 0
+        self.total = SalesItem.objects.filter(sales=self).aggregate(val=Sum(F('unit_price') * F('quantity')))['val'] or 0
+        self.with_discount_total = SalesItem.objects.filter(sales=self, less_discount__gt=0).aggregate(val=Sum(F('unit_price') * F('quantity')))['val'] or 0
+        self.discount = self.less_discount_total + self.less_vat_total
+        self.sales_without_vat = self.with_discount_total - self.less_vat_total
+        self.item_count = SalesItem.objects.filter(sales=self).aggregate(val=Sum('quantity'))['val'] or 0
+        self.vatable = SalesItem.objects.filter(sales=self, vatable__isnull=False).aggregate(val=Sum('vatable'))['val'] or 0
+        self.vat = SalesItem.objects.filter(sales=self, vat_amount__isnull=False).aggregate(val=Sum('vat_amount'))['val'] or 0
+        self.zero_rated = SalesItem.objects.filter(sales=self, zero_rated__isnull=False).aggregate(val=Sum('zero_rated'))['val'] or 0
+        self.vat_exempt = SalesItem.objects.filter(sales=self, vat_exempt__isnull=False).aggregate(val=Sum('vat_exempt'))['val'] or 0
+        self.payable = decimal.Decimal(self.total) - self.less_discount_total - self.less_vat_total
+        self.tendered = SalesPayment.objects.filter(sales=self).aggregate(val=Sum('amount'))['val'] or 0
+        print(self.tendered)
+        self.change = self.tendered - self.payable
+        self.save()
 
     @property
     def is_buyer_info_required(self):
@@ -518,6 +563,8 @@ class Sales(models.Model):
                 item.pk = None
                 item.sales = current
                 item.save()
+                item.fill_in_other_fields()
+            current.fill_in_other_fields()
             return True
         except:
             return False
@@ -525,6 +572,7 @@ class Sales(models.Model):
     def reset(self):
         # delete all sales items under this transaction
         SalesItem.objects.filter(sales=self).delete()
+        self.fill_in_other_fields()
 
     def apply_discount(self):
         if self.discount > 0:
@@ -535,6 +583,7 @@ class Sales(models.Model):
         if items:
             for item in items:
                 item.apply_discount(self.discount_type, count)
+        self.fill_in_other_fields()
 
     def cancel_discount(self):
         # get products and their quantity
@@ -557,6 +606,7 @@ class Sales(models.Model):
             self.customer_id_card = None
             self.customer_tin = None
             self.save()
+        self.fill_in_other_fields()
 
 
     def price_composition(self, product, subtotal):
@@ -576,7 +626,7 @@ class Sales(models.Model):
         product = Product.objects.filter(barcode=barcode)[:1]
         if product:
             product = product.first()
-            rem = product.get_store_stock_count()
+            rem = product.store_stocks
             print(rem)
             if product.status != 'ACTIVE':
                 return False, product.full_description + " is currently not active. Please make it active first."
@@ -617,6 +667,7 @@ class Sales(models.Model):
                         vat_exempt=vat_exempt,
                         zero_rated=zero_rated
                     )
+                    item.fill_in_other_fields()
 
                 if qty > 0:
                     subtotal = qty * product.selling_price
@@ -632,11 +683,15 @@ class Sales(models.Model):
                         vat_exempt=vat_exempt,
                         zero_rated=zero_rated
                     )
+                    item.fill_in_other_fields()
+                    
                 message = ""
                 if quantity < 0:
                     message = "Removed " + str(quantity * -1)
                 else:
                     message = "Added " + str(quantity)
+
+                self.fill_in_other_fields()
 
                 return True, message + " " + product.uom.uom_description + "(s) of " + product.full_description + "."
         else:
@@ -650,25 +705,12 @@ class Sales(models.Model):
         self.status = Sales.WIP
         self.save()
 
-    def add_payment(self, mode, detail, amount):
-        payment = SalesPayment.objects.create(
-            sales=self, 
-            amount=amount, 
-            payment_mode=mode, 
-            details=detail
-        )
-        if self.change > 0:
-            payment.value = amount - self.change
-        else:
-            payment.value = amount
-        payment.save()
-
-
     def complete(self, cashier, details=None):
         invoice = SalesInvoice()
         invoice.sales = self
         invoice.details = details
         invoice.save()
+        invoice.fill_in_other_fields()
         # adjust store stocks accordingly
         items = SalesItem.objects.filter(sales=self)
         if items:
@@ -772,26 +814,37 @@ class SalesItem(models.Model):
         decimal_places=2,
         default=0
     )
+    subtotal = models.DecimalField(
+        _("Subtotal"), 
+        max_digits=10, 
+        decimal_places=2,
+        default=0
+    )
+    total = models.DecimalField(
+        _("Total"), 
+        max_digits=10, 
+        decimal_places=2,
+        default=0
+    )
 
     def __str__(self):
         return self.product.full_description + ": " + str(self.quantity)
 
-    @property
-    def subtotal(self):
-        return self.unit_price * self.quantity
-
-    @property
-    def total(self):
+    def fill_in_other_fields(self):
+        self.subtotal = self.unit_price * self.quantity
+        
         less_vat = 0 if self.less_vat == None else self.less_vat
         less_discount = 0 if self.less_discount == None else self.less_discount
-        return self.subtotal - less_vat - less_discount
+        self.total = self.subtotal - less_vat - less_discount
+
+        self.save()
 
     def apply_discount(self, discount_type, count = 0):
         if not discount_type:
             return
-        # print(f"self.product.tax_type: {self.product.tax_type}")
-        # print(f"discount_type.necessity_only: {discount_type.necessity_only}")
-        # print(f"self.product.for_discount: {self.product.for_discount}")
+        print(f"self.product.tax_type: {self.product.tax_type}")
+        print(f"discount_type.necessity_only: {discount_type.necessity_only}")
+        print(f"self.product.for_discount: {self.product.for_discount}")
         # check if the tax is VATable, and for necessity
         if self.product.tax_type == 'V' \
             and discount_type.necessity_only and self.product.for_discount:
@@ -801,14 +854,14 @@ class SalesItem(models.Model):
             self.less_discount = discount_amt
             self.vat_exempt = self.vatable - discount_amt  # the product will become VAT-Exempt less discount
             self.vatable = 0
-            # print("Discount-1 Applied")
-            # print(f" self.less_vat: {self.less_vat}")
-            # print(f" self.vat_exempt: {self.vat_exempt}")
-            # print(f" self.less_discount: {self.less_discount}")
+            print("Discount-1 Applied")
+            print(f" self.less_vat: {self.less_vat}")
+            print(f" self.vat_exempt: {self.vat_exempt}")
+            print(f" self.less_discount: {self.less_discount}")
         # apply discount for non-VATable products, or when not for necessity
         elif (discount_type.necessity_only and self.product.for_discount) \
             or not discount_type.necessity_only:
-            # print("Discount-2 Applied")
+            print("Discount-2 Applied")
             self.less_discount = discount_type.compute(self.subtotal, count)
             if self.vatable > 0:
                 self.vatable = self.vatable - self.less_discount
@@ -817,10 +870,11 @@ class SalesItem(models.Model):
             else:
                 self.zero_rated = self.zero_rated - self.less_discount
         else:
-            # print("No Discount Applied")
+            print("No Discount Applied")
             self.less_vat = 0
             self.less_discount = 0
         self.save()
+        self.fill_in_other_fields()
 
 
     class Meta:
@@ -895,6 +949,17 @@ class SalesInvoice(models.Model):
         null=True,
         blank=True,
         default=None)
+    is_cancelled = models.BooleanField(
+        _("Is Cancelled?"),
+        default=False
+    )
+    payment_modes = models.CharField(
+        _("Payment Modes"), 
+        max_length=50,
+        blank=True,
+        null=True,
+        default=None
+    )
 
     @property
     def si_date(self):
@@ -904,16 +969,16 @@ class SalesInvoice(models.Model):
     def si_time(self):
         return self.sales_datetime.time()
 
-    @property
-    def is_cancelled(self):
-        return SalesVoid.objects.filter(sales_invoice=self).exists()
+    def fill_in_other_fields(self):
+        self.is_cancelled = SalesVoid.objects.filter(sales_invoice=self).exists()
+
+        modes = self.get_payment_modes()
+        self.payment_modes = ', '.join(modes)
+
+        self.save()
 
     def get_payment_modes(self):
         return list(self.sales.salespayment_set.order_by().values_list('payment_mode', flat=True).distinct())
-
-    def get_payment_modes_as_string(self):
-        modes = self.get_payment_modes()
-        return ', '.join(modes)
 
     def reprint(self, cashier):
         self.last_reprint = datetime.now()

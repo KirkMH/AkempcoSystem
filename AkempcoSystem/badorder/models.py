@@ -86,6 +86,16 @@ class BadOrder(models.Model):
         _("Process Step"),
         default=1 #Pending
     )
+    number_of_items = models.PositiveIntegerField(
+        _("Number of Items"),
+        default=0
+    )
+    grand_total = models.DecimalField(
+        _("Grand Total"), 
+        max_digits=10, 
+        decimal_places=2,
+        default=0
+    )
 
     class Meta:
         ordering = ['supplier', '-pk']
@@ -93,13 +103,10 @@ class BadOrder(models.Model):
     def __str__(self):
         return self.supplier.supplier_name
 
-    @property
-    def number_of_items(self):
-        return self.bo_items.all().count()
-
-    @property
-    def grand_total(self):
-        return self.bo_items.all().aggregate(grand=Sum(F('quantity') * F('unit_price')))['grand']
+    def fill_in_other_fields(self):
+        self.number_of_items = self.bo_items.all().count()
+        self.grand_total = self.bo_items.all().aggregate(grand=Sum(F('quantity') * F('unit_price')))['grand']
+        self.save()
 
     def is_pending(self):
         return self.process_step == 1
@@ -188,6 +195,9 @@ class BadOrder(models.Model):
             hist.remarks = 'Bad order: ' + item.reason
             hist.performed_by = self.reported_by
             hist.save()
+
+            # update product stocks
+            item.product.set_stock_count() # update product stocks
             
         # update fields of this record
         self.approved_by = user
@@ -242,10 +252,17 @@ class BadOrderItem(models.Model):
         _("Reason"), 
         max_length=100
     )
+    total_cost = models.DecimalField(
+        _("Total Cost"), 
+        max_digits=10, 
+        decimal_places=2,
+        default=0
+    )
 
-    @property
-    def total_cost(self):
-        return self.quantity * self.unit_price
+    def fill_in_other_fields(self):
+        self.unit_price = self.product.get_earliest_supplier_price_with_stock()
+        self.total_cost = self.quantity * self.unit_price
+        self.save()
 
     def __str__(self):
         return str(self.quantity) + " " + self.product.uom.uom_description + \
