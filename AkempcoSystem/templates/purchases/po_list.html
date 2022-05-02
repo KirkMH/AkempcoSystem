@@ -1,6 +1,10 @@
 {% extends '../base.html' %}
 {% load static form_tags %}
 
+{% block extra_header %}
+{% include '../includes/datatable.html' %}    
+{% endblock extra_header %}
+
 {% block css %}
     <link rel="stylesheet" href="{% static 'css/table_setup.css' %}">
     <style>
@@ -30,13 +34,13 @@
         <div class="card-header">
             <div class="row">
             <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
-                <a href="{% url 'po_create' supplier.pk %}" class="btn btn-primary">New Purchase Order</a>
+                <a href="{% url 'po_create' supplier_pk %}" class="btn btn-primary">New Purchase Order</a>
             </div>
             </div>
         </div>
     </form>
     <div class="card-body table-responsive">
-        <table class="table table-hover table-head-fixed table-sm">
+        <table id="dtPO" class="table table-hover table-head-fixed table-sm">
             <thead>
                 <tr>
                     <th width="10%">Action</th>
@@ -49,33 +53,6 @@
                 </tr>
             </thead>
             <tbody>
-
-                {% if not po %}
-                    <tr><td colspan="7" style="text-align: center;">No data found.</td></tr>
-                {% else %}
-
-                {% for item in po %}
-                    <tr>
-                        <td class="text-center">
-                            
-                            {% if item.status == 'Open' %}
-                            <a href="{% url 'po_products' item.pk %}" title="Manage PO"><i class="fas fa-check-double"></i></a>                                
-                            {% else %}
-                            <a href="{% url 'po_products' item.pk %}" title="View PO"><i class="far fa-eye"></i></a>
-                            {% endif %}
-                                
-                        </td>
-                        <td>{{ item.pk|seq_num }}</td>
-                        <td>{{ item.po_date|date:"F d, Y" }}</td>
-                        <td>{{ item.category }}</td>
-                        <td class="text-center">{{ item.item_count }}</td>
-                        <td class="text-right">{{ item.total_po_amount|peso }}</td>
-                        <td class="{{ item.get_status_css_class}}">{{ item.status }}</td>
-                    </tr>
-                {% endfor %}
-
-                {% endif %}
-                    
             </tbody>
         </table>
     </div>
@@ -86,6 +63,51 @@
 {% block js %}
     <script>
         $(document).ready(function() {
+            $("#dtPO").DataTable({
+                serverSide: true,
+                sAjaxSource: "{% url 'po_dtlist' %}", 
+                columns: [
+                    {   
+                        name: 'links',
+                        data: null,
+                        render: function (data) {
+                            
+                            if (data[5] === 'Open')
+                                return '<a href="../../po/'+ data[0] + '/products" title="Manage PO"><i class="fas fa-check-double"></i></a>';
+                            else
+                                return '<a href="../../po/'+ data[0] + '/products" title="View PO"><i class="far fa-eye"></i></a>';
+                        },
+                        className: 'text-center'
+                    },
+                    { 
+                        name: 'pk', 
+                        data: 0,
+                        render: function (data) {
+                            return String(data).padStart(12, '0');
+                        }
+                    },
+                    { 
+                        name: 'po_date', 
+                        data: 1,
+                        render: function (data) {
+                            return $.datepicker.formatDate('MM d, yy', new Date(data));
+                        }
+                    },
+                    { name: 'category', data: 2, className: 'text-center'},
+                    { name: 'item_count', data: 3, className: 'text-center'},
+                    {
+                        name: "total", 
+                        data: 4, 
+                        className: 'text-right',
+                        render: function (data) {
+                            return peso.format(data);
+                        }
+                    },
+                    { name: 'status', data: 5, className: 'text-center'},
+                ],
+                order: [[1, 'desc']],
+            });
+
             $("#menu_trans").addClass("menu-open")
             $("#menu_trans_purchases").addClass("active")
         })

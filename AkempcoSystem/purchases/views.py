@@ -73,20 +73,25 @@ class ApprovalListView(ListView):
         return object_list
 
 
+@login_required
+@user_is_allowed(Feature.TR_PURCHASES)
+def supplier_orders(request, pk):
+    request.session['po_supplier_id'] = pk
+    return render(request, "purchases/po_list.html", {'supplier_pk': pk})
+
+
 # PO List of selected supplier
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
-class PurchaseSupplierDetailView(DetailView):
-    model = Supplier
-    context_object_name = 'supplier'
-    template_name = "purchases/po_list.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["po"] = PurchaseOrder.objects.filter(supplier=self.object)
-        print(context["po"])
-        return context
-
+class PurchaseSupplierDTView(ServerSideDatatableView):
+    
+    def get(self, request, *args, **kwargs):
+        pk = request.session.get('po_supplier_id', 0)
+        supplier = get_object_or_404(Supplier, pk=pk)
+        self.queryset = PurchaseOrder.objects.filter(supplier=supplier)
+        self.columns = ['pk', 'po_date', 'category__category_description', 'item_count', 'total_po_amount', 'status']
+        return super().get(request, *args, **kwargs)
+        
 
 # Create new PO
 @method_decorator(login_required, name='dispatch')
