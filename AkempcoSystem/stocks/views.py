@@ -4,6 +4,7 @@ from django.views.generic import ListView, DetailView, CreateView
 from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView
 from django.contrib import messages
 from django.db.models import Q
+from django_serverside_datatable.views import ServerSideDatatableView
 
 from AkempcoSystem.decorators import user_is_allowed
 from django.contrib.auth.decorators import login_required
@@ -16,60 +17,56 @@ from .models import RequisitionVoucher, RV_Product
 from .forms import RV_ProductForm
 
 
-# for pagination
-MAX_ITEMS_PER_PAGE = 10
+@login_required
+@user_is_allowed(Feature.TR_STOCKS)
+def stock_list(request):
+    userType = request.user.userdetail.userType
+    count = 0
+    if userType == 'General Manager':
+        count = RequisitionVoucher.objects.filter(process_step=2).count()
+    elif userType == 'Warehouse Staff':
+        count = RequisitionVoucher.objects.filter(process_step=3).count()
+    elif userType == 'Storekeeper':
+        count = RequisitionVoucher.objects.filter(process_step=4).count()
+    if count is None: count = 0
+
+    return render(request, "stocks/stock_list.html", {'count': count})
 
 
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_STOCKS), name='dispatch')
-class StockListView(ListView):
+class StockDTListView(ServerSideDatatableView):
     model = Product
-    context_object_name = "product"
-    template_name = "stocks/stock_list.html"
-    paginate_by = MAX_ITEMS_PER_PAGE
+    columns = ['pk', 'barcode', 'full_description', 'warehouse_stocks', 'store_stocks', 'total_stocks', 'reorder_point']
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        # GM
-        # - for approval
-        # Storekeeper
-        # - for receiving
-        # WH
-        # - for releasing
-        userType = self.request.user.userdetail.userType
-        count = 0
-        if userType == 'General Manager':
-            count = RequisitionVoucher.objects.filter(process_step=2).count()
-        elif userType == 'Warehouse Staff':
-            count = RequisitionVoucher.objects.filter(process_step=3).count()
-        elif userType == 'Storekeeper':
-            count = RequisitionVoucher.objects.filter(process_step=4).count()
-        if count is None: count = 0
-        context['count'] = count
-        return context
 
+@login_required
+@user_is_allowed(Feature.TR_STOCKS)
+def rv_list(request):
+    return render(request, "stocks/requisition_voucher.html")
 
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_STOCKS), name='dispatch')
-class RVListView(ListView):
+class RVDTListView(ServerSideDatatableView):
     model = RequisitionVoucher
-    context_object_name = "rv"
-    template_name = "stocks/requisition_voucher.html"
-    paginate_by = MAX_ITEMS_PER_PAGE
+    columns = ['pk', 'item_count', 'requested_at', 'status', 'process_step']
+    # context_object_name = "rv"
+    # template_name = "stocks/requisition_voucher.html"
+    # paginate_by = MAX_ITEMS_PER_PAGE
 
-    def get_queryset(self):
-        # check if the user searched for something
-        key = get_index(self.request, "table_search")
-        object_list = self.model.objects.all()
-        if key:
-            object_list = object_list.filter(
-                Q(pk__icontains=key)
-            )
-        return object_list
+    # def get_queryset(self):
+    #     # check if the user searched for something
+    #     key = get_index(self.request, "table_search")
+    #     object_list = self.model.objects.all()
+    #     if key:
+    #         object_list = object_list.filter(
+    #             Q(pk__icontains=key)
+    #         )
+    #     return object_list
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        return add_search_key(self.request, context)
+    # def get_context_data(self, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     return add_search_key(self.request, context)
 
 
 @login_required

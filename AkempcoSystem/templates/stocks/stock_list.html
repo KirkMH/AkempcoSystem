@@ -1,6 +1,10 @@
 {% extends '../base.html' %}
 {% load static form_tags %}
 
+{% block extra_header %}
+{% include '../includes/datatable.html' %}    
+{% endblock extra_header %}
+
 {% block css %}
     <link rel="stylesheet" href="{% static 'css/table_setup.css' %}">
 {% endblock css %}
@@ -25,15 +29,11 @@
                     {% endif %}
                 </a>
             </div>
-            
-            <div class="col-lg-8 col-md-8 col-sm-8 col-xs-8">
-                {% include 'includes/search_tool.html' %}
-            </div>
             </div>
         </div>
     </form>
     <div class="card-body table-responsive">
-        <table class="table table-hover table-head-fixed table-sm">
+        <table id="dtStocks" class="table table-hover table-head-fixed table-sm">
             <thead>
                 <tr>
                     <!-- <th width="10%">Action</th> -->
@@ -45,36 +45,8 @@
                 </tr>
             </thead>
             <tbody>
-
-                    {% if not product %}
-                    <tr><td colspan="6" style="text-align: center;">No data found.</td></tr>
-                {% else %}
-
-                {% for item in product %}
-                    <tr>
-                        <!-- <td class="text-center"></td> -->
-                        <td>{{ item.barcode }}</td>
-                        <td>{{ item.full_description }}</td>
-                        <td class="text-center">{{ item.warehouse_stocks }}</td>
-                        <td class="text-center">{{ item.store_stocks }}</td>
-                        <td class="text-center">
-                            <span class="{% if item.is_critical_level %}text-danger{% endif %}" data-toggle="tooltip" title="This stock is in critical level. Consider reordering.">
-                                {{ item.total_stocks }}
-                            </span>
-                            {% if item.is_critical_level %}
-                            <a href="#" class="badge badge-danger rounded-pill badge-notification" data-toggle="tooltip" title="This quantity is in critical level. Consider reordering.">!</a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-
-                {% endif %}
-                    
             </tbody>
         </table>
-    </div>
-    <div class="card-footer">
-        {% include 'includes/pagination.html' %}
     </div>
 </div>
 {% endblock main_content %}
@@ -83,6 +55,29 @@
 {% block js %}
     <script>
         $(document).ready(function() {
+            $("#dtStocks").DataTable({
+                serverSide: true,
+                sAjaxSource: "{% url 'stock_dtlist' %}", 
+                columns: [
+                    { name: 'barcode', data: 1, className: 'text-center'},
+                    { name: 'full_description', data: 2},
+                    { name: 'warehouse_stocks', data: 3, className: 'text-center'},
+                    { name: 'store_stocks', data: 4, className: 'text-center'},
+                    {   
+                        name: 'total',
+                        data: null,
+                        render: function (data) {
+                            let render = data[5];
+                            if (data[5] < data[6])
+                                render = '<span style="color: red;">' + render + '</span> <a href="#" class="badge badge-danger rounded-pill badge-notification" data-toggle="tooltip" title="This quantity is in critical level. Consider reordering.">!</a>';
+                            return render;
+                        },
+                        className: 'text-center'
+                    },
+                ],
+                order: [[1, 'desc']],
+            });
+
             $("#menu_trans").addClass("menu-open")
             $("#menu_trans_stocks").addClass("active")
         })
