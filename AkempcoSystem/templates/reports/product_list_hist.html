@@ -1,6 +1,10 @@
 {% extends '../base.html' %}
 {% load static form_tags %}
 
+{% block extra_header %}
+{% include '../includes/datatable.html' %}    
+{% endblock extra_header %}
+
 {% block page_title %}Product History{% endblock page_title %}
 
 {% block breadcrumb %}
@@ -15,14 +19,11 @@
             <div class="row">
             <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
             </div>
-            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                {% include 'includes/search_tool.html' %}
-            </div>
             </div>
         </div>
     </form>
     <div class="card-body table-responsive">
-        <table class="table table-hover table-head-fixed table-sm">
+        <table id="dtStocks" class="table table-hover table-head-fixed table-sm">
             <thead>
                 <tr>
                     <th class="text-center" width="10%">Action</th>
@@ -35,32 +36,8 @@
                 </tr>
             </thead>
             <tbody>
-                {% for product in products %}
-                    <tr>
-                        <td class="text-center">
-                            <a href="{% url 'product_history' product.pk %}" title="View history"><i class="far fa-eye"></i></a>
-                        </td>
-                        <td>{{ product.barcode }}</td>
-                        <td>{{ product.full_description }}</td>
-                        <td>{{ product.category.category_description }}</td>
-                        <td class="text-center">{{ product.get_warehouse_stock_count }}</td>
-                        <td class="text-center">{{ product.get_store_stock_count }}</td>
-                        <td class="text-center">
-                            <span class="{% if product.is_critical_level %}text-danger{% endif %}" data-toggle="tooltip" title="This stock is in critical level. Consider reordering.">
-                                {{ product.get_total_stock_count }}
-                            </span>
-                            {% if product.is_critical_level %}
-                            <a href="#" class="badge badge-danger rounded-pill badge-notification" data-toggle="tooltip" title="This quantity is in critical level. Consider reordering.">!</a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
             </tbody>
         </table>
-    </div>
-        
-    <div class="card-footer">
-        {% include 'includes/pagination.html' %}
     </div>
 </div>
 {% endblock main_content %}
@@ -69,6 +46,39 @@
 {% block js %}
     <script>
         $(document).ready(function() {
+            $("#dtStocks").DataTable({
+                serverSide: true,
+                sAjaxSource: "{% url 'stock_dtlist' %}", 
+                columns: [
+                    {
+                        name: 'links',
+                        data: 0,
+                        className: 'text-center',
+                        render: function(data) {
+                            return  '<a href="history/' + data + '/product/warehouse" title="Warehouse history"><i class="fas fa-warehouse"></i></a> | ' +
+                                    '<a href="history/' + data + '/product/store" title="Store history"><i class="fas fa-store"></i></a>';
+                        }
+                    },
+                    { name: 'barcode', data: 1, className: 'text-center'},
+                    { name: 'full_description', data: 2},
+                    { name: 'category', data: 7},
+                    { name: 'warehouse_stocks', data: 3, className: 'text-center'},
+                    { name: 'store_stocks', data: 4, className: 'text-center'},
+                    {   
+                        name: 'total',
+                        data: null,
+                        render: function (data) {
+                            let render = data[5];
+                            if (data[5] < data[6])
+                                render = '<span style="color: red;">' + render + '</span> <a href="#" class="badge badge-danger rounded-pill badge-notification" data-toggle="tooltip" title="This quantity is in critical level. Consider reordering.">!</a>';
+                            return render;
+                        },
+                        className: 'text-center'
+                    },
+                ],
+                order: [[2, 'asc']],
+            });
+
             $("#menu_rpt").addClass("menu-open")
             $("#menu_rpt_history").addClass("active")
         })
