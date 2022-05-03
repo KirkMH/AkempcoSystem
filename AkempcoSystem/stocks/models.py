@@ -404,6 +404,7 @@ class ProductHistory(models.Model):
 
     class Meta:
         ordering = ['-performed_on', 'product']
+        verbose_name_plural = 'Product History'
 
     def __str__(self):
         return  'Product: ' + self.product.full_description + '\n' + \
@@ -418,10 +419,10 @@ class ProductHistory(models.Model):
                 pk__lt=self.pk
             ).order_by('-pk')[:1]
 
-        last_qty = 0
+        last_bal = 0
         if last_entry:
             last_entry = last_entry.first()
-            last_qty = last_entry.quantity
-        self.balance = last_qty + self.quantity
+            last_bal = last_entry.balance
+        self.balance = last_bal + self.quantity
         self.save()
         self.product.set_stock_count()

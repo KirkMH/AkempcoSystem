@@ -630,7 +630,7 @@ class Sales(models.Model):
             print(rem)
             if product.status != 'ACTIVE':
                 return False, product.full_description + " is currently not active. Please make it active first."
-            elif product.price_review == True or product.wholesale_price == None or product.selling_price == None:
+            elif product.for_price_review == True or product.selling_price == None or (product.wholesale_qty > 0 and product.wholesale_price == None):
                 return False, product.full_description + " is currently for price review. The price must be approved first."
             elif rem < quantity:
                 return False, "Insufficient stocks. <br>Remaining stocks is only " + str(rem) + "."

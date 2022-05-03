@@ -9,12 +9,11 @@
     <link rel="stylesheet" href="{% static 'css/table_setup.css' %}">
 {% endblock css %}
     
-{% block page_title %}Product's Store History{% endblock page_title %}
+{% block page_title %}Critical Level Products{% endblock page_title %}
 
 {% block breadcrumb %}
     <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-    <li class="breadcrumb-item"><a href="{% url 'product_list_history' %}">Product</a></li>
-    <li class="breadcrumb-item active">Store History</li>
+    <li class="breadcrumb-item active">Critical Level Products</li>
 {% endblock breadcrumb %}
 
 {% block main_content %}
@@ -41,36 +40,26 @@
                 {% endif %}
                     
                 <div class="mt-4 mb-2">
-                    <h2>Product's Store History</h2>
+                    <h2>Critical Level Product</h2>
+                    <h4>As of {% now "F j, Y" %}</h4>
                 </div>
                     
             </div>
             <!-- /.col -->
         </div>
-        <!-- info row -->
-        <div class="row invoice-info mb-4">
-            <div class="col-sm-1 invoice-col">Product:</div>
-            <div class="col-sm-6 invoice-col text-bold">
-                {{ product.full_description }}
-                <span class="text-muted">({{ product.barcode }})</span>
-            </div>
-            <div class="col-sm-2 invoice-col text-right">Date Generated:</div>
-            <div class="col-sm-3 invoice-col text-bold">{% now "F j, Y" %}</div>
-        </div>
-        <!-- /.row -->
 
         <!-- Table row -->
         <div class="row mt-4">
             <div class="col-12 table-responsive">
-            <div class="text-success mb-2">Current Stocks: <b>{{ product.store_stocks }}</b></div>
-            <table id="dtStoreHistory" class="table table-striped table-sm">
+            <table id="dtCriticalLevel" class="table table-striped table-sm">
                 <thead>
                     <tr>
-                        <th width="20%">Date</th>
-                        <th width="15%">Qty</th>
-                        <th>Remarks</th>
-                        <th width="20%">Performed By</th>
-                        <th width="15%">Subtotal</th>
+                        <th class="text-center">Barcode</th>
+                        <th class="text-center">Product</th>
+                        <th class="text-center">Category</th>
+                        <th width="10%" class="text-center">Warehouse Stocks</th>
+                        <th width="10%" class="text-center">Store Stocks</th>
+                        <th width="10%" class="text-center">Total</th>
                     </tr>
                 </thead>
                 <tbody style="font-size: 11pt;">
@@ -102,33 +91,28 @@
 {% block js %}
     <script>
         $(document).ready(function() {
-            const product_pk = "{{ product.pk }}";
-            $("#dtStoreHistory").DataTable({
+            $("#dtCriticalLevel").DataTable({
                 serverSide: true,
-                sAjaxSource: "../../../history/" + product_pk + "/product/store/dt", 
+                sAjaxSource: "{% url 'critical_dtlist' %}", 
                 columns: [
-                    { 
-                        name: 'performed_on', 
-                        data: 1,
-                        render: function (data) {
-                            return $.datepicker.formatDate('MM d, yy', new Date(data));
-                        }
-                    },
-                    { name: 'quantity', data: 2, className: 'text-center'},
-                    { name: 'remarks', data: 3},
-                    { 
-                        name: 'performed_by', 
+                    { name: 'barcode', data: 1, className: 'text-center'},
+                    { name: 'full_description', data: 2},
+                    { name: 'category', data: 7},
+                    { name: 'warehouse_stocks', data: 3, className: 'text-center'},
+                    { name: 'store_stocks', data: 4, className: 'text-center'},
+                    {   
+                        name: 'total',
                         data: null,
-                        render: function(data) {
-                            return data[4] + ' ' + data[5];
-                        }
+                        render: function (data) {
+                            let render = data[5];
+                            if (data[5] < data[6])
+                                render = '<span style="color: red;">' + render + '</span> <a href="#" class="badge badge-danger rounded-pill badge-notification" data-toggle="tooltip" title="This quantity is in critical level. Consider reordering.">!</a>';
+                            return render;
+                        },
+                        className: 'text-center'
                     },
-                    { name: 'balance', data: 6, className: 'text-center'},
                 ],
-                buttons: [
-                    'csv'
-                ],
-                order: [[0, 'desc']],
+                order: [[1, 'asc']],
             });
 
             $("#menu_rpt").addClass("menu-open")

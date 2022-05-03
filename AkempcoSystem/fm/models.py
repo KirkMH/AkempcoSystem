@@ -332,10 +332,6 @@ class Product(models.Model):
         choices=STATUS,
         default=ACTIVE
     )
-    price_review = models.BooleanField(
-        _("For price review?"),
-        default=False
-    )
     warehouse_stocks = models.PositiveIntegerField(
         _("Warehouse Stocks"),
         default=0
@@ -524,6 +520,7 @@ class Product(models.Model):
                 deducted = qty
                 item.remaining_stocks = rem - qty
                 item.save()
+                qty = 0
                 
             else:
                 print(f"deducted {rem}")

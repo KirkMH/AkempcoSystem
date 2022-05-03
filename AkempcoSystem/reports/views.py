@@ -3,7 +3,7 @@ from django.views.generic import ListView, DetailView
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from django.db.models import Q
+from django.db.models import Q, F
 from django_serverside_datatable.views import ServerSideDatatableView
 
 from fm.views import get_index, add_search_key
@@ -76,3 +76,19 @@ class ProductStoreDTView(ServerSideDatatableView):
         self.columns = ['pk', 'performed_on', 'quantity', 'remarks', 'performed_by__first_name', 'performed_by__last_name', 'balance']
         return super().get(request, *args, **kwargs)
      
+    
+
+@login_required
+# @user_is_allowed(Feature.RP_CRITICAL)
+def critical_products(request):
+    akempco = Store.objects.all().first()
+    context = {
+        'akempco': akempco
+    }
+    return render(request, 'reports/critical_level.html', context)  
+    
+
+@method_decorator(login_required, name='dispatch')
+class CriticalStockDTListView(ServerSideDatatableView):
+    queryset = Product.objects.filter(total_stocks__lte=F('reorder_point'))
+    columns = ['pk', 'barcode', 'full_description', 'warehouse_stocks', 'store_stocks', 'total_stocks', 'reorder_point', 'category__category_description']

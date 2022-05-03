@@ -8,4 +8,7 @@ urlpatterns = [
     path('history/<int:pk>/product/warehouse/dt', views.ProductWarehouseDTView.as_view(), name='product_history_w_dt'),
     path('history/<int:pk>/product/store', views.product_store_history, name='product_history_s'),
     path('history/<int:pk>/product/store/dt', views.ProductStoreDTView.as_view(), name='product_history_s_dt'),
+    
+    path('critical', views.critical_products, name='product_list_critical'),
+    path('critical/dt', views.CriticalStockDTListView.as_view(), name='critical_dtlist'),
 ]

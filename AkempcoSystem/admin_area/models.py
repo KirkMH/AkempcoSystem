@@ -35,6 +35,7 @@ class Feature:
     TR_BO = 12
     TR_POS = 13
     RP_PRODHIST = 9
+    RP_CRITICAL = 12
     FM_CREDITOR = 10
     MEMBER_TRANS = 11
 
@@ -51,6 +52,7 @@ class Feature:
         (TR_BO, 'Transaction - Bad Orders'),
         (TR_POS, 'Transaction - Point-of-Sale'),
         (RP_PRODHIST, 'Reports - Product History'),
+        (RP_PRODHIST, 'Reports - Critical Level Products'),
         (MEMBER_TRANS, 'Members - Transactions'),
     )
 

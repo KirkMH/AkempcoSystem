@@ -6,7 +6,7 @@ from django.contrib.auth.models import User, Group
 from django.utils.translation import gettext_lazy as _
 from .models import UserDetail, Store
 from purchases.models import PurchaseOrder, PO_Product
-from stocks.models import WarehouseStock, StoreStock
+from stocks.models import WarehouseStock, StoreStock, ProductHistory
 from sales.models import *
 from member.models import Creditor, CreditorPayment
 from fm.models import *
@@ -69,8 +69,11 @@ class DiscountAdmin(admin.ModelAdmin):
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 admin.site.register(Store, StoreAdmin)
+
 admin.site.register(WarehouseStock)
 admin.site.register(StoreStock)
+admin.site.register(ProductHistory)
+
 admin.site.register(PurchaseOrder)
 admin.site.register(PO_Product)
 admin.site.register(Discount, DiscountAdmin)
