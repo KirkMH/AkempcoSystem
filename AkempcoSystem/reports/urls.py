@@ -11,4 +11,7 @@ urlpatterns = [
     
     path('critical', views.critical_products, name='product_list_critical'),
     path('critical/dt', views.CriticalStockDTListView.as_view(), name='critical_dtlist'),
+
+    path('itr/<int:rpt>/', views.inventoryTurnoverRatio, name='itr_report'),
+    path('itr/<int:rpt>/dt', views.InventoryTurnoverRatioDTView.as_view(), name='itr_dtlist'),
 ]

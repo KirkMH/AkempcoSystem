@@ -79,7 +79,7 @@ class ProductStoreDTView(ServerSideDatatableView):
     
 
 @login_required
-# @user_is_allowed(Feature.RP_CRITICAL)
+@user_is_allowed(Feature.RP_CRITICAL)
 def critical_products(request):
     akempco = Store.objects.all().first()
     context = {
@@ -89,6 +89,49 @@ def critical_products(request):
     
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.RP_CRITICAL), name='dispatch')
 class CriticalStockDTListView(ServerSideDatatableView):
     queryset = Product.objects.filter(total_stocks__lte=F('reorder_point'))
     columns = ['pk', 'barcode', 'full_description', 'warehouse_stocks', 'store_stocks', 'total_stocks', 'reorder_point', 'category__category_description']
+
+
+@login_required
+@user_is_allowed(Feature.RP_ITR)
+def inventoryTurnoverRatio(request, rpt):
+    # update inventory turnover ratios of all products
+    products = Product.objects.filter(status='ACTIVE')
+    for p in products:
+        p.compute_itr()
+    # render the page
+    akempco = Store.objects.all().first()
+    context = {
+        'akempco': akempco,
+        'rpt': rpt
+    }
+    return render(request, 'reports/inventory_turnover_ratio.html', context)  
+    
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.RP_ITR), name='dispatch')
+class InventoryTurnoverRatioDTView(ServerSideDatatableView):
+    
+    def get(self, request, *args, **kwargs):
+        products = None
+
+        rpt = kwargs.get('rpt')  # if nothing is given, have ITR of all products
+        print(f"rpt: {rpt}")
+        if rpt == 0:
+            # slow-moving products only
+            products = Product.objects.filter(status='ACTIVE', itr__lte=3)
+
+        elif rpt == 1:
+            # fast-moving products only
+            products = Product.objects.filter(status='ACTIVE', itr__gte=7)
+
+        else:
+            # get ITR of all products
+            products = Product.objects.filter(status='ACTIVE')
+
+        self.queryset = products
+        self.columns = ['pk', 'barcode', 'full_description', 'cogs', 'avg_inventory', 'itr']
+        return super().get(request, *args, **kwargs)

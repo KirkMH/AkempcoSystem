@@ -1,7 +1,10 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Avg, Min, Max, Sum, F, Q
+from django.apps import apps
 import math
+from datetime import datetime
+from dateutil import relativedelta
 
 from django.contrib.auth.models import User
 from admin_area.models import UserDetail, Store
@@ -352,8 +355,31 @@ class Product(models.Model):
         null=True,
         blank=True
     )
-    # objects = models.Manager()
-    # misc_qs = ProductManager()
+    # for the Inventory Turnover Ratio
+    cogs = models.DecimalField(
+        _("Cost of Goods Sold"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0,
+        null=True,
+        blank=True
+    )
+    avg_inventory = models.DecimalField(
+        _("Average Inventory"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0,
+        null=True,
+        blank=True
+    )
+    itr = models.DecimalField(
+        _("Inventory Turnover Ratio"), 
+        max_digits=11, 
+        decimal_places=2,
+        default=0,
+        null=True,
+        blank=True
+    )
 
     @property
     def tax_type_description(self):
@@ -364,6 +390,49 @@ class Product(models.Model):
 
     def __str__(self):
         return self.full_description
+
+    def compute_itr(self):
+        # prepare models
+        SalesVoid = apps.get_model('sales', 'SalesVoid')
+        Sales = apps.get_model('sales', 'Sales')
+        SalesItem = apps.get_model('sales', 'SalesItem')
+        SalesItemCogs = apps.get_model('sales', 'SalesItemCogs')
+        # computing cogs for the last 1 month
+        last_month = datetime.now() + relativedelta.relativedelta(months=-1)
+        print(f"last month: {last_month}")
+        voided = SalesVoid.objects.filter(cancelled_on__gte=last_month).values('sales_invoice')
+        sales = Sales.objects.filter(transaction_datetime__gte=last_month).exclude(salesinvoice__pk__in=voided)
+        print(sales)
+        sales_items = SalesItem.objects.filter(sales__in=sales, product=self)
+        computed_cogs = SalesItemCogs.objects.filter(sales_item__in=sales_items) \
+                        .prefetch_related('store_stock') \
+                        .aggregate(cogs=Sum(F('quantity') * F('store_stock__supplier_price'))) \
+                        ['cogs'] or 0
+        # computing ending inventory
+        ws_ending_bal = WarehouseStock.availableStocks.filter(product=self) \
+                        .aggregate(ws=Sum(F('supplier_price') * F('remaining_stocks'))) \
+                        ['ws'] or 0
+        ss_ending_bal = StoreStock.availableStocks.filter(product=self) \
+                        .aggregate(ss=Sum(F('supplier_price') * F('remaining_stocks'))) \
+                        ['ss'] or 0
+        ending_inv = ws_ending_bal + ss_ending_bal
+        # computing purchases for the last 1 month
+        po_list = PurchaseOrder.objects.filter(is_open=False, received_date__gte=last_month)
+        purchases = PO_Product.objects.filter(purchase_order__in=po_list, product=self) \
+                        .aggregate(purchases=Sum(F('unit_price') * F('received_qty'))) \
+                        ['purchases'] or 0
+        # computing beginning inventory, average inventory, and itr
+        beg_inv = ending_inv + computed_cogs - purchases
+        computed_avg_inventory = (beg_inv + ending_inv) / 2
+        computed_itr = computed_cogs / computed_avg_inventory
+        # save computed results
+        self.cogs = computed_cogs
+        self.avg_inventory = computed_avg_inventory
+        self.itr = computed_itr
+        self.save()
+
+        print(f"{self.full_description}: {ss_ending_bal} + {ws_ending_bal} = {ending_inv}, {purchases}")
+        print(f"\t{computed_cogs} / (({beg_inv} + {ending_inv}) / 2) = {computed_itr}")
 
     def is_consigned(self):
         return 'Yes' if self.is_consignment else 'No'

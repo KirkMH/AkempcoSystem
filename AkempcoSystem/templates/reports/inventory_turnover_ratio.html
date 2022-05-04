@@ -1,0 +1,106 @@
+{% extends '../base.html' %}
+{% load static form_tags %}
+
+{% block extra_header %}
+{% include '../includes/datatable.html' %}    
+{% endblock extra_header %}
+
+{% block page_title %}
+Inventory Turnover Ratio Report<br>
+<span class="text-muted">
+    
+    {% if rpt == 0 %}
+        Slow-moving Products
+    {% elif rpt == 1 %}
+        Fast-moving Products
+    {% else %}
+        All Products
+    {% endif %}
+        
+</span>
+{% endblock page_title %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item active">Inventory Turnover Ratio</li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+<div class="card m-4">
+    <form method="get">
+        <div class="card-header">
+            <div class="row">
+            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                <div class="form-group">
+                    <label for="filter">Filter:&nbsp;</label>
+                    <select style="display: inline; width: auto;" class="form-control" id="filter">
+                        <option value="0" {% if rpt == 0 %}selected{% endif %}>Slow-moving products</option>
+                        <option value="1" {% if rpt == 1 %}selected{% endif %}>Fast-moving products</option>
+                        <option value="2" {% if rpt == 2 %}selected{% endif %}>All products</option>
+                    </select>
+                </div>
+            </div>
+            </div>
+        </div>
+    </form>
+    <div class="card-body table-responsive">
+        <table id="dtItr" class="table table-hover table-head-fixed table-sm">
+            <thead>
+                <tr>
+                    <th class="text-center">Barcode</th>
+                    <th class="text-center">Product</th>
+                    <th class="text-center">Cost of Goods Sold</th>
+                    <th class="text-center">Average Inventory</th>
+                    <th class="text-center">Inventory Turnover Ratio</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock main_content %}
+
+
+{% block js %}
+    <script>
+        $(document).ready(function() {
+            const val = $('#filter option:selected').val();
+            $("#dtItr").DataTable({
+                destroy: true,
+                serverSide: true,
+                sAjaxSource: "../../itr/" + val + "/dt", 
+                columns: [
+                    { name: 'barcode', data: 1, className: 'text-center'},
+                    { name: 'full_description', data: 2},
+                    { 
+                        name: 'cogs', 
+                        data: 3, 
+                        className: 'text-right',
+                        render: function(data) {
+                            return peso.format(data);
+                        }
+                    },
+                    { 
+                        name: 'avg_inv', 
+                        data: 4, 
+                        className: 'text-right',
+                        render: function(data) {
+                            return peso.format(data);
+                        }
+                    },
+                    { name: 'itr', data: 5, className: 'text-center'},
+                ],
+                order: [[2, 'asc']],
+            });
+
+            $("#filter").change(function () {
+                const sel = $('#filter option:selected').val();
+                location.href = "../../itr/" + sel + "/"
+            })
+
+            $("#menu_rpt").addClass("menu-open")
+            $("#menu_rpt_itr").addClass("active")
+        })
+    </script>
+{% endblock js %}
