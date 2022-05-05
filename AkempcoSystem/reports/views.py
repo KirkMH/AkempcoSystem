@@ -92,7 +92,7 @@ def critical_products(request):
 @method_decorator(user_is_allowed(Feature.RP_CRITICAL), name='dispatch')
 class CriticalStockDTListView(ServerSideDatatableView):
     queryset = Product.objects.filter(total_stocks__lte=F('reorder_point'))
-    columns = ['pk', 'barcode', 'full_description', 'warehouse_stocks', 'store_stocks', 'total_stocks', 'reorder_point', 'category__category_description']
+    columns = ['pk', 'barcode', 'full_description', 'warehouse_stocks', 'store_stocks', 'total_stocks', 'reorder_point', 'category__category_description', 'ceiling_qty']
 
 
 @login_required

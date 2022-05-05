@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'widget_tweaks',
     'crispy_forms',
     'bootstrap_modal_forms',
+    'fontawesomefree', # font-awesome
 
     # internally-created apps
     'admin_area',

@@ -57,9 +57,10 @@
                         <th class="text-center">Barcode</th>
                         <th class="text-center">Product</th>
                         <th class="text-center">Category</th>
-                        <th width="10%" class="text-center">Warehouse Stocks</th>
-                        <th width="10%" class="text-center">Store Stocks</th>
-                        <th width="10%" class="text-center">Total</th>
+                        <th class="text-center">Remaining Stocks</th>
+                        <th class="text-center">Reorder Point</th>
+                        <th class="text-center">Ceiling Qty</th>
+                        <th class="text-center">Suggested Order Qty</th>
                     </tr>
                 </thead>
                 <tbody style="font-size: 11pt;">
@@ -98,8 +99,6 @@
                     { name: 'barcode', data: 1, className: 'text-center'},
                     { name: 'full_description', data: 2},
                     { name: 'category', data: 7},
-                    { name: 'warehouse_stocks', data: 3, className: 'text-center'},
-                    { name: 'store_stocks', data: 4, className: 'text-center'},
                     {   
                         name: 'total',
                         data: null,
@@ -110,6 +109,17 @@
                             return render;
                         },
                         className: 'text-center'
+                    },
+                    { name: 'reorder_point', data: 6, className: 'text-center'},
+                    { name: 'ceiling_qty', data: 8, className: 'text-center'},
+                    { 
+                        name: 'to_order', 
+                        data: null, 
+                        className: 'text-center',
+                        render: function(data) {
+                            const order = data[8] - data[5];
+                            return order;
+                        }
                     },
                 ],
                 order: [[1, 'asc']],
