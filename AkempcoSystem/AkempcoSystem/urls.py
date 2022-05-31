@@ -25,6 +25,7 @@ urlpatterns = [
     path('purchases/', include('purchases.urls')),
     path('pricing/', include('pricing.urls')),
     path('stocks/', include('stocks.urls')),
+    path('entryadj/', include('entryadjustment.urls')),
     path('reports/', include('reports.urls')),
     path('sales/', include('sales.urls')),
     path('bo/', include('badorder.urls')),

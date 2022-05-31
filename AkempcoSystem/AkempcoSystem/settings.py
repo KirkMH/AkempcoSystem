@@ -49,7 +49,8 @@ INSTALLED_APPS = [
     'fm',
     'purchases',    # this includes PO and receiving
     'pricing',    # price management
-    'stocks',    # stock management, inc. RV; stock sdjustment
+    'stocks',    # stock management, inc. RV; stock adjustment
+    'entryadjustment',
     'reports',
     'sales',    # POS
     'badorder',
