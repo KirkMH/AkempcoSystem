@@ -3,7 +3,7 @@ from bootstrap_modal_forms.forms import BSModalModelForm
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Submit, Row, Column
 
-from .models import RV_Product, RequisitionVoucher
+from .models import RV_Product, RequisitionVoucher, StockAdjustment
 
 
 class RV_ProductForm(BSModalModelForm):
@@ -43,3 +43,10 @@ class RV_ProductForm(BSModalModelForm):
             ),
             # Submit()
         )
+
+
+class StockAdjustmentForm(forms.ModelForm):
+    required_css_class = 'required'
+    class Meta:
+        model = StockAdjustment
+        fields = ['product', 'quantity', 'location', 'reason']

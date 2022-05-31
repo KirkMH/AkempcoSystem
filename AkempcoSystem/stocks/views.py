@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView
 from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView
 from django.contrib import messages
 from django.db.models import Q
 from django_serverside_datatable.views import ServerSideDatatableView
+from django.contrib.messages.views import SuccessMessageMixin
 
 from AkempcoSystem.decorators import user_is_allowed
 from django.contrib.auth.decorators import login_required
@@ -12,9 +13,8 @@ from django.utils.decorators import method_decorator
 
 from fm.models import Product
 from admin_area.models import Feature, Store
-from fm.views import get_index, add_search_key
-from .models import RequisitionVoucher, RV_Product
-from .forms import RV_ProductForm
+from .models import RequisitionVoucher, RV_Product, StockAdjustment
+from .forms import RV_ProductForm, StockAdjustmentForm
 
 
 @login_required
@@ -234,3 +234,57 @@ def clone_rv(request, pk):
     rv = get_object_or_404(RequisitionVoucher, pk=pk)
     new_rv = rv.clone(request.user)
     return redirect('rv_products', pk=new_rv.pk)
+
+    
+@login_required
+@user_is_allowed(Feature.TR_STOCKADJ)
+def adjustment_list(request):
+    return render(request, "stocks/stock_adjustment.html")
+
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_STOCKADJ), name='dispatch')
+class StockAdjustmentDTListView(ServerSideDatatableView):
+    model = StockAdjustment
+    columns = ['pk', 'product__full_description', 'quantity', 'location', 'reason', 'created_at', 'status']
+
+    
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_STOCKADJ), name='dispatch')
+class StockAdjustmentCreateView(SuccessMessageMixin, CreateView):
+    model = StockAdjustment
+    form_class = StockAdjustmentForm
+    template_name = 'stocks/stock_adjustment_new.html'
+    success_message = "New stock adjustment request created."
+    success_url = reverse_lazy('adjustment_list')
+    
+    def form_valid(self, form):
+       adjustment = form.save(commit=False)
+       form.instance.created_by = self.request.user
+       form.save()
+       return super().form_valid(form)
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.TR_STOCKADJ), name='dispatch')
+class StockAdjustmentDetailView(DetailView):
+    model = StockAdjustment
+    template_name = "stocks/stock_adjustment_view.html"
+    context_object_name = 'adjustment'
+
+
+@login_required
+@user_is_allowed(Feature.TR_STOCKADJ)
+def approve_adjustment(request, pk):
+    adjustment = get_object_or_404(StockAdjustment, pk=pk)
+    adjustment.approve(request.user)
+    messages.success(request, "Stock adjustment was approved.")
+    return redirect('adjustment_list')
+
+
+@login_required
+@user_is_allowed(Feature.TR_STOCKADJ)
+def cancel_adjustment(request, pk):
+    adjustment = get_object_or_404(StockAdjustment, pk=pk)
+    adjustment.cancel(request.user)
+    messages.success(request, "Stock adjustment was cancelled.")
+    return redirect('adjustment_list')

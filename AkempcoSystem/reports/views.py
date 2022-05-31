@@ -6,7 +6,7 @@ from django.utils.decorators import method_decorator
 from django.db.models import Q, F
 from django_serverside_datatable.views import ServerSideDatatableView
 
-from fm.views import get_index, add_search_key
+# from fm.views import get_index, add_search_key
 
 from AkempcoSystem.decorators import user_is_allowed
 from admin_area.models import Feature, Store

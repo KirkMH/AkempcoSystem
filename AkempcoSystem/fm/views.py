@@ -18,21 +18,21 @@ from .forms import *
 import random
 import json
 
-# function to retrieve the search key
-def get_index(request, index):
-    key = None
-    if index in request.GET:
-        key = request.GET[index]
-    return key
+# # function to retrieve the search key
+# def get_index(request, index):
+#     key = None
+#     if index in request.GET:
+#         key = request.GET[index]
+#     return key
 
 
-# function to pass back the search key by adding it to the context
-def add_search_key(request, context):
-    key = get_index(request, "table_search")
-    # pass-back the search key to be displayed in the textbox
-    if key:
-        context["table_search"] = key
-    return context
+# # function to pass back the search key by adding it to the context
+# def add_search_key(request, context):
+#     key = get_index(request, "table_search")
+#     # pass-back the search key to be displayed in the textbox
+#     if key:
+#         context["table_search"] = key
+#     return context
 
 
 ################################

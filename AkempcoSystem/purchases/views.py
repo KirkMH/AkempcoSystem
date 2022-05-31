@@ -13,7 +13,7 @@ from django.utils.decorators import method_decorator
 
 from django_serverside_datatable.views import ServerSideDatatableView
 from admin_area.models import Feature, Store
-from fm.views import get_index, add_search_key
+# from fm.views import get_index, add_search_key
 from fm.models import Product, Supplier
 from .models import PurchaseOrder, PO_Product, PO_PROCESS
 from .forms import PurchaseOrderForm, PO_ProductForm

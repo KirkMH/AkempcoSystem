@@ -6,7 +6,7 @@ from django.contrib.auth.models import User, Group
 from django.utils.translation import gettext_lazy as _
 from .models import UserDetail, Store
 from purchases.models import PurchaseOrder, PO_Product
-from stocks.models import WarehouseStock, StoreStock, ProductHistory
+from stocks.models import WarehouseStock, StoreStock, ProductHistory, StockAdjustment
 from sales.models import *
 from member.models import Creditor, CreditorPayment
 from fm.models import *
@@ -65,6 +65,12 @@ class DiscountAdmin(admin.ModelAdmin):
      def has_delete_permission(self, request, obj=None):
         return False
 
+# custom action for admin to perform stock adjustment
+@admin.action(description='Perform selected requests')
+def perform_requests(modeladmin, request, queryset):
+    for req in queryset:
+        req.perform(request.user)
+
 # Re-register UserAdmin
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
@@ -73,6 +79,10 @@ admin.site.register(Store, StoreAdmin)
 admin.site.register(WarehouseStock)
 admin.site.register(StoreStock)
 admin.site.register(ProductHistory)
+class StockAdjustmentAdmin(admin.ModelAdmin):
+    list_display = ('created_at', 'product', 'quantity', 'location', 'reason', 'created_by', 'status')
+    actions = [perform_requests]
+admin.site.register(StockAdjustment, StockAdjustmentAdmin)
 
 admin.site.register(PurchaseOrder)
 admin.site.register(PO_Product)

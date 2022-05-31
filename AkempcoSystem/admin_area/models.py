@@ -35,10 +35,11 @@ class Feature:
     TR_BO = 12
     TR_POS = 13
     RP_PRODHIST = 9
-    RP_CRITICAL = 12
-    RP_ITR = 13
+    RP_CRITICAL = 14
+    RP_ITR = 15
     FM_CREDITOR = 10
     MEMBER_TRANS = 11
+    TR_STOCKADJ = 16
 
     LIST = (
         (FM_UOM, 'File Maintenance - Unit of Measure'),
@@ -51,6 +52,7 @@ class Feature:
         (TR_STOCKS, 'Transaction - Stock Management'),
         (TR_RV, 'Transaction - Requisition Voucher'),
         (TR_BO, 'Transaction - Bad Orders'),
+        (TR_STOCKADJ, 'Transaction - Stock Adjustment'),
         (TR_POS, 'Transaction - Point-of-Sale'),
         (RP_PRODHIST, 'Reports - Product History'),
         (RP_CRITICAL, 'Reports - Critical Level Products'),
@@ -73,6 +75,7 @@ class UserType:
     OIC = 'Officer-In-Charge'
     AUDIT = 'Audit Committee'
     GM = 'General Manager'
+    ADMIN = 'Administrator'
     
     LIST = (
         (CREDITOR, 'Member/Creditor'),
@@ -82,7 +85,8 @@ class UserType:
         (PURCHASER, 'Purchaser'),
         (OIC, 'Officer-In-Charge'),
         (AUDIT, 'Audit Committee'),
-        (GM, 'General Manager')
+        (GM, 'General Manager'),
+        (ADMIN, 'Administrator')
     )
 
 

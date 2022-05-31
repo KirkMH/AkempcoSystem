@@ -14,7 +14,7 @@ from fm.models import Product
 from admin_area.models import Feature
 from stocks.models import WarehouseStock, StoreStock
 from .models import ProductPricing
-from fm.views import get_index, add_search_key
+# from fm.views import get_index, add_search_key
 from .forms import NewProductPricingForm
 
 

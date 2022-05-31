@@ -1,0 +1,133 @@
+{% extends '../base.html' %}
+{% load static %}
+
+{% block page_title %}Stock Adjustment Request
+{% endblock page_title %}
+
+{% block css %}
+  <link rel="stylesheet" href="{% static 'css/asterisk_on_required.css' %}">
+  <style>
+      .name {
+          font-size: large;
+      }
+      .value {
+          font-size: larger;
+          font-weight: bold;
+      }
+  </style>
+{% endblock css %}
+    
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'adjustment_list' %}">Stock Adjustment</a></li>
+    <li class="breadcrumb-item active">View</li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+    <div class="card m-4">
+        <form method="post" action="{% url 'adjustment_approve' adjustment.pk %}" novalidate>
+            {% csrf_token %}
+
+            <div class="card-body">
+                <div class="col-lg-6 col-md-8 col-sm-10 col-xs-12">
+                    <div class="row">
+                        <div class="col-6 name">Product to adjust:</div>
+                        <div class="col-6 value">{{ adjustment.product.full_description }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 name">By how many (Quantity):</div>
+                        <div class="col-6 value">{{ adjustment.quantity }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 name">Location:</div>
+                        <div class="col-6 value">{{ adjustment.location_str }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 name">Reason for adjustment:</div>
+                        <div class="col-6 value">{{ adjustment.reason }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 name">Status:</div>
+                        <div class="col-6 value">{{ adjustment.status }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 text-muted value mt-4">History:</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 name">Request created by:</div>
+                        <div class="col-6 value">{{ adjustment.created_by }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 name">Request created at:</div>
+                        <div class="col-6 value">{{ adjustment.created_at }}</div>
+                    </div>
+                    
+                    {% if adjustment.checked_by %}
+                    <div class="row">
+                        <div class="col-6 name">Checked by:</div>
+                        <div class="col-6 value">{{ adjustment.checked_by }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 name">Checked at:</div>
+                        <div class="col-6 value">{{ adjustment.checked_at }}</div>
+                    </div>                        
+                    {% endif %}
+                        
+                    {% if adjustment.approved_by %}
+                    <div class="row">
+                        <div class="col-6 name">Approved by:</div>
+                        <div class="col-6 value">{{ adjustment.approved_by }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 name">Approved at:</div>
+                        <div class="col-6 value">{{ adjustment.approved_at }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if adjustment.performed_by %}
+                    <div class="row">
+                        <div class="col-6 name">Performed by:</div>
+                        <div class="col-6 value">{{ adjustment.performed_by }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 name">Performed at:</div>
+                        <div class="col-6 value">{{ adjustment.performed_at }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if adjustment.cancelled_by %}
+                    <div class="row">
+                        <div class="col-6 name">Cancelled by:</div>
+                        <div class="col-6 value">{{ adjustment.cancelled_by }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 name">Cancelled at:</div>
+                        <div class="col-6 value">{{ adjustment.cancelled_at }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card-footer">
+                {% if adjustment.next_to_approve == user.userdetail.userType and not adjustment.is_cancelled %}
+                <button type="submit" class="btn btn-success" name="save">Approve</button>                    
+                {% endif %}
+                {% if not adjustment.is_completed and not adjustment.is_cancelled %}
+                <a href="{% url 'adjustment_cancel' adjustment.pk %}" class="btn btn-danger" name="cancel">Cancel</a>                    
+                {% endif %}
+                    
+                <a href="{% url 'adjustment_list' %}" class="btn btn-default">Back to list</a>
+            </div>
+        </form>
+    </div>
+{% endblock main_content %}
+
+
+{% block js %}
+    <script>
+        $(document).ready(function() {
+            $("#menu_trans").addClass("menu-open")
+            $("#menu_trans_adj").addClass("active")
+        })
+    </script>
+{% endblock js %}

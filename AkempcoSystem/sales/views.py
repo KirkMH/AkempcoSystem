@@ -12,7 +12,7 @@ from django.contrib.auth.hashers import check_password # for overriding validati
 
 from django_serverside_datatable.views import ServerSideDatatableView
 from django.contrib.auth.models import User
-from fm.views import get_index, add_search_key
+# from fm.views import get_index, add_search_key
 from fm.models import Product
 from member.models import Creditor
 from AkempcoSystem.decorators import user_is_allowed

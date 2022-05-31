@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from admin_area.models import UserType
 from django.utils.translation import gettext_lazy as _
 from django.db.models import F, Sum
 from datetime import datetime
@@ -426,3 +427,200 @@ class ProductHistory(models.Model):
         self.balance = last_bal + self.quantity
         self.save()
         self.product.set_stock_count()
+
+
+class StockAdjustment(models.Model):
+    location_options = [
+        (0, 'Warehouse'),
+        (1, 'Store')
+    ]
+
+    product = models.ForeignKey(
+        "fm.Product", 
+        help_text=_("Product to adjust"),
+        verbose_name=_("Product"), 
+        on_delete=models.CASCADE
+    )
+    quantity = models.SmallIntegerField(
+        _("By how many?"),
+        help_text="Negative to reduce the quantity, positive to increase the quantity."
+    )
+    location = models.PositiveSmallIntegerField(
+        _("Location"),
+        help_text="Where will the adjustment be made?",
+        choices=location_options
+    )
+    reason = models.CharField(_("Reason for adjustment"), max_length=250)
+    created_by = models.ForeignKey(
+        User, 
+        related_name='adjustment_requester',
+        on_delete=models.RESTRICT
+    )
+    created_at = models.DateTimeField(
+        _("Created at"), 
+        auto_now_add=True
+    )
+    checked_by = models.ForeignKey(
+        User, 
+        related_name='adjustment_checker',
+        on_delete=models.RESTRICT, 
+        null=True,
+        blank=True,
+        default=None  
+    )
+    checked_at = models.DateTimeField(
+        _("Checked at"), 
+        null=True,
+        blank=True,
+        default=None   
+    )
+    approved_by = models.ForeignKey(
+        User, 
+        related_name='adjustment_approver',
+        on_delete=models.RESTRICT, 
+        null=True,
+        blank=True,
+        default=None  
+    )
+    approved_at = models.DateTimeField(
+        _("Approved at"), 
+        null=True,
+        blank=True,
+        default=None   
+    )
+    performed_by = models.ForeignKey(
+        User, 
+        related_name='adjustment_performer',
+        on_delete=models.RESTRICT, 
+        null=True,
+        blank=True,
+        default=None  
+    )
+    performed_at = models.DateTimeField(
+        _("Performed at"), 
+        null=True,
+        blank=True,
+        default=None   
+    )
+    cancelled_by = models.ForeignKey(
+        User, 
+        related_name='adjustment_canceller',
+        on_delete=models.RESTRICT, 
+        null=True,
+        blank=True,
+        default=None  
+    )
+    cancelled_at = models.DateTimeField(
+        _("Cancelled at"), 
+        null=True,
+        blank=True,
+        default=None   
+    )
+    status = models.CharField(
+        _("Status"), 
+        max_length=10,
+        default='Submitted'
+    )
+
+    class Meta:
+        ordering = ['-created_at', 'product']
+
+    def __str__(self):
+        return self.product.full_description + ": " + str(self.quantity) + " due to " + self.reason
+    
+    @property
+    def location_str(self):
+        return 'Warehouse' if self.location == 0 else 'Store'
+
+    @property
+    def is_completed(self):
+        return self.status == 'Completed'
+
+    @property
+    def is_cancelled(self):
+        return self.status == 'Cancelled'
+
+    def next_to_approve(self):
+        if self.checked_by == None:
+            return UserType.AUDIT
+        elif self.approved_by == None:
+            return UserType.GM
+        elif self.performed_by == None:
+            return UserType.ADMIN
+        else:
+            return None
+
+    def cancel(self, user):
+        if self.is_completed:
+            return
+
+        self.cancelled_by = user
+        self.cancelled_at = datetime.now()
+        self.status = 'Cancelled'
+        self.save()
+
+    def approve(self, user):
+        if user.userdetail.userType == UserType.AUDIT:
+            self.checked_by = user
+            self.checked_at = datetime.now()
+            self.status = 'Checked'
+        elif user.userdetail.userType == UserType.GM:
+            self.approved_by = user
+            self.approved_at = datetime.now()
+            self.status = 'Approved'
+        self.save()
+
+    def perform(self, user):
+        # if already completed, ignore action
+        if self.is_completed:
+            return
+
+        # increase/decrease quantity and log to product history
+
+        # get stocks of this product
+        source = WarehouseStock if self.location == 0 else StoreStock
+        stock_source = source.availableStocks.filter(product=self.product).order_by('pk')
+        qty = self.quantity
+        if qty > 0:
+            # add qty to stocks
+            if stock_source:
+                stock = stock_source.first()
+            else:
+                stock = source.objects.filter(product=self.product).order_by('-pk').first()
+            stock.remaining_stocks = stock.remaining_stocks + qty
+            stock.save()
+
+        else:
+            # deduct qty from stock
+            qty = abs(qty)
+            for item in stock_source:
+                stocks = int(item.remaining_stocks)
+                if qty <= stocks:
+                    # this record has sufficient stocks; deduct entire qty
+                    item.remaining_stocks = item.remaining_stocks - qty
+                    item.save()
+                    qty = 0
+                    break
+                else:
+                    # this record has insufficient stocks
+                    # compute remaining qty to transfer from the next record
+                    qty = qty - stocks
+                    # transfer only the remaining_stocks of this record
+                    item.remaining_stocks = 0
+                    item.save()
+        
+        # record in history
+        hist = ProductHistory()
+        hist.product = self.product
+        hist.location = self.location
+        hist.quantity = self.quantity
+        hist.remarks = 'Stock adjustment'
+        hist.performed_by = self.created_by
+        hist.save()
+        hist.set_current_balance()
+        
+        # update status
+        self.performed_by = user
+        self.performed_at = datetime.now()
+        self.status = 'Completed'
+        self.save()
