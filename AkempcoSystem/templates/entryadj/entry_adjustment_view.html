@@ -1,0 +1,166 @@
+{% extends '../base.html' %}
+{% load static %}
+
+{% block page_title %}Entry Adjustment Request{% endblock page_title %}
+
+{% block css %}
+  <link rel="stylesheet" href="{% static 'css/asterisk_on_required.css' %}">
+  <style>
+      .name {
+          font-size: large;
+          width: 30%;
+          display: inline-block;
+      }
+      .value {
+          font-size: larger;
+          font-weight: bold;
+          width: 70%;
+          display: inline-block;
+      }
+      @media screen and (max-width: 691px) {
+          .name {
+              display: block;
+              width: 100%;
+          }
+          .value {
+              display: block;
+              width: 100%;
+          }
+      }
+  </style>
+{% endblock css %}
+    
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'request_list' %}">Entry Adjustments</a></li>
+    <li class="breadcrumb-item active">View</li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+    <div class="card m-4">
+        <form id="EntryAdjustment" method="post" action="{% url 'request_approve' adjustment.pk %}" novalidate>
+            {% csrf_token %}
+
+            <div class="card-body">
+                <div class="col-12">
+                    <div class="row">
+                        <div class="name">Transaction Type:</div>
+                        <div class="value">{{ adjustment.transaction_type }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="name">Reference Number:</div>
+                        <div class="value">{{ adjustment.reference_num }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="name">Request Detail:</div>
+                        <div class="value">{{ adjustment.adjustment_detail }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="name">Reason for request:</div>
+                        <div class="value">{{ adjustment.reason }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="name">Status:</div>
+                        <div class="value">{{ adjustment.status }}</div>
+                    </div>
+                    <div class="row">
+                        <div class=" text-muted value mt-4">History:</div>
+                    </div>
+                    <div class="row">
+                        <div class="name">Requested by:</div>
+                        <div class="value">{{ adjustment.requested_by }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="name">Requested at:</div>
+                        <div class="value">{{ adjustment.requested_at }}</div>
+                    </div>
+                    
+                    {% if adjustment.checked_by %}
+                    <div class="row">
+                        <div class="name">Checked by:</div>
+                        <div class="value">{{ adjustment.checked_by }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="name">Checked at:</div>
+                        <div class="value">{{ adjustment.checked_at }}</div>
+                    </div>                        
+                    {% endif %}
+                        
+                    {% if adjustment.approved_by %}
+                    <div class="row">
+                        <div class="name">Approved by:</div>
+                        <div class="value">{{ adjustment.approved_by }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="name">Approved at:</div>
+                        <div class="value">{{ adjustment.approved_at }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if adjustment.performed_by %}
+                    <div class="row">
+                        <div class="name">Performed by:</div>
+                        <div class="value">{{ adjustment.performed_by }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="name">Performed at:</div>
+                        <div class="value">{{ adjustment.performed_at }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if adjustment.cancelled_by %}
+                    <div class="row">
+                        <div class="name">Cancelled by:</div>
+                        <div class="value">{{ adjustment.cancelled_by }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="name">Cancelled at:</div>
+                        <div class="value">{{ adjustment.cancelled_at }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card-footer">
+                {% if adjustment.next_to_approve == user.userdetail.userType and not adjustment.is_cancelled %}
+                <button type="button" class="btn btn-success" id="save">Approve</button>                    
+                {% endif %}
+                {% if not adjustment.is_completed and not adjustment.is_cancelled %}
+                <button type="button" class="btn btn-danger" id="cancel">Cancel</button>
+                {% endif %}
+                    
+                <a href="{% url 'request_list' %}" class="btn btn-default">Back to list</a>
+            </div>
+        </form>
+    </div>
+{% endblock main_content %}
+
+
+{% block js %}
+    <script src="{% static 'js/jquery.bootstrap.modal.forms.min.js' %}"></script>
+    <!-- bootboxjs -->
+    <script src="{% static 'js/bootbox.all.min.js' %}"></script>
+
+    <script>
+        $(document).ready(function() {
+            $('#cancel').click(function () {
+                bootbox.confirm("Are you sure you want to cancel this entry adjustment request?", function(result){ 
+                    if (result) {
+                        location.href = "{% url 'request_cancel' adjustment.pk %}";
+                    }
+                });
+            });
+
+            $('#save').click(function () {
+                bootbox.confirm("Are you sure you want to approve this entry adjustment request?", function(result){ 
+                    if (result) {
+                        $('#EntryAdjustment').submit();
+                    }
+                });
+            });
+
+            $("#menu_trans").addClass("menu-open")
+            $("#menu_trans_req").addClass("active")
+        })
+    </script>
+{% endblock js %}

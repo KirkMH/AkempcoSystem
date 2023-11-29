@@ -1,0 +1,47 @@
+{% extends '../base.html' %}
+{% load static %}
+
+{% block page_title %}New Stock Adjustment Request{% endblock page_title %}
+
+{% block css %}
+  <link rel="stylesheet" href="{% static 'css/asterisk_on_required.css' %}">
+{% endblock css %}
+    
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'request_list' %}">Entry Adjustments</a></li>
+    <li class="breadcrumb-item active">New</li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+    <div class="card m-4">
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="card-header">
+                <h3 class="card-title">Please fill in all the fields marked with an <label class="required">asterisk</label>.</h3>
+            </div>
+
+            <div class="card-body">
+                <div class="col-lg-6 col-md-8 col-sm-10 col-xs-12">
+                    {% include '../includes/form.html' %}
+                </div>
+            </div>
+            
+            <div class="card-footer">
+                <button type="submit" class="btn btn-success" name="save">Submit</button>
+                <a href="{% url 'request_list' %}" class="btn btn-default">Cancel</a>
+            </div>
+        </form>
+    </div>
+{% endblock main_content %}
+
+
+{% block js %}
+    <script>
+        $(document).ready(function() {
+            $("#menu_trans").addClass("menu-open")
+            $("#menu_trans_req").addClass("active")
+        })
+    </script>
+{% endblock js %}

@@ -143,7 +143,7 @@ class RequisitionVoucher(models.Model):
     )
 
     def __str__(self):
-        return 'RV# ' + str(self.pk) + ': ' + self.get_status()
+        return 'RV# ' + str(self.pk) + ': ' + self.status
     
     def set_item_count(self):
         count = RV_Product.objects.filter(rv=self).count() or 0

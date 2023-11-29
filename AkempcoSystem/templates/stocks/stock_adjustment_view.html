@@ -25,7 +25,7 @@
 
 {% block main_content %}
     <div class="card m-4">
-        <form method="post" action="{% url 'adjustment_approve' adjustment.pk %}" novalidate>
+        <form method="post" id="frmStockAdjustment" action="{% url 'adjustment_approve' adjustment.pk %}" novalidate>
             {% csrf_token %}
 
             <div class="card-body">
@@ -110,10 +110,10 @@
             
             <div class="card-footer">
                 {% if adjustment.next_to_approve == user.userdetail.userType and not adjustment.is_cancelled %}
-                <button type="submit" class="btn btn-success" name="save">Approve</button>                    
+                <button type="button" class="btn btn-success" id="save" name="save">Approve</button>                    
                 {% endif %}
                 {% if not adjustment.is_completed and not adjustment.is_cancelled %}
-                <a href="{% url 'adjustment_cancel' adjustment.pk %}" class="btn btn-danger" name="cancel">Cancel</a>                    
+                <button type="button" class="btn btn-danger" id="cancel" name="cancel">Cancel</button>
                 {% endif %}
                     
                 <a href="{% url 'adjustment_list' %}" class="btn btn-default">Back to list</a>
@@ -124,8 +124,28 @@
 
 
 {% block js %}
+    <script src="{% static 'js/jquery.bootstrap.modal.forms.min.js' %}"></script>
+    <!-- bootboxjs -->
+    <script src="{% static 'js/bootbox.all.min.js' %}"></script>
+
     <script>
         $(document).ready(function() {
+            $('#cancel').click(function () {
+                bootbox.confirm("Are you sure you want to cancel this stock adjustment request?", function(result){ 
+                    if (result) {
+                        location.href = "{% url 'adjustment_cancel' adjustment.pk %}";
+                    }
+                });
+            });
+
+            $('#save').click(function () {
+                bootbox.confirm("Are you sure you want to approve this stock adjustment request?", function(result){ 
+                    if (result) {
+                        $('#frmStockAdjustment').submit();
+                    }
+                });
+            });
+
             $("#menu_trans").addClass("menu-open")
             $("#menu_trans_adj").addClass("active")
         })

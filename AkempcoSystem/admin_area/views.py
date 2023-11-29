@@ -55,7 +55,7 @@ def dashboard_view(request):
 def login_check(request):
     if request.user.is_authenticated:
         my_user = User.objects.get(pk=request.user.pk)
-        if all([hasattr(my_user, 'userdetail'), my_user.userdetail.activated_at is not None]):
+        if hasattr(my_user, 'userdetail') and my_user.userdetail.activated_at is not None:
             if my_user.userdetail.userType == UserType.CREDITOR:
                 return redirect('dashboard_member')
             else:

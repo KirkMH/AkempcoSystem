@@ -40,6 +40,7 @@ class Feature:
     FM_CREDITOR = 10
     MEMBER_TRANS = 11
     TR_STOCKADJ = 16
+    TR_ENTRYADJ = 17
 
     LIST = (
         (FM_UOM, 'File Maintenance - Unit of Measure'),
@@ -53,6 +54,7 @@ class Feature:
         (TR_RV, 'Transaction - Requisition Voucher'),
         (TR_BO, 'Transaction - Bad Orders'),
         (TR_STOCKADJ, 'Transaction - Stock Adjustment'),
+        (TR_ENTRYADJ, 'Transaction - Entry Adjustment'),
         (TR_POS, 'Transaction - Point-of-Sale'),
         (RP_PRODHIST, 'Reports - Product History'),
         (RP_CRITICAL, 'Reports - Critical Level Products'),

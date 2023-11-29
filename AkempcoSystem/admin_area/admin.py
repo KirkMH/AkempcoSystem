@@ -6,10 +6,11 @@ from django.contrib.auth.models import User, Group
 from django.utils.translation import gettext_lazy as _
 from .models import UserDetail, Store
 from purchases.models import PurchaseOrder, PO_Product
-from stocks.models import WarehouseStock, StoreStock, ProductHistory, StockAdjustment
+from stocks.models import WarehouseStock, StoreStock, ProductHistory, StockAdjustment, RequisitionVoucher, RV_Product
 from sales.models import *
 from member.models import Creditor, CreditorPayment
 from fm.models import *
+from entryadjustment.models import *
 
 
 admin.site.site_header = 'AKEMPCO System Administrator'
@@ -65,11 +66,6 @@ class DiscountAdmin(admin.ModelAdmin):
      def has_delete_permission(self, request, obj=None):
         return False
 
-# custom action for admin to perform stock adjustment
-@admin.action(description='Perform selected requests')
-def perform_requests(modeladmin, request, queryset):
-    for req in queryset:
-        req.perform(request.user)
 
 # Re-register UserAdmin
 admin.site.unregister(User)
@@ -79,10 +75,29 @@ admin.site.register(Store, StoreAdmin)
 admin.site.register(WarehouseStock)
 admin.site.register(StoreStock)
 admin.site.register(ProductHistory)
+admin.site.register(RequisitionVoucher)
+admin.site.register(RV_Product)
+
+# custom action for admin to perform stock adjustment
+@admin.action(description='Perform selected requests')
+def perform_requests(modeladmin, request, queryset):
+    for req in queryset:
+        req.perform(request.user)
 class StockAdjustmentAdmin(admin.ModelAdmin):
     list_display = ('created_at', 'product', 'quantity', 'location', 'reason', 'created_by', 'status')
     actions = [perform_requests]
 admin.site.register(StockAdjustment, StockAdjustmentAdmin)
+
+
+# custom action for admin to perform entry adjustment
+@admin.action(description='Perform selected requests')
+def perform_entry_adj_requests(modeladmin, request, queryset):
+    for req in queryset:
+        req.perform(request.user)
+class EntryAdjustmentAdmin(admin.ModelAdmin):
+    list_display = ('requested_at', 'transaction_type', 'reference_num', 'adjustment_detail', 'reason', 'requested_by', 'status')
+    actions = [perform_entry_adj_requests]
+admin.site.register(EntryAdjustment, EntryAdjustmentAdmin)
 
 admin.site.register(PurchaseOrder)
 admin.site.register(PO_Product)

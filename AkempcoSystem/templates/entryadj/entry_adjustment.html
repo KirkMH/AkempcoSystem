@@ -5,11 +5,11 @@
 {% include '../includes/datatable.html' %}    
 {% endblock extra_header %}
 
-{% block page_title %}Stock Adjustment{% endblock page_title %}
+{% block page_title %}Entry Adjustment Requests{% endblock page_title %}
 
 {% block breadcrumb %}
     <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-    <li class="breadcrumb-item active">Stock Adjustment</li>
+    <li class="breadcrumb-item active">Entry Adjustment</li>
 {% endblock breadcrumb %}
 
 {% block main_content %}
@@ -18,11 +18,7 @@
             <div class="card-header">
                 <div class="row">
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                    
-                    {% if user.userdetail.userType == 'Warehouse Staff' or user.userdetail.userType == 'Storekeeper' %}
-                    <a href="{% url 'adjustment_new' %}" class="btn btn-primary">New</a>                        
-                    {% endif %}
-                        
+                    <a href="{% url 'request_new' %}" class="btn btn-primary">New</a>                        
                 </div>
                 </div>
             </div>
@@ -32,10 +28,10 @@
                 <thead>
                     <tr>
                         <th class="text-center" width="10%">Action</th>
-                        <th>Created At</th>
-                        <th>Product</th>
-                        <th class="text-center">Quantity</th>
-                        <th>Location</th>
+                        <th>Requested At</th>
+                        <th>Transaction Type</th>
+                        <th>Reference Number</th>
+                        <th>Adjustment Detail</th>
                         <th>Reason</th>
                         <th>Status</th>
                     </tr>
@@ -53,47 +49,42 @@
     <script src="{% static 'js/date-format.js' %}"></script>
     <script>
         $(document).ready(function() {
-            const userType = "{{ user.userdetail.userType }}";
             $("#dtAdjustment").DataTable({
                 serverSide: true,
-                sAjaxSource: "{% url 'adjustment_dtlist' %}", 
+                sAjaxSource: "{% url 'request_dtlist' %}", 
                 columns: [
                     {   
                         name: "links",
                         data: 0,
                         render: function (data) {
-                            let links = '<a href="adjustment/' + data + '/view" title="View"><i class="fas fa-eye"></i></a>';
+                            let links = '<a href="' + data + '/view" title="View"><i class="fas fa-eye"></i></a>';
 
                             return links;
                         },
                         className: 'text-center'
                     },
                     {
-                        name: "created_at",
-                        data: 5,
+                        name: "requested_at",
+                        data: 1,
                         render: function (data) {
                             return formatDate(new Date(data));
                         }
                     },
                     {   
-                        name: "product",
-                        data: 1,
-                    },
-                    {   
-                        name: "quantity",
+                        name: "transaction_type",
                         data: 2,
-                        className: 'text-center'
                     },
                     {   
-                        name: "location",
+                        name: "reference_num",
                         data: 3,
-                        render: function(data) {
-                            return (data == 0) ? 'Warehouse' : 'Store';
-                        }
+                    },
+                    {   
+                        name: "adjustment_detail",
+                        data: 4,
                     },
                     {   
                         name: "reason",
-                        data: 4,
+                        data: 5,
                     },
                     {
                         name: "status", 
@@ -104,7 +95,7 @@
             });
             
             $("#menu_trans").addClass("menu-open")
-            $("#menu_trans_adj").addClass("active")
+            $("#menu_trans_req").addClass("active")
         })
     </script>
 {% endblock js %}

@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
+import dj_database_url
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -38,11 +39,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
-    'multiselectfield', # to store multiple values in a field
+    'multiselectfield',  # to store multiple values in a field
     'widget_tweaks',
     'crispy_forms',
     'bootstrap_modal_forms',
-    'fontawesomefree', # font-awesome
+    'fontawesomefree',  # font-awesome
 
     # internally-created apps
     'admin_area',
@@ -100,15 +101,14 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'django_akempcosystem',
         'USER': 'root',
-        'PASSWORD': 'p@$$w0rD',
+        'PASSWORD': 'admin',
         'HOST': 'localhost'
     }
 }
 
 # as per instructions from https://www.codementor.io/@jamesezechukwu/how-to-deploy-django-app-on-heroku-dtsee04d4
 # ----------------------------------------------------------------------------
-import dj_database_url 
-prod_db  =  dj_database_url.config(conn_max_age=500)
+prod_db = dj_database_url.config(conn_max_age=500)
 DATABASES['default'].update(prod_db)
 # ----------------------------------------------------------------------------
 
@@ -149,7 +149,7 @@ USE_TZ = True
 
 # as per instructions from https://www.codementor.io/@jamesezechukwu/how-to-deploy-django-app-on-heroku-dtsee04d4
 # ----------------------------------------------------------------------------
-STATIC_ROOT  = BASE_DIR / 'staticfiles'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [

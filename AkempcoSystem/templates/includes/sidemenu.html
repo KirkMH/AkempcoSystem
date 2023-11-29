@@ -85,6 +85,12 @@
                   <p>Price Management</p>
                 </a>
               </li>
+              <li class="nav-item" id="menu14">
+                <a href="{% url 'payable_list' %}" class="nav-link" id="menu_trans_payment">
+                  <i class="fas fa-money-bill nav-icon"></i>
+                  <p>Member Payment</p>
+                </a>
+              </li>
               <li class="nav-item type12" id="menu12">
                 <a href="{% url 'bo_list' %}" class="nav-link" id="menu_trans_bo">
                   <i class="fas fa-thumbs-down nav-icon"></i>
@@ -93,14 +99,14 @@
               </li>
               <li class="nav-item type16" id="menu16">
                 <a href="{% url 'adjustment_list' %}" class="nav-link" id="menu_trans_adj">
-                  <i class="fa-solid fa-plus-minus"></i>
+                  <i class="fa-solid fa-plus-minus nav-icon"></i>
                   <p>Stock Adjustment</p>
                 </a>
               </li>
-              <li class="nav-item" id="menu14">
-                <a href="{% url 'payable_list' %}" class="nav-link" id="menu_trans_payment">
-                  <i class="fas fa-money-bill nav-icon"></i>
-                  <p>Member Payment</p>
+              <li class="nav-item type17" id="menu17">
+                <a href="{% url 'request_list' %}" class="nav-link" id="menu_trans_req">
+                  <i class="fa-solid fa-pen-to-square nav-icon"></i>
+                  <p>Entry Adjustment</p>
                 </a>
               </li>
             </ul>

@@ -21,10 +21,10 @@ urlpatterns = [
     path('rv/products/<int:pk>/delete', views.delete_rv_product, name='delete_rv_product'),
     path('rv/products/<int:pk>/update', views.RVProductUpdateView.as_view(), name='update_rv_product'),
 
-    path('stockadj', views.adjustment_list, name='adjustment_list'),
-    path('stockadj/dt', views.StockAdjustmentDTListView.as_view(), name='adjustment_dtlist'),
-    path('stockadj/new', views.StockAdjustmentCreateView.as_view(), name='adjustment_new'),
-    path('stockadj/<int:pk>/view', views.StockAdjustmentDetailView.as_view(), name='adjustment_view'),
-    path('stockadj/<int:pk>/approve', views.approve_adjustment, name='adjustment_approve'),
-    path('stockadj/<int:pk>/cancel', views.cancel_adjustment, name='adjustment_cancel'),
+    path('adjustment', views.adjustment_list, name='adjustment_list'),
+    path('adjustment/dt', views.StockAdjustmentDTListView.as_view(), name='adjustment_dtlist'),
+    path('adjustment/new', views.StockAdjustmentCreateView.as_view(), name='adjustment_new'),
+    path('adjustment/<int:pk>/view', views.StockAdjustmentDetailView.as_view(), name='adjustment_view'),
+    path('adjustment/<int:pk>/approve', views.approve_adjustment, name='adjustment_approve'),
+    path('adjustment/<int:pk>/cancel', views.cancel_adjustment, name='adjustment_cancel'),
 ]
