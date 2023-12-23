@@ -10,9 +10,11 @@ class MemberCreditors(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(creditor_type='Member', active=True).order_by('name')
 
+
 class GroupCreditors(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(creditor_type='Group', active=True).order_by('name')
+
 
 class Creditor(models.Model):
     CREDITOR_TYPES = [
@@ -25,24 +27,30 @@ class Creditor(models.Model):
         max_length=10,
         choices=CREDITOR_TYPES
     )
+    id_number = models.CharField(
+        _("ID Number"),
+        max_length=5,
+        unique=True,
+        null=True, blank=True, default=None
+    )
     name = models.CharField(
-        _("Name"), 
+        _("Name"),
         max_length=100
     )
     address = models.CharField(
-        _("Address"), 
+        _("Address"),
         max_length=250
     )
     tin = models.CharField(
-        _("Tax Identification Number"), 
+        _("Tax Identification Number"),
         max_length=20,
         blank=True,
         null=True,
         default=None
     )
     credit_limit = models.DecimalField(
-        _("Credit Limit"), 
-        max_digits=10, 
+        _("Credit Limit"),
+        max_digits=10,
         decimal_places=2
     )
     active = models.BooleanField(
@@ -51,36 +59,36 @@ class Creditor(models.Model):
         default=True
     )
     total_charges = models.DecimalField(
-        _("Total Charges"), 
-        max_digits=10, 
+        _("Total Charges"),
+        max_digits=10,
         decimal_places=2,
         default=0
     )
     transaction_count = models.PositiveIntegerField(
-        _("Transaction Count"), 
+        _("Transaction Count"),
         default=0
     )
     total_transaction_amount = models.DecimalField(
-        _("Total Transaction Amount"), 
-        max_digits=10, 
+        _("Total Transaction Amount"),
+        max_digits=10,
         decimal_places=2,
         default=0
     )
     total_payments = models.DecimalField(
-        _("Total Payments"), 
-        max_digits=10, 
+        _("Total Payments"),
+        max_digits=10,
         decimal_places=2,
         default=0
     )
     remaining_credit = models.DecimalField(
-        _("Remaining Credit"), 
-        max_digits=10, 
+        _("Remaining Credit"),
+        max_digits=10,
         decimal_places=2,
         default=0
     )
     payable = models.DecimalField(
-        _("Payable"), 
-        max_digits=10, 
+        _("Payable"),
+        max_digits=10,
         decimal_places=2,
         default=0
     )
@@ -91,36 +99,44 @@ class Creditor(models.Model):
 
     def fill_in_other_fields(self):
         charges = 0
-        sales = Sales.objects.filter(customer=self, status='Completed').values_list('pk', flat=True)
+        sales = Sales.objects.filter(
+            customer=self, status='Completed').values_list('pk', flat=True)
         records = SalesPayment.objects.all()
         if records and sales:
-            records = records.filter(sales__in=list(sales), payment_mode='Charge')
+            records = records.filter(
+                sales__in=list(sales), payment_mode='Charge')
             charges = records.aggregate(s_amt=Sum('amount'))['s_amt']
         self.total_charges = charges
 
         sales = Sales.objects.filter(customer=self, status='Completed')
         self.transaction_count = sales.count() if sales else 0
 
-        sales = Sales.objects.filter(customer=self, status='Completed').values_list('pk', flat=True)
-        total = SalesItem.objects.filter(sales__in=sales).aggregate(val=Sum(F('unit_price') * F('quantity')))['val']
+        sales = Sales.objects.filter(
+            customer=self, status='Completed').values_list('pk', flat=True)
+        total = SalesItem.objects.filter(sales__in=sales).aggregate(
+            val=Sum(F('unit_price') * F('quantity')))['val']
         self.total_transaction_amount = total if total else 0
-        
-        self.total_payments = CreditorPayment.objects.filter(creditor=self).aggregate(val=Sum('amount'))['val'] or 0
+
+        self.total_payments = CreditorPayment.objects.filter(
+            creditor=self).aggregate(val=Sum('amount'))['val'] or 0
 
         self.payable = self.total_charges - self.total_payments
-        
+
         self.remaining_credit = self.credit_limit - self.payable
         self.save()
 
-
     def get_latest_10_transactions(self):
-        sales = Sales.objects.filter(customer=self, status='Completed').values_list('pk', flat=True)
-        transactions = SalesInvoice.objects.filter(sales__in=sales).order_by('-sales_datetime')[:10]
+        sales = Sales.objects.filter(
+            customer=self, status='Completed').values_list('pk', flat=True)
+        transactions = SalesInvoice.objects.filter(
+            sales__in=sales).order_by('-sales_datetime')[:10]
         return transactions
 
     def get_all_transactions(self):
-        sales = Sales.objects.filter(customer=self, status='Completed').values_list('pk', flat=True)
-        transactions = SalesInvoice.objects.filter(sales__in=sales).order_by('-sales_datetime')
+        sales = Sales.objects.filter(
+            customer=self, status='Completed').values_list('pk', flat=True)
+        transactions = SalesInvoice.objects.filter(
+            sales__in=sales).order_by('-sales_datetime')
         return transactions
 
     def get_latest_10_payments(self):
@@ -129,10 +145,8 @@ class Creditor(models.Model):
     def get_all_payments(self):
         return CreditorPayment.objects.filter(creditor=self)
 
-
     def __str__(self):
         return self.name + ": " + str(self.remaining_credit) + " of " + str(self.credit_limit)
-    
 
     class Meta:
         ordering = ['name']
@@ -145,8 +159,8 @@ class CreditorPayment(models.Model):
         on_delete=models.CASCADE
     )
     amount = models.DecimalField(
-        _("Amount Paid"), 
-        max_digits=10, 
+        _("Amount Paid"),
+        max_digits=10,
         decimal_places=2
     )
     date_posted = models.DateField(
@@ -164,4 +178,3 @@ class CreditorPayment(models.Model):
 
     class Meta:
         ordering = ['-date_posted']
-    

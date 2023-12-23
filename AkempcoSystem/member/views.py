@@ -1,4 +1,5 @@
-import csv, io
+import csv
+import io
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
@@ -22,17 +23,21 @@ from .forms import *
 #   Creditor FM
 ################################
 
+
 @login_required()
 @user_is_allowed(Feature.FM_CREDITOR)
 def creditor_list(request):
     return render(request, 'member/creditor_list.html')
 
+
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.FM_CREDITOR), name='dispatch')
 class CreditorDTListView(ServerSideDatatableView):
-	queryset = Creditor.objects.all()
-	columns = ['pk', 'name', 'address', 'creditor_type', 'credit_limit', 'active', 'payable']
-    
+    queryset = Creditor.objects.all()
+    columns = ['pk', 'name', 'address', 'creditor_type',
+               'credit_limit', 'active', 'payable', 'id_number']
+
+
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.FM_CREDITOR), name='dispatch')
 class CreditorCreateView(CreateView):
@@ -50,10 +55,10 @@ class CreditorCreateView(CreateView):
                 return redirect('new_cred')
             else:
                 return redirect('cred_list')
-        
+
         else:
             return render(request, 'member/creditor_form.html', {'form': form})
-        
+
 
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.FM_CREDITOR), name='dispatch')
@@ -81,7 +86,8 @@ def dashboard_member_view(request):
     total_transaction_amount = member.total_transaction_amount
     total_charges = member.total_charges
     total_payments = member.total_payments
-    ratio = 0 if total_transaction_amount == 0 else (total_charges / total_transaction_amount) * 100
+    ratio = 0 if total_transaction_amount == 0 else (
+        total_charges / total_transaction_amount) * 100
 
     # for transaction history
     transactions = member.get_latest_10_transactions()
@@ -97,21 +103,23 @@ def dashboard_member_view(request):
         'payments': payments
     }
     return render(request, 'member/dashboard.html', context)
-    
+
+
 @method_decorator(login_required, name='dispatch')
 class TransactionHistoryDTListView(ServerSideDatatableView):
-	
+
     def get(self, request, *args, **kwargs):
         member = request.user.userdetail.linked_creditor_acct
         self.queryset = member.get_all_transactions()
-        self.columns = ['pk', 'sales_datetime', 'sales__item_count', 'payment_modes', 'sales__total']
+        self.columns = ['pk', 'sales_datetime',
+                        'sales__item_count', 'payment_modes', 'sales__total']
         return super().get(request, *args, **kwargs)
-    
+
 
 def transaction_history(request):
     return render(request, 'member/transaction_history.html')
 
-    
+
 def open_transaction(request, pk):
     si = get_object_or_404(SalesInvoice, pk=pk)
     items = SalesItem.objects.filter(sales=si.sales)
@@ -125,13 +133,14 @@ def open_transaction(request, pk):
 
 
 #########################################
-### Member Payable/Payment Transactions
+# Member Payable/Payment Transactions
 #########################################
 
 @login_required()
 def payable_listview(request):
     return render(request, "member/payable_list.html")
-    
+
+
 class PaymentCreateView(CreateView):
     model = CreditorPayment
     form_class = NewPaymentForm
@@ -143,7 +152,6 @@ class PaymentCreateView(CreateView):
         context["creditor"] = get_object_or_404(Creditor, pk=self.kwargs['pk'])
         return context
 
-
     def post(self, request, *args, **kwargs):
         form = NewPaymentForm(request.POST)
         if form.is_valid():
@@ -153,19 +161,21 @@ class PaymentCreateView(CreateView):
             payment.posted_by = request.user
             payment.save()
             creditor.fill_in_other_fields()
-            messages.success(request, payment.creditor.name + "'s payment was posted successfully.")        
+            messages.success(request, payment.creditor.name +
+                             "'s payment was posted successfully.")
             return redirect('payable_list')
         else:
             return render(request, 'member/payment_form.html', {'form': form})
 
-    
+
 @login_required()
 def payment_history(request):
     return render(request, 'member/payment_history.html')
 
+
 @method_decorator(login_required, name='dispatch')
 class PaymentHistoryDTListView(ServerSideDatatableView):
-	
+
     def get(self, request, *args, **kwargs):
         member = request.user.userdetail.linked_creditor_acct
         self.queryset = member.get_all_payments()
@@ -174,7 +184,7 @@ class PaymentHistoryDTListView(ServerSideDatatableView):
 
 
 #################################
-### CSV File Manipulation
+# CSV File Manipulation
 #################################
 
 def download_csv(request):
@@ -185,7 +195,8 @@ def download_csv(request):
     )
 
     writer = csv.writer(response)
-    writer.writerow(["ID (Don't change')", 'Name', 'Payable Amount', 'Amount Paid'])
+    writer.writerow(["ID (Don't change')", 'Name',
+                    'Payable Amount', 'Amount Paid'])
     creditors = Creditor.objects.filter(active=True)
     for cred in creditors:
         writer.writerow([cred.pk, cred.name, cred.payable])
@@ -207,12 +218,14 @@ def upload_csv(request):
                 if not csv_file.name.endswith('.csv'):
                     print('File is not a CSV type.')
                     messages.error(request, 'File is not a CSV type.')
-                
+
                 # If file is too large
                 elif csv_file.multiple_chunks():
-                    print('Uploaded file is too big (%.2f MB)' %(csv_file.size(1000*1000),))
-                    messages.error(request, 'Uploaded file is too big (%.2f MB)' %(csv_file.size(1000*1000),))
-                
+                    print('Uploaded file is too big (%.2f MB)' %
+                          (csv_file.size(1000*1000),))
+                    messages.error(request, 'Uploaded file is too big (%.2f MB)' % (
+                        csv_file.size(1000*1000),))
+
                 else:
                     # save file contents
                     csv_file = request.FILES['payment_file']
@@ -225,23 +238,25 @@ def upload_csv(request):
                         creditor = Creditor.objects.get(pk=pk)
                         if len(col) == 4:
                             amt = col[3]
-                            
+
                             payment = CreditorPayment(
                                 creditor=creditor,
                                 amount=amt,
                                 posted_by=request.user
                             )
                             payments.append(payment)
-                            
+
                     # actual saving to database
                     for payment in payments:
                         payment.save()
 
-                messages.success(request, "Successully uploaded the file for member payments.")
+                messages.success(
+                    request, "Successully uploaded the file for member payments.")
                 return redirect('payable_list')
 
         except Creditor.DoesNotExist:
-            messages.error(request, 'Unable to save payments because at least one ID has been changed. Please re-upload with correct member IDs.')
+            messages.error(
+                request, 'Unable to save payments because at least one ID has been changed. Please re-upload with correct member IDs.')
             return redirect('payable_list')
 
         except Exception as e:

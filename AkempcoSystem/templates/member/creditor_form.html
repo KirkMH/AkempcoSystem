@@ -61,6 +61,19 @@ New Creditor
         $(document).ready(function() {
             $("#menu_fm").addClass("menu-open")
             $("#menu_fm_cred").addClass("active")
+
+            // create a function that is triggered when the creditor type is changed
+            $("#id_creditor_type").change(function() {
+                // if creditor type is a group creditor, hide the ID number field
+                if ($("#id_creditor_type").val() == "Group") {
+                    $("#id_id_number").parent().hide()
+                    $("#id_id_number").val("0")
+                }
+                else {
+                    $("#id_id_number").parent().show()
+                    $("#id_id_number").val("")
+                }   
+            })
         })
     </script>
 {% endblock js %}

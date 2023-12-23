@@ -1,10 +1,12 @@
+from django.forms.forms import BaseForm
+from django.forms.models import BaseModelForm
 from django.shortcuts import redirect, reverse, get_object_or_404, render
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.db.models import Q
 from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView, BSModalDeleteView
 from django.core.paginator import Paginator
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from datetime import datetime
 
 from AkempcoSystem.decorators import user_is_allowed
@@ -13,6 +15,7 @@ from django.utils.decorators import method_decorator
 
 from django_serverside_datatable.views import ServerSideDatatableView
 from admin_area.models import Feature, Store
+from admin_area.views import is_ajax
 # from fm.views import get_index, add_search_key
 from fm.models import Product, Supplier
 from .models import PurchaseOrder, PO_Product, PO_PROCESS
@@ -49,9 +52,10 @@ class POSupplierListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["is_po_approver"] = PO_PROCESS.is_po_approver(self.request.user)
+        context["is_po_approver"] = PO_PROCESS.is_po_approver(
+            self.request.user)
         return context
-            
+
 
 # List of Suppliers to choose from
 @method_decorator(login_required, name='dispatch')
@@ -65,7 +69,8 @@ class ApprovalListView(ListView):
         object_list = None
         if count > 0:
             if self.request.user.userdetail.userType == 'Officer-In-Charge':
-                object_list = PurchaseOrder.objects.filter(process_step=step, category=self.request.user.userdetail.oic_for)
+                object_list = PurchaseOrder.objects.filter(
+                    process_step=step, category=self.request.user.userdetail.oic_for)
             elif self.request.user.userdetail.userType != 'Purchaser':
                 object_list = PurchaseOrder.objects.filter(process_step=step)
         if object_list == None:
@@ -84,14 +89,15 @@ def supplier_orders(request, pk):
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
 class PurchaseSupplierDTView(ServerSideDatatableView):
-    
+
     def get(self, request, *args, **kwargs):
         pk = request.session.get('po_supplier_id', 0)
         supplier = get_object_or_404(Supplier, pk=pk)
         self.queryset = PurchaseOrder.objects.filter(supplier=supplier)
-        self.columns = ['pk', 'po_date', 'category__category_description', 'item_count', 'total_po_amount', 'status']
+        self.columns = ['pk', 'po_date', 'category__category_description',
+                        'item_count', 'total_po_amount', 'status']
         return super().get(request, *args, **kwargs)
-        
+
 
 # Create new PO
 @method_decorator(login_required, name='dispatch')
@@ -105,7 +111,7 @@ class POCreateView(CreateView):
         context = super().get_context_data(**kwargs)
         context["supplier"] = Supplier.objects.get(pk=self.kwargs['pk'])
         return context
-    
+
     def form_valid(self, form):
         form.instance.supplier = Supplier.objects.get(pk=self.kwargs.get('pk'))
         form.instance.prepared_by = self.request.user
@@ -113,9 +119,9 @@ class POCreateView(CreateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse('po_products', kwargs={'pk' : self.object.pk})
+        return reverse('po_products', kwargs={'pk': self.object.pk})
 
-        
+
 # Update PO details
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
@@ -130,7 +136,7 @@ class POUpdateView(UpdateView):
         return context
 
     def get_success_url(self):
-        return reverse('po_products', kwargs={'pk' : self.object.pk})
+        return reverse('po_products', kwargs={'pk': self.object.pk})
 
 
 # List of Products under PO
@@ -140,38 +146,37 @@ class PODetailView(DetailView):
     model = PurchaseOrder
     context_object_name = 'po'
     template_name = "purchases/po_products.html"
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         self.object.is_receiving_now = False
         self.object.save()
-        context["products"] = PO_Product.objects.filter(purchase_order=self.object)
+        context["products"] = PO_Product.objects.filter(
+            purchase_order=self.object)
         context["supplier"] = self.object.supplier
         context['for_approval'] = False
         userType = self.request.user.userdetail.userType
         # check if this user can approve this PO
-        if (userType == self.object.get_user_type() and userType == 'Officer-In-Charge' and \
+        if (userType == self.object.get_user_type() and userType == 'Officer-In-Charge' and
                 self.object.category == self.request.user.userdetail.oic_for) or \
-                (userType != 'Officer-In-Charge' and userType != 'Purchaser' and \
-                userType == self.object.get_user_type()):
+                (userType != 'Officer-In-Charge' and userType != 'Purchaser' and
+                 userType == self.object.get_user_type()):
             context['for_approval'] = True
-            
-        return context
 
+        return context
 
 
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
 class PODeleteView(DeleteView):
     model = PurchaseOrder
-    
+
     def get(self, request, *args, **kwargs):
         return self.post(request, *args, **kwargs)
-        
+
     def get_success_url(self):
         messages.success(self.request, "Purchase Order is now deleted.")
-        return reverse('po_list', kwargs={'pk' : self.object.supplier.pk})
-
+        return reverse('po_list', kwargs={'pk': self.object.supplier.pk})
 
 
 @method_decorator(login_required, name='dispatch')
@@ -184,31 +189,51 @@ class POProductCreateView(BSModalCreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         po = get_object_or_404(PurchaseOrder, pk=self.kwargs['pk'])
-        context["form"].fields["product"].queryset = Product.objects.filter(status='ACTIVE', suppliers=po.supplier, category=po.category)
+        context["form"].fields["product"].queryset = Product.objects.filter(
+            status='ACTIVE', suppliers=po.supplier, category=po.category)
         context['action'] = "Add"
         return context
 
-    def post(self, request, *args, **kwargs):
-        my_form = self.form_class(self.request.POST)
-
-        if my_form.is_valid():
-            po_prod = my_form.save(commit=False)
-            po = get_object_or_404(PurchaseOrder, pk=self.kwargs['pk']) 
-            ordered_quantity = my_form.instance.ordered_quantity
-            prod_qty = po.get_product_ordered(my_form.instance.product)
+    def form_valid(self, form: BaseForm) -> HttpResponse:
+        if not is_ajax(self.request):
+            po_prod = form.save(commit=False)
+            po = get_object_or_404(PurchaseOrder, pk=self.kwargs['pk'])
+            ordered_quantity = form.instance.ordered_quantity
+            prod_qty = po.get_product_ordered(form.instance.product)
             po_prod.ordered_quantity = ordered_quantity + prod_qty
             po_prod.purchase_order = po
             po_prod.save()
             po_prod.compute_fields()
             po.fill_in_other_po_fields()
-        else:
-            messages.error(self.request, 'Please fill-in all the required fields.')
-            
-        return redirect('po_products', pk=self.kwargs['pk'])
+        return super().form_valid(form)
+
+    def form_invalid(self, form: BaseModelForm) -> HttpResponse:
+        messages.error(
+            self.request, 'Please fill-in all the required fields.')
+        return super().form_invalid(form)
+
+    # def post(self, request, *args, **kwargs):
+    #     my_form = self.form_class(self.request.POST)
+
+    #     if my_form.is_valid():
+    #         po_prod = my_form.save(commit=False)
+    #         po = get_object_or_404(PurchaseOrder, pk=self.kwargs['pk'])
+    #         ordered_quantity = my_form.instance.ordered_quantity
+    #         prod_qty = po.get_product_ordered(my_form.instance.product)
+    #         po_prod.ordered_quantity = ordered_quantity + prod_qty
+    #         po_prod.purchase_order = po
+    #         po_prod.save()
+    #         po_prod.compute_fields()
+    #         po.fill_in_other_po_fields()
+    #     else:
+    #         messages.error(
+    #             self.request, 'Please fill-in all the required fields.')
+
+    #     return redirect('po_products', pk=self.kwargs['pk'])
 
     def get_success_url(self):
-        return reverse('po_products', kwargs={'pk' : self.kwargs['pk']})
-    
+        return reverse('po_products', kwargs={'pk': self.kwargs['pk']})
+
 
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
@@ -220,20 +245,26 @@ class POProductUpdateView(BSModalUpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         po = self.object.purchase_order
-        context["form"].fields["product"].queryset = Product.objects.filter(status='ACTIVE', suppliers=po.supplier, category=po.category)
+        context["form"].fields["product"].queryset = Product.objects.filter(
+            status='ACTIVE', suppliers=po.supplier, category=po.category)
         context['action'] = 'Edit'
         return context
 
     def get_success_url(self):
-        return reverse('po_products', 
-                        kwargs={'pk' : self.object.purchase_order.pk})
+        return reverse('po_products',
+                       kwargs={'pk': self.object.purchase_order.pk})
 
     def form_valid(self, form):
         prod = self.get_object().product.full_description
         self.object.compute_fields()
         self.object.purchase_order.fill_in_other_po_fields()
         return super().form_valid(form)
-    
+
+    def form_invalid(self, form: BaseModelForm) -> HttpResponse:
+        messages.error(
+            self.request, 'Please fill-in all the required fields.')
+        return super().form_invalid(form)
+
 
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_PURCHASES), name='dispatch')
@@ -247,9 +278,8 @@ class POProductDeleteView(BSModalDeleteView):
     def get_success_url(self):
         po = self.object.purchase_order
         po.fill_in_other_po_fields()
-        return reverse('po_products', 
-                        kwargs={'pk' : po.pk})
-
+        return reverse('po_products',
+                       kwargs={'pk': po.pk})
 
 
 @method_decorator(login_required, name='dispatch')
@@ -258,10 +288,11 @@ class PurchaseOrderDetailView(DetailView):
     model = PurchaseOrder
     context_object_name = 'po'
     template_name = "purchases/po_print.html"
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["po_list"] = PO_Product.objects.filter(purchase_order=self.object)
+        context["po_list"] = PO_Product.objects.filter(
+            purchase_order=self.object)
         context["akempco"] = Store.objects.all().first()
         return context
 
@@ -312,7 +343,8 @@ def select_product(request):
         inv_uom = product.uom.uom_description
 
         # retrieve supplier price from PO_Product.unit_price
-        po = PO_Product.objects.filter(product=product).filter(received_qty__gt=0).order_by('-id').first()
+        po = PO_Product.objects.filter(product=product).filter(
+            received_qty__gt=0).order_by('-id').first()
         supplier_price = 0
         if po:
             supplier_price = po.unit_price
@@ -339,18 +371,18 @@ def load_data(request):
     if supplier_id > 0:
         supplier = get_object_or_404(Supplier, pk=supplier_id)
     prod_list = Product.objects.filter(
-            Q(full_description__istartswith=key) |
-            Q(barcode__istartswith=key)
-        )
+        Q(full_description__istartswith=key) |
+        Q(barcode__istartswith=key)
+    )
     if supplier:
         prod_list = prod_list.filter(suppliers=supplier)
-        
+
     data = list(prod_list.values())
     return JsonResponse(data, safe=False)
 
 
 ##################################################
-#### FOR RECEIVING OF STOCKS
+# FOR RECEIVING OF STOCKS
 ##################################################
 
 @method_decorator(login_required, name='dispatch')
@@ -359,12 +391,13 @@ class PODetailViewReceiveStocks(DetailView):
     model = PurchaseOrder
     context_object_name = 'po'
     template_name = "purchases/receive_products.html"
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if not self.object.is_receiving_now:
             self.object.prepare_for_receiving()
-        context["products"] = PO_Product.objects.filter(purchase_order=self.object)
+        context["products"] = PO_Product.objects.filter(
+            purchase_order=self.object)
         context["supplier"] = self.object.supplier
         return context
 
@@ -408,13 +441,13 @@ def update_unit_price(request, pk):
 @user_is_allowed(Feature.TR_PURCHASES)
 def update_ref_no(request, pk):
     ref_no = request.POST.get('value', '')
-    next_url = reverse('receive_stocks', kwargs={'pk' : pk})
+    next_url = reverse('receive_stocks', kwargs={'pk': pk})
     try:
         po = PurchaseOrder.objects.get(pk=pk)
         po.reference_number = ref_no
         po.save()
     except:
-        next_url = reverse('po_products', kwargs={'pk' : pk})
+        next_url = reverse('po_products', kwargs={'pk': pk})
     return JsonResponse(next_url, safe=False)
 
 
@@ -436,7 +469,7 @@ def update_price_review(request, pk):
 @login_required()
 @user_is_allowed(Feature.TR_PURCHASES)
 def receive_stocks_save(request, pk):
-    next_url = reverse('po_products', kwargs={'pk' : pk})
+    next_url = reverse('po_products', kwargs={'pk': pk})
 
     po = PurchaseOrder.objects.get(pk=pk)
 
@@ -444,14 +477,15 @@ def receive_stocks_save(request, pk):
         po.receive_stocks(request.user)
         messages.success(request, "Stocks was received successfully.")
     else:
-        messages.error(request, "Cannot receive stocks with zero prices. Please encode supplier price first.")
-        next_url = reverse('receive_stocks', kwargs={'pk' : pk})
+        messages.error(
+            request, "Cannot receive stocks with zero prices. Please encode supplier price first.")
+        next_url = reverse('receive_stocks', kwargs={'pk': pk})
 
     return JsonResponse(next_url, safe=False)
 
 
 ##################################################
-### Undelivered Items: Backorder and Cancellation
+# Undelivered Items: Backorder and Cancellation
 ##################################################
 
 @method_decorator(login_required, name='dispatch')
@@ -460,10 +494,11 @@ class PODetailViewRR(DetailView):
     model = PurchaseOrder
     context_object_name = 'po'
     template_name = "purchases/rpt_receiving_print.html"
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["po_list"] = PO_Product.objects.filter(purchase_order=self.object)
+        context["po_list"] = PO_Product.objects.filter(
+            purchase_order=self.object)
         context["akempco"] = Store.objects.all().first()
         return context
 
@@ -474,16 +509,17 @@ class PODetailViewVR(DetailView):
     model = PurchaseOrder
     context_object_name = 'po'
     template_name = "purchases/rpt_variance_print.html"
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["po_list"] = PO_Product.objects.filter(purchase_order=self.object)
+        context["po_list"] = PO_Product.objects.filter(
+            purchase_order=self.object)
         context["akempco"] = Store.objects.all().first()
         return context
 
 
 ##################################################
-### Undelivered Items: Backorder and Cancellation
+# Undelivered Items: Backorder and Cancellation
 ##################################################
 
 @method_decorator(login_required, name='dispatch')
@@ -492,13 +528,13 @@ class POUndeliveredDetailView(DetailView):
     model = PurchaseOrder
     context_object_name = 'po'
     template_name = "purchases/undelivered_products.html"
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["products"] = PO_Product.objects.filter(purchase_order=self.object)
+        context["products"] = PO_Product.objects.filter(
+            purchase_order=self.object)
         context["supplier"] = self.object.supplier
         return context
-        
 
 
 @login_required()
@@ -521,19 +557,19 @@ def split_backorder(request, pk):
         'next_url': 'show-modal'
     }
     return JsonResponse(data, safe=False)
-        
 
 
 @login_required()
 @user_is_allowed(Feature.TR_PURCHASES)
 def cancel_undelivered(request, pk):
     success = True
-    next_url = reverse('po_products', kwargs={'pk' : pk})
-    
+    next_url = reverse('po_products', kwargs={'pk': pk})
+
     try:
         po = PurchaseOrder.objects.get(pk=pk)
         po.cancel_undelivered()
-        messages.success(request, "All undelivered items have been cancelled successfully.")
+        messages.success(
+            request, "All undelivered items have been cancelled successfully.")
 
     except:
         success = False
@@ -544,7 +580,7 @@ def cancel_undelivered(request, pk):
     }
     return JsonResponse(data, safe=False)
 
-    
+
 @login_required()
 @user_is_allowed(Feature.TR_PURCHASES)
 def clone_po(request, pk):

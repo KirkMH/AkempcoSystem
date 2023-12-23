@@ -7,6 +7,8 @@ from .models import PurchaseOrder, PO_Product
 from fm.models import Product, Supplier
 
 # to override the default text field rendered by django
+
+
 class DateInput(forms.DateInput):
     input_type = 'date'
 
@@ -32,7 +34,6 @@ class PO_ProductForm(BSModalModelForm):
             'product': forms.Select(attrs={'size': 5}),
         }
 
-        
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['product'].empty_label = None

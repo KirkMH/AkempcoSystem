@@ -29,6 +29,7 @@
                     <tr>
                         <th class="text-center" width="10%">Action</th>
                         <th>Name</th>
+                        <th>ID Number</th>
                         <th>Address</th>
                         <th class="text-center">Type</th>
                         <th class="text-right">Credit Limit</th>
@@ -58,6 +59,14 @@
                         className: 'text-center'
                     },
                     {name: "name", data: 1},
+                    {
+                        name: "idNumber", 
+                        data: 7,
+                        className: 'text-center',
+                        render: function (data) {
+                            return (data === '0') ? '' : data;
+                        }
+                    },
                     {name: "address", data: 2},
                     {
                         name: "type", 
