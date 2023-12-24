@@ -236,10 +236,10 @@ class Store(models.Model):
         default=None
     )
     # markup details
-    point_of_reference = models.DecimalField(
-        _("Point of Reference "),
+    retail_point_of_reference = models.DecimalField(
+        _("Retail Price's Point of Reference "),
         help_text=_(
-            "The price that will be used as basis for markup computation. In pesos."),
+            "The price that will be used as basis for markup computation of retail price. In pesos."),
         max_digits=5,
         decimal_places=2
     )
@@ -255,6 +255,13 @@ class Store(models.Model):
         help_text=_(
             "The retail markup to be applied above the point of reference. In percent, 1-100."),
         max_digits=5,
+        decimal_places=2
+    )
+    wholesale_point_of_reference = models.DecimalField(
+        _("Wholesale Price's Point of Reference "),
+        help_text=_(
+            "The price that will be used as basis for markup computation of wholesale price. In pesos."),
+        max_digits=7,
         decimal_places=2
     )
     wholesale_markup_below = models.DecimalField(
