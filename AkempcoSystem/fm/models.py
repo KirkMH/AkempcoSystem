@@ -20,19 +20,23 @@ STATUS = [
 ]
 
 # used to round the value up to the nearest 5 cents, for pricing
+
+
 def round_up(x):
     return math.ceil(x / 0.05) * 0.05
 
 # UnitOfMeasure model
+
+
 class UnitOfMeasure(models.Model):
     uom_description = models.CharField(
-        _("Unit of measure"), 
-        max_length=50, 
+        _("Unit of measure"),
+        max_length=50,
         help_text='Use singular form.',
         null=False
     )
     status = models.CharField(
-        _("Status"), 
+        _("Status"),
         max_length=10,
         choices=STATUS,
         default=ACTIVE
@@ -45,17 +49,16 @@ class UnitOfMeasure(models.Model):
         ordering = ['uom_description']
 
 
-
 # Category model
 class Category(models.Model):
     category_description = models.CharField(
-        _("Category description"), 
-        max_length=50, 
+        _("Category description"),
+        max_length=50,
         help_text='Use singular form.',
         null=False
     )
     status = models.CharField(
-        _("Status"), 
+        _("Status"),
         max_length=10,
         choices=STATUS,
         default=ACTIVE
@@ -81,46 +84,46 @@ class Supplier(models.Model):
     ]
 
     supplier_name = models.CharField(
-        _("Supplier Name"), 
+        _("Supplier Name"),
         max_length=50
     )
     address = models.CharField(
-        _("Address"), 
+        _("Address"),
         max_length=250
     )
     contact_person = models.CharField(
-        _("Contact Person"), 
+        _("Contact Person"),
         max_length=50
     )
     contact_info = models.CharField(
-        _("Contact Information"), 
+        _("Contact Information"),
         max_length=50,
         null=True,
         blank=True
     )
     email = models.EmailField(
-        _("Email"), 
+        _("Email"),
         max_length=100,
         null=True,
         blank=True
     )
     tax_class = models.CharField(
-        _("Tax Classification"), 
-        max_length=50, 
+        _("Tax Classification"),
+        max_length=50,
         choices=TAX_CLASSIFICATION,
         default=None,
         null=True,
         blank=True
     )
     tin = models.CharField(
-        _("Tax Identification Number"), 
+        _("Tax Identification Number"),
         max_length=20,
         null=True,
         blank=True,
         default=None
     )
     less_vat = models.BooleanField(
-        _("Supplier deducts VAT from total"), 
+        _("Supplier deducts VAT from total"),
         default=False
     )
     notes = models.TextField(
@@ -129,7 +132,7 @@ class Supplier(models.Model):
         blank=True
     )
     created_at = models.DateTimeField(
-        _("Created at"), 
+        _("Created at"),
         auto_now_add=True
     )
     activated_at = models.DateTimeField(
@@ -137,7 +140,7 @@ class Supplier(models.Model):
         null=True
     )
     last_updated_at = models.DateTimeField(
-        _("Last updated at"), 
+        _("Last updated at"),
         auto_now=True,
         null=True
     )
@@ -147,15 +150,15 @@ class Supplier(models.Model):
         default=None
     )
     status = models.CharField(
-        _("Status"), 
+        _("Status"),
         max_length=10,
         choices=STATUS,
         default=ACTIVE
     )
     last_po = models.OneToOneField(
-        "purchases.PurchaseOrder", 
+        "purchases.PurchaseOrder",
         related_name='last_po',
-        verbose_name=_("Last Purchase Order"), 
+        verbose_name=_("Last Purchase Order"),
         on_delete=models.SET_NULL,
         null=True,
         blank=True
@@ -177,8 +180,10 @@ class Supplier(models.Model):
         return self.supplier_name
 
     def fill_in_other_fields(self):
-        self.open_po_count = PurchaseOrder.objects.filter(supplier=self).filter(is_open=True, process_step__lt=6).count() or 0
-        self.po_count = PurchaseOrder.objects.filter(supplier=self, process_step__lt=6).count() or 0
+        self.open_po_count = PurchaseOrder.objects.filter(
+            supplier=self).filter(is_open=True, process_step__lt=6).count() or 0
+        self.po_count = PurchaseOrder.objects.filter(
+            supplier=self, process_step__lt=6).count() or 0
         if self.po_count > 0:
             closed_ctr = self.po_count - self.open_po_count
             self.completion_rate = closed_ctr / self.po_count
@@ -220,59 +225,61 @@ class Product(models.Model):
     ]
 
     barcode = models.CharField(
-        _("Barcode"), 
+        _("Barcode"),
         max_length=50,
         unique=True,
     )
     full_description = models.CharField(
-        _("Product description"), 
+        _("Product description"),
         max_length=250,
         unique=True
     )
     short_name = models.CharField(
-        _("Short name"), 
+        _("Short name"),
         max_length=50,
         unique=True,
         help_text=_("This will appear in the receipt")
     )
     category = models.ForeignKey(
-        Category, 
-        verbose_name=_("Category"), 
+        Category,
+        verbose_name=_("Category"),
         on_delete=models.RESTRICT
     )
     uom = models.ForeignKey(
-        UnitOfMeasure, 
-        verbose_name=_("Unit of Measurement"), 
+        UnitOfMeasure,
+        verbose_name=_("Unit of Measurement"),
         on_delete=models.RESTRICT
     )
     reorder_point = models.PositiveIntegerField(
         _("Reorder Point"),
         default=20,
-        help_text=_("The level (quantity) when you will need to place an order so you won't run out of stock.")
+        help_text=_(
+            "The level (quantity) when you will need to place an order so you won't run out of stock.")
     )
     ceiling_qty = models.PositiveIntegerField(
         _("Ceiling Quantity"),
         default=50,
-        help_text=_("The maximum quantity you should keep in inventory in order to meet your demand and avoid overstocking.")
+        help_text=_(
+            "The maximum quantity you should keep in inventory in order to meet your demand and avoid overstocking.")
     )
     suggested_retail_price = models.DecimalField(
-        _("Suggested Retail Price"), 
-        max_digits=11, 
+        _("Suggested Retail Price"),
+        max_digits=11,
         decimal_places=2,
         default=0,
         null=True,
         blank=True
     )
     selling_price = models.DecimalField(
-        _("Selling Price"), 
-        max_digits=11, 
+        _("Selling Price"),
+        max_digits=11,
         decimal_places=2,
         null=True,
         blank=True
     )
     wholesale_price = models.DecimalField(
-        _("Wholesale Price"), 
-        max_digits=11, 
+        _("Wholesale Price"),
+        max_digits=11,
         decimal_places=2,
         null=True,
         blank=True
@@ -283,14 +290,15 @@ class Product(models.Model):
         help_text=_("Quantity to consider as wholesale")
     )
     tax_type = models.CharField(
-        _("Tax Type"), 
+        _("Tax Type"),
         max_length=1,
         choices=TAXTYPE,
         default=VAT
     )
     for_discount = models.BooleanField(
         _("Basic necessity or prime commodity?"),
-        help_text=_("Is this a basic necessity or prime commodity? SC and PWD discounts will be applied."),
+        help_text=_(
+            "Is this a basic necessity or prime commodity? SC and PWD discounts will be applied."),
         default=False
     )
     is_consignment = models.BooleanField(
@@ -300,7 +308,8 @@ class Product(models.Model):
     )
     is_buyer_info_needed = models.BooleanField(
         _("Buyer's information needed?"),
-        help_text=_("Do you need to get the buyer's information upon purchase?"),
+        help_text=_(
+            "Do you need to get the buyer's information upon purchase?"),
         default=False
     )
     other_info = models.TextField(
@@ -313,24 +322,24 @@ class Product(models.Model):
         default=False
     )
     created_at = models.DateTimeField(
-        _("Created at"), 
+        _("Created at"),
         auto_now_add=True
     )
     price_updated_on = models.DateField(
         _("Price updated on"),
         null=True,
         blank=True,
-        default=None 
+        default=None
     )
     cancelled_at = models.DateTimeField(
         _("Cancelled at"),
         null=True,
         blank=True,
-        default=None 
+        default=None
     )
     suppliers = models.ManyToManyField(Supplier)
     status = models.CharField(
-        _("Status"), 
+        _("Status"),
         max_length=10,
         choices=STATUS,
         default=ACTIVE
@@ -348,8 +357,8 @@ class Product(models.Model):
         default=0
     )
     latest_supplier_price = models.DecimalField(
-        _("Latest Supplier Price"), 
-        max_digits=11, 
+        _("Latest Supplier Price"),
+        max_digits=11,
         decimal_places=2,
         default=0,
         null=True,
@@ -357,24 +366,24 @@ class Product(models.Model):
     )
     # for the Inventory Turnover Ratio
     cogs = models.DecimalField(
-        _("Cost of Goods Sold"), 
-        max_digits=11, 
+        _("Cost of Goods Sold"),
+        max_digits=11,
         decimal_places=2,
         default=0,
         null=True,
         blank=True
     )
     avg_inventory = models.DecimalField(
-        _("Average Inventory"), 
-        max_digits=11, 
+        _("Average Inventory"),
+        max_digits=11,
         decimal_places=2,
         default=0,
         null=True,
         blank=True
     )
     itr = models.DecimalField(
-        _("Inventory Turnover Ratio"), 
-        max_digits=11, 
+        _("Inventory Turnover Ratio"),
+        max_digits=11,
         decimal_places=2,
         default=0,
         null=True,
@@ -400,27 +409,26 @@ class Product(models.Model):
         # computing cogs for the last 1 month
         last_month = datetime.now() + relativedelta.relativedelta(months=-1)
         print(f"last month: {last_month}")
-        voided = SalesVoid.objects.filter(cancelled_on__gte=last_month).values('sales_invoice')
-        sales = Sales.objects.filter(transaction_datetime__gte=last_month).exclude(salesinvoice__pk__in=voided)
+        voided = SalesVoid.objects.filter(
+            cancelled_on__gte=last_month).values('sales_invoice')
+        sales = Sales.objects.filter(transaction_datetime__gte=last_month).exclude(
+            salesinvoice__pk__in=voided)
         print(sales)
         sales_items = SalesItem.objects.filter(sales__in=sales, product=self)
         computed_cogs = SalesItemCogs.objects.filter(sales_item__in=sales_items) \
-                        .prefetch_related('store_stock') \
-                        .aggregate(cogs=Sum(F('quantity') * F('store_stock__supplier_price'))) \
-                        ['cogs'] or 0
+            .prefetch_related('store_stock') \
+            .aggregate(cogs=Sum(F('quantity') * F('store_stock__supplier_price')))['cogs'] or 0
         # computing ending inventory
         ws_ending_bal = WarehouseStock.availableStocks.filter(product=self) \
-                        .aggregate(ws=Sum(F('supplier_price') * F('remaining_stocks'))) \
-                        ['ws'] or 0
+            .aggregate(ws=Sum(F('supplier_price') * F('remaining_stocks')))['ws'] or 0
         ss_ending_bal = StoreStock.availableStocks.filter(product=self) \
-                        .aggregate(ss=Sum(F('supplier_price') * F('remaining_stocks'))) \
-                        ['ss'] or 0
+            .aggregate(ss=Sum(F('supplier_price') * F('remaining_stocks')))['ss'] or 0
         ending_inv = ws_ending_bal + ss_ending_bal
         # computing purchases for the last 1 month
-        po_list = PurchaseOrder.objects.filter(is_open=False, received_date__gte=last_month)
+        po_list = PurchaseOrder.objects.filter(
+            is_open=False, received_date__gte=last_month)
         purchases = PO_Product.objects.filter(purchase_order__in=po_list, product=self) \
-                        .aggregate(purchases=Sum(F('unit_price') * F('received_qty'))) \
-                        ['purchases'] or 0
+            .aggregate(purchases=Sum(F('unit_price') * F('received_qty')))['purchases'] or 0
         # computing beginning inventory, average inventory, and itr
         beg_inv = ending_inv + computed_cogs - purchases
         computed_avg_inventory = (beg_inv + ending_inv) / 2
@@ -431,8 +439,10 @@ class Product(models.Model):
         self.itr = computed_itr
         self.save()
 
-        print(f"{self.full_description}: {ss_ending_bal} + {ws_ending_bal} = {ending_inv}, {purchases}")
-        print(f"\t{computed_cogs} / (({beg_inv} + {ending_inv}) / 2) = {computed_itr}")
+        print(
+            f"{self.full_description}: {ss_ending_bal} + {ws_ending_bal} = {ending_inv}, {purchases}")
+        print(
+            f"\t{computed_cogs} / (({beg_inv} + {ending_inv}) / 2) = {computed_itr}")
 
     def is_consigned(self):
         return 'Yes' if self.is_consignment else 'No'
@@ -441,25 +451,28 @@ class Product(models.Model):
         return 'Yes' if self.is_buyer_info_needed else 'No'
 
     def set_stock_count(self):
-        s_stocks = StoreStock.availableStocks.filter(product=self).aggregate(total=Sum('remaining_stocks'))['total']
-        if s_stocks is None: s_stocks = 0
+        s_stocks = StoreStock.availableStocks.filter(
+            product=self).aggregate(total=Sum('remaining_stocks'))['total']
+        if s_stocks is None:
+            s_stocks = 0
 
-        w_stocks = WarehouseStock.availableStocks.filter(product=self).aggregate(total=Sum('remaining_stocks'))['total']
-        if w_stocks is None: w_stocks = 0
+        w_stocks = WarehouseStock.availableStocks.filter(
+            product=self).aggregate(total=Sum('remaining_stocks'))['total']
+        if w_stocks is None:
+            w_stocks = 0
 
         self.store_stocks = s_stocks
         self.warehouse_stocks = w_stocks
         self.total_stocks = s_stocks + w_stocks
         self.save()
 
-
     def get_on_order_qty(self):
         qty = PO_Product.objects.filter(
-                Q(product=self) &
-                Q(purchase_order__is_open=True) &
-                Q(purchase_order__process_step__gt=1) &
-                Q(purchase_order__process_step__lt=6)
-            ).aggregate(on_order=Sum('ordered_quantity'))['on_order']
+            Q(product=self) &
+            Q(purchase_order__is_open=True) &
+            Q(purchase_order__process_step__gt=1) &
+            Q(purchase_order__process_step__lt=6)
+        ).aggregate(on_order=Sum('ordered_quantity'))['on_order']
         return qty if qty else 0
 
     def is_critical_level(self):
@@ -492,29 +505,35 @@ class Product(models.Model):
         return reduce_by
 
     def get_earliest_supplier_price_with_stock(self):
-        stock = WarehouseStock.availableStocks.filter(product=self).order_by('pk').first()
+        stock = WarehouseStock.availableStocks.filter(
+            product=self).order_by('pk').first()
         supplier_price = stock.supplier_price
         return supplier_price
 
     def set_latest_supplier_price(self):
-        po = PO_Product.objects.filter(product=self, purchase_order__status='Closed').order_by('-pk').first()
+        po = PO_Product.objects.filter(
+            product=self, purchase_order__status='Closed').order_by('-pk').first()
         self.latest_supplier_price = po.unit_price if po else 0
         self.save()
 
     def compute_prices(self, price):
-        store = Store.objects.all().order_by('-pk').first()
-        point_of_reference = store.point_of_reference
-        retail_markup_below = store.retail_markup_below
-        retail_markup = store.retail_markup
-        wholesale_markup = store.wholesale_markup
-        retail = 0
+        retail = None
         wholesale = None
-        if price < point_of_reference:
-            retail = price * (1 + (retail_markup_below / 100))
-        else:
-            retail = price * (1 + (retail_markup / 100))
-        if self.wholesale_qty > 0:
-            wholesale = price * (1 + (wholesale_markup / 100)) * self.wholesale_qty
+        try:
+            store = Store.objects.all().order_by('-pk').first()
+            point_of_reference = store.point_of_reference
+            retail_markup_below = store.retail_markup_below
+            retail_markup = store.retail_markup
+            wholesale_markup = store.wholesale_markup
+            if price < point_of_reference:
+                retail = price * (1 + (retail_markup_below / 100))
+            else:
+                retail = price * (1 + (retail_markup / 100))
+            if self.wholesale_qty > 0:
+                wholesale = price * \
+                    (1 + (wholesale_markup / 100)) * self.wholesale_qty
+        except Exception as e:
+            print(e)
         return retail, wholesale
 
     def get_prices(self):
@@ -522,24 +541,34 @@ class Product(models.Model):
         return self.compute_prices(price)
 
     def get_retail_price(self):
-        retail, wholesale = self.get_prices()
+        retail, _ = self.get_prices()
         return retail
 
     def get_wholesale_price(self):
-        retail, wholesale = self.get_prices()
+        _, wholesale = self.get_prices()
         return wholesale
 
     def get_avg_supplier_price(self):
-        avg_sprice_w = WarehouseStock.availableStocks.filter(product=self).aggregate(w_avg=Sum( F('supplier_price') * F('remaining_stocks')))['w_avg']
-        avg_sprice_s = StoreStock.availableStocks.filter(product=self).aggregate(s_avg=Sum( F('supplier_price') * F('remaining_stocks')))['s_avg']
-        count_w = WarehouseStock.availableStocks.filter(product=self).aggregate(w_count=Sum('remaining_stocks'))['w_count']
-        count_s = StoreStock.availableStocks.filter(product=self).aggregate(s_count=Sum('remaining_stocks'))['s_count']
-        if avg_sprice_w is None: avg_sprice_w = 0
-        if avg_sprice_s is None: avg_sprice_s = 0
-        if count_w is None: count_w = 0
-        else: avg_sprice_w = avg_sprice_w / count_w
-        if count_s is None: count_s = 0
-        else: avg_sprice_s = avg_sprice_s / count_s
+        avg_sprice_w = WarehouseStock.availableStocks.filter(product=self).aggregate(
+            w_avg=Sum(F('supplier_price') * F('remaining_stocks')))['w_avg']
+        avg_sprice_s = StoreStock.availableStocks.filter(product=self).aggregate(
+            s_avg=Sum(F('supplier_price') * F('remaining_stocks')))['s_avg']
+        count_w = WarehouseStock.availableStocks.filter(
+            product=self).aggregate(w_count=Sum('remaining_stocks'))['w_count']
+        count_s = StoreStock.availableStocks.filter(product=self).aggregate(
+            s_count=Sum('remaining_stocks'))['s_count']
+        if avg_sprice_w is None:
+            avg_sprice_w = 0
+        if avg_sprice_s is None:
+            avg_sprice_s = 0
+        if count_w is None:
+            count_w = 0
+        else:
+            avg_sprice_w = avg_sprice_w / count_w
+        if count_s is None:
+            count_s = 0
+        else:
+            avg_sprice_s = avg_sprice_s / count_s
         if avg_sprice_w == 0:
             return avg_sprice_s
         elif avg_sprice_s == 0:
@@ -548,30 +577,40 @@ class Product(models.Model):
             return (avg_sprice_s + avg_sprice_w) / 2
 
     def get_max_supplier_price(self):
-        max_sprice_w = WarehouseStock.availableStocks.filter(product=self).aggregate(Max('supplier_price'))['supplier_price__max']
-        max_sprice_s = StoreStock.availableStocks.filter(product=self).aggregate(Max('supplier_price'))['supplier_price__max']
-        if max_sprice_w is None: max_sprice_w = 0
-        if max_sprice_s is None: max_sprice_s = 0
+        max_sprice_w = WarehouseStock.availableStocks.filter(
+            product=self).aggregate(Max('supplier_price'))['supplier_price__max']
+        max_sprice_s = StoreStock.availableStocks.filter(
+            product=self).aggregate(Max('supplier_price'))['supplier_price__max']
+        if max_sprice_w is None:
+            max_sprice_w = 0
+        if max_sprice_s is None:
+            max_sprice_s = 0
         return max(max_sprice_s, max_sprice_w)
 
     def get_min_supplier_price(self):
-        min_sprice_w = WarehouseStock.availableStocks.filter(product=self).aggregate(Min('supplier_price'))['supplier_price__min']
-        min_sprice_s = StoreStock.availableStocks.filter(product=self).aggregate(Min('supplier_price'))['supplier_price__min']
-        if min_sprice_w is None: min_sprice_w = 0
-        if min_sprice_s is None: min_sprice_s = 0
+        min_sprice_w = WarehouseStock.availableStocks.filter(
+            product=self).aggregate(Min('supplier_price'))['supplier_price__min']
+        min_sprice_s = StoreStock.availableStocks.filter(
+            product=self).aggregate(Min('supplier_price'))['supplier_price__min']
+        if min_sprice_w is None:
+            min_sprice_w = 0
+        if min_sprice_s is None:
+            min_sprice_s = 0
         return min(min_sprice_s, min_sprice_w)
 
     def get_recommended_retail_price(self):
         max_price = self.get_max_supplier_price()
-        retail, wholesale = self.compute_prices(max_price)
-        if retail is None: retail = 0
+        retail, _ = self.compute_prices(max_price)
+        if retail is None:
+            retail = 0
         retail = float(int(retail*100)) / 100
         return round_up(retail)
 
     def get_recommended_wholesale_price(self):
         avg_price = self.get_max_supplier_price()
-        retail, wholesale = self.compute_prices(avg_price)
-        if wholesale is None: wholesale = 0
+        _, wholesale = self.compute_prices(avg_price)
+        if wholesale is None:
+            wholesale = 0
         wholesale = float(int(wholesale*100)) / 100
         return round_up(wholesale)
 
@@ -590,7 +629,7 @@ class Product(models.Model):
                 item.remaining_stocks = rem - qty
                 item.save()
                 qty = 0
-                
+
             else:
                 print(f"deducted {rem}")
                 deducted = rem
@@ -601,8 +640,9 @@ class Product(models.Model):
             cogs_item = (deducted, item)
             cogs.append(cogs_item)
 
-            if qty == 0: break
-        
+            if qty == 0:
+                break
+
         # record history
         hist = ProductHistory()
         hist.product = self
@@ -617,4 +657,3 @@ class Product(models.Model):
 
     class Meta:
         ordering = ['full_description']
-    

@@ -62,6 +62,13 @@
                         <div class="col-2 text-bold text-right">{{ product.get_recommended_retail_price|peso }}</div>
 
                     </div>
+                    {% if store_count == 0 %}
+                    <div class="row mt-1">
+                        <div class="col">
+                            <p class="text-danger">The store's settings, whiich include point of reference and markups, are not yet set. Please inform the administrator.</p>
+                        </div>
+                    </div>
+                    {% endif %}
                     <div class="row mt-1">
                         <div class="col">
                             <button id="pricing-detail" class="btn btn-info" type="button">View Details</button>
