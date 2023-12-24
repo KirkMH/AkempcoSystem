@@ -13,6 +13,7 @@ def get_vatable_percentage():
             return store.vat_percent
     return 0
 
+
 def is_store_vatable():
     store = Store.objects.all()
     if store:
@@ -20,7 +21,7 @@ def is_store_vatable():
         return store.vatable
     else:
         return False
-        
+
 
 # Feature is used to load in the side menu under the specified group
 class Feature:
@@ -65,7 +66,7 @@ class Feature:
 
 class FeatureList(models.Model):
     pass
-    
+
 
 # UserType is used to clasify users
 class UserType:
@@ -78,7 +79,7 @@ class UserType:
     AUDIT = 'Audit Committee'
     GM = 'General Manager'
     ADMIN = 'Administrator'
-    
+
     LIST = (
         (CREDITOR, 'Member/Creditor'),
         (WH_STAFF, 'Warehouse Staff'),
@@ -100,7 +101,7 @@ class UserDetail(models.Model):
         on_delete=models.CASCADE
     )
     contact_no = models.CharField(
-        _("Contact number"), 
+        _("Contact number"),
         max_length=50,
         blank=True,
         null=True
@@ -149,7 +150,8 @@ class UserDetail(models.Model):
 
     @property
     def last_login(self):
-        log = UserLog.objects.filter(user=self.user, action_taken='logged in').latest('timestamp')
+        log = UserLog.objects.filter(
+            user=self.user, action_taken='logged in').latest('timestamp')
         if log:
             return log.timestamp
         else:
@@ -168,7 +170,7 @@ class UserDetail(models.Model):
 # Stores user log-in and log-out
 class UserLog(models.Model):
     username = models.CharField(
-        _("Username"), 
+        _("Username"),
         max_length=100
     )
     user = models.ForeignKey(
@@ -184,22 +186,21 @@ class UserLog(models.Model):
         max_length=100
     )
     timestamp = models.DateTimeField(
-        _("Timestamp"), 
+        _("Timestamp"),
         auto_now_add=True
     )
 
     def __str__(self):
         return f"{self.username} {self.action_taken} on {self.timestamp}"
-    
 
 
 class Store(models.Model):
     name = models.CharField(
-        _("Store Name"), 
+        _("Store Name"),
         max_length=100
     )
     address = models.CharField(
-        _("Address"), 
+        _("Address"),
         max_length=250
     )
     registration_number = models.CharField(
@@ -210,14 +211,15 @@ class Store(models.Model):
         blank=True
     )
     contact_numbers = models.CharField(
-        _("Contact Numbers"), 
+        _("Contact Numbers"),
         max_length=100,
-        help_text=_("Please indicate the type. Separate different contact numbers by comma. E.g., Telephone number: 111-2222"),
+        help_text=_(
+            "Please indicate the type. Separate different contact numbers by comma. E.g., Telephone number: 111-2222"),
         null=True,
         blank=True
     )
     email = models.EmailField(
-        _("Email Address"), 
+        _("Email Address"),
         max_length=100,
         null=True,
         blank=True
@@ -235,26 +237,41 @@ class Store(models.Model):
     )
     # markup details
     point_of_reference = models.DecimalField(
-        _("Point of Reference"), 
-        max_digits=5, 
+        _("Point of Reference "),
+        help_text=_(
+            "The price that will be used as basis for markup computation. In pesos."),
+        max_digits=5,
         decimal_places=2
     )
     retail_markup_below = models.DecimalField(
-        _("Retail Markup Below Point of Reference"), 
-        max_digits=5, 
+        _("Retail Markup Up To Point of Reference"),
+        help_text=_(
+            "The retail markup to be applied from the point of reference and below. In percent, 1-100."),
+        max_digits=5,
         decimal_places=2
     )
     retail_markup = models.DecimalField(
-        _("Retail Markup From Point of Reference"), 
-        max_digits=5, 
+        _("Retail Markup Above Point of Reference"),
+        help_text=_(
+            "The retail markup to be applied above the point of reference. In percent, 1-100."),
+        max_digits=5,
+        decimal_places=2
+    )
+    wholesale_markup_below = models.DecimalField(
+        _("Wholesale Markup Up To Point of Reference"),
+        help_text=_(
+            "The wholesale markup to be applied from the point of reference and below. In percent, 1-100."),
+        max_digits=5,
         decimal_places=2
     )
     wholesale_markup = models.DecimalField(
-        _("Wholesale Markup"), 
-        max_digits=5, 
+        _("Wholesale Markup Above Point of Reference"),
+        help_text=_(
+            "The wholesale markup to be applied above the point of reference. In percent, 1-100."),
+        max_digits=5,
         decimal_places=2
     )
-    
+
     def __str__(self):
         return self.name
 
