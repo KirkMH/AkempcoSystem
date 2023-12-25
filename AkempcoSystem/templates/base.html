@@ -54,9 +54,13 @@
     <ul class="navbar-nav ml-auto">
       <!-- Navbar Search -->
       <li class="nav-item">
-        <a class="nav-link" data-widget="navbar-search" href="#" role="button">
-          <i class="fas fa-search"></i>
-        </a>
+        <div class="nav-link">Hi, 
+          {% if user.last_name %}
+            {{ user.first_name.strip }} {{ user.last_name.strip }}
+          {% else %}
+            {{ user.get_username.strip }}
+          {% endif %}!
+        </div>
         <div class="navbar-search-block">
           <form class="form-inline">
             <div class="input-group input-group-sm">
@@ -115,25 +119,6 @@
 
     <!-- Sidebar -->
     <div class="sidebar">
-      <!-- Sidebar user panel (optional) -->
-      <div class="user-panel mt-3 pb-3 mb-3 d-flex">
-        <div class="image">
-          <!-- <i class="fas fa-user" style="color: white;"></i> -->
-          <img src="{% static 'img/avatar.png' %}" class="img-circle elevation-2" alt="User Image" style="background-color: white;">
-        </div>
-        <div class="info">
-          <a href="#" class="d-block">
-            
-            {% if user.last_name %}
-              {{ user.first_name }} {{ user.last_name }}
-            {% else %}
-              {{ user.get_username }}            
-            {% endif %}
-            
-          </a>
-        </div>
-      </div>
-
       <!-- Sidebar Menu -->
       {% include 'includes/sidemenu.html' %}
       <!-- /.sidebar-menu -->
@@ -168,7 +153,7 @@
   </div>
   <!-- /.content-wrapper -->
   <footer class="main-footer no-print">
-    <strong>Copyright &copy; 2021 <a href="#">F-1 IT System Solutions</a>.</strong>
+    <strong>Copyright &copy; {% now "Y" %} <a href="#">F-1 IT System Solutions</a>.</strong>
     All rights reserved.
     <div class="float-right d-none d-sm-inline-block">
       <b>Version</b> 1.0.0
