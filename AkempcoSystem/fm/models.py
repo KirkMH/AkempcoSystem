@@ -77,10 +77,12 @@ class Supplier(models.Model):
     TAXABLE = 'Taxable'
     NONTAX = 'Non-Taxable'
     TAXEXEMPT = 'Tax Exempt'
+    ZERORATED = 'Zero-Rated'
     TAX_CLASSIFICATION = [
         (TAXABLE, _('Taxable')),
         (NONTAX, _('Non-Taxable')),
-        (TAXEXEMPT, _('Tax Exempt'))
+        (TAXEXEMPT, _('Tax Exempt')),
+        (ZERORATED, _('Zero-Rated'))
     ]
 
     supplier_name = models.CharField(
