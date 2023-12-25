@@ -521,7 +521,7 @@ class Product(models.Model):
         wholesale = None
         try:
             store = Store.objects.all().order_by('-pk').first()
-            point_of_reference = store.point_of_reference
+            point_of_reference = store.retail_point_of_reference
             retail_markup_below = store.retail_markup_below
             retail_markup = store.retail_markup
             wholesale_markup = store.wholesale_markup
@@ -530,10 +530,15 @@ class Product(models.Model):
             else:
                 retail = price * (1 + (retail_markup / 100))
             if self.wholesale_qty > 0:
-                wholesale = price * \
-                    (1 + (wholesale_markup / 100)) * self.wholesale_qty
+                if self.wholesale_price < store.wholesale_point_of_reference:
+                    wholesale = self.wholesale_price * \
+                        (1 + (store.wholesale_markup_below / 100))
+                else:
+                    wholesale = self.wholesale_price * \
+                        (1 + (store.wholesale_markup / 100))
         except Exception as e:
             print(e)
+        print(f"retail: {retail}, wholesale: {wholesale}")
         return retail, wholesale
 
     def get_prices(self):

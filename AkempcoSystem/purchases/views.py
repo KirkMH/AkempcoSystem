@@ -1,10 +1,8 @@
-from django.forms.forms import BaseForm
 from django.forms.models import BaseModelForm
 from django.shortcuts import redirect, reverse, get_object_or_404, render
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.db.models import Q
 from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView, BSModalDeleteView
-from django.core.paginator import Paginator
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
 from datetime import datetime
@@ -194,7 +192,7 @@ class POProductCreateView(BSModalCreateView):
         context['action'] = "Add"
         return context
 
-    def form_valid(self, form: BaseForm) -> HttpResponse:
+    def form_valid(self, form):
         if not is_ajax(self.request):
             po_prod = form.save(commit=False)
             po = get_object_or_404(PurchaseOrder, pk=self.kwargs['pk'])
@@ -207,29 +205,10 @@ class POProductCreateView(BSModalCreateView):
             po.fill_in_other_po_fields()
         return super().form_valid(form)
 
-    def form_invalid(self, form: BaseModelForm) -> HttpResponse:
+    def form_invalid(self, form):
         messages.error(
             self.request, 'Please fill-in all the required fields.')
         return super().form_invalid(form)
-
-    # def post(self, request, *args, **kwargs):
-    #     my_form = self.form_class(self.request.POST)
-
-    #     if my_form.is_valid():
-    #         po_prod = my_form.save(commit=False)
-    #         po = get_object_or_404(PurchaseOrder, pk=self.kwargs['pk'])
-    #         ordered_quantity = my_form.instance.ordered_quantity
-    #         prod_qty = po.get_product_ordered(my_form.instance.product)
-    #         po_prod.ordered_quantity = ordered_quantity + prod_qty
-    #         po_prod.purchase_order = po
-    #         po_prod.save()
-    #         po_prod.compute_fields()
-    #         po.fill_in_other_po_fields()
-    #     else:
-    #         messages.error(
-    #             self.request, 'Please fill-in all the required fields.')
-
-    #     return redirect('po_products', pk=self.kwargs['pk'])
 
     def get_success_url(self):
         return reverse('po_products', kwargs={'pk': self.kwargs['pk']})

@@ -82,10 +82,23 @@ $(document).ready(function() {
                     $('#id_uom').val(data.inv_uom.toLowerCase() + '(s)')
                     $('#id_w_qty').val(data.w_stock)
                     $('#id_s_qty').val(data.s_stock)
+                    $("#id_quantity").attr({
+                        "min": 0,
+                        "max": data.w_stock
+                    })
                 }
             })
         }
     }
+
+    // the inputted quantity must not be greater than the warehouse quantity
+    $("#id_quantity").keyup(function(e) {
+        const qty = parseInt($("#id_quantity").val())
+        const warehouse = parseInt($("#id_w_qty").val())
+        if (qty > warehouse) {
+            $("#id_quantity").val(warehouse)
+        }
+    });
 
     
     $('#search').keyup(function(e){

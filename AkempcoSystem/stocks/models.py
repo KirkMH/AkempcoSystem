@@ -18,25 +18,27 @@ class RV_PROCESS:
     ]
 
 ############################################
-### For Warehouse Stocks Monitoring
+# For Warehouse Stocks Monitoring
 ############################################
+
 
 class AvailableWarehouseStockManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(remaining_stocks__gt=0)
 
+
 class WarehouseStock(models.Model):
     product = models.ForeignKey(
-        "fm.Product", 
-        verbose_name=_("Product"), 
+        "fm.Product",
+        verbose_name=_("Product"),
         on_delete=models.CASCADE)
     date_received = models.DateField(
-        _("Date Received"), 
+        _("Date Received"),
         auto_now_add=True
     )
     received_by = models.ForeignKey(
-        User, 
-        verbose_name=_("Received By"), 
+        User,
+        verbose_name=_("Received By"),
         on_delete=models.CASCADE
     )
     supplier_price = models.DecimalField(
@@ -58,93 +60,93 @@ class WarehouseStock(models.Model):
 
     def __str__(self):
         return self.product.full_description + ": " + str(self.remaining_stocks) + " item(s) left in warehouse."
-    
+
 
 ############################################
-### For Requisition Vouchers
+# For Requisition Vouchers
 ############################################
 
 class RequisitionVoucher(models.Model):
     requested_by = models.ForeignKey(
-        User, 
+        User,
         related_name='rv_requester',
         on_delete=models.RESTRICT
     )
     requested_at = models.DateTimeField(
-        _("Requested at"), 
+        _("Requested at"),
         auto_now_add=True
     )
     approved_by = models.ForeignKey(
-        User, 
+        User,
         related_name='rv_approver',
-        on_delete=models.RESTRICT, 
+        on_delete=models.RESTRICT,
         null=True,
         default=None
     )
     approved_at = models.DateTimeField(
-        _("Approved at"), 
+        _("Approved at"),
         null=True,
         default=None
     )
     released_by = models.ForeignKey(
-        User, 
+        User,
         related_name='rv_releaser',
         on_delete=models.RESTRICT,
         null=True,
         default=None
     )
     released_at = models.DateTimeField(
-        _("Released at"), 
+        _("Released at"),
         null=True,
         default=None
     )
     received_by = models.ForeignKey(
-        User, 
+        User,
         related_name='rv_receiver',
-        on_delete=models.RESTRICT, 
+        on_delete=models.RESTRICT,
         null=True,
         default=None
     )
     received_at = models.DateTimeField(
-        _("Received at"), 
+        _("Received at"),
         null=True,
         default=None
     )
     rejected_by = models.ForeignKey(
-        User, 
+        User,
         related_name='rv_rejecter',
-        on_delete=models.RESTRICT, 
+        on_delete=models.RESTRICT,
         null=True,
         default=None
     )
     rejected_at = models.DateTimeField(
-        _("Rejected at"), 
+        _("Rejected at"),
         null=True,
         default=None
     )
     reject_reason = models.CharField(
-        _("Reject Reason"), 
+        _("Reject Reason"),
         max_length=250,
         null=True,
         default=None
     )
     process_step = models.PositiveSmallIntegerField(
         _("Process Step"),
-        default=1 #Pending
+        default=1  # Pending
     )
     item_count = models.PositiveIntegerField(
         _("Item Count"),
         default=0
     )
     status = models.CharField(
-        _("Status"), 
+        _("Status"),
         max_length=15,
         default=RV_PROCESS.STEPS[0][1]
     )
 
     def __str__(self):
         return 'RV# ' + str(self.pk) + ': ' + self.status
-    
+
     def set_item_count(self):
         count = RV_Product.objects.filter(rv=self).count() or 0
         self.item_count = count
@@ -172,13 +174,13 @@ class RequisitionVoucher(models.Model):
 
     def is_released(self):
         return self.process_step == 4
-    
+
     def is_closed(self):
         return self.process_step == 5
-    
+
     def is_rejected(self):
         return self.process_step == 6
-    
+
     def is_open(self):
         return self.process_step > 1 and self.process_step < 5
 
@@ -227,7 +229,8 @@ class RequisitionVoucher(models.Model):
         reqs = RV_Product.objects.filter(rv=self)
         for r in reqs:
             # get WH stocks of this product
-            whs = WarehouseStock.availableStocks.filter(product=r.product).order_by('pk')
+            whs = WarehouseStock.availableStocks.filter(
+                product=r.product).order_by('pk')
             qty = int(r.quantity)
             for wh in whs:
                 stocks = int(wh.remaining_stocks)
@@ -242,11 +245,11 @@ class RequisitionVoucher(models.Model):
                     qty = qty - stocks
                     # transfer only the remaining_stocks of this record
                     self.move_to_store(user, wh.pk, stocks)
-            
+
             # record in history
             hist = ProductHistory()
             hist.product = r.product
-            hist.location = 0 # warehouse
+            hist.location = 0  # warehouse
             hist.quantity = 0 - r.quantity
             hist.remarks = 'Transfered to the store.'
             hist.performed_by = self.released_by
@@ -254,14 +257,13 @@ class RequisitionVoucher(models.Model):
             hist.set_current_balance()
             # record in history
             hist.pk = None
-            hist.location = 1 # store
+            hist.location = 1  # store
             hist.quantity = r.quantity
             hist.remarks = 'Received from the warehouse.'
             hist.save()
             hist.set_current_balance()
-            #update product stocks
-            r.product.set_stock_count() # update product stocks
-
+            # update product stocks
+            r.product.set_stock_count()  # update product stocks
 
     def reject(self, user, reason):
         self.rejected_by = user
@@ -297,14 +299,13 @@ class RequisitionVoucher(models.Model):
         ordering = [F('pk').desc(nulls_first=True)]
 
 
-
 class RV_Product(models.Model):
-    rv = models.ForeignKey(RequisitionVoucher, 
-        verbose_name=_("Requisition Voucher"), 
-        on_delete=models.CASCADE
-    )
+    rv = models.ForeignKey(RequisitionVoucher,
+                           verbose_name=_("Requisition Voucher"),
+                           on_delete=models.CASCADE
+                           )
     product = models.ForeignKey(
-        "fm.Product", 
+        "fm.Product",
         on_delete=models.RESTRICT
     )
     quantity = models.PositiveIntegerField(
@@ -312,17 +313,21 @@ class RV_Product(models.Model):
         default=0
     )
 
+    def __str__(self):
+        return f"{self.quantity} {self.product.uom}(s) of {self.product.full_description}"
+
     class Meta:
         ordering = ['product']
 
 
 ############################################
-### For Store Stocks Monitoring
+# For Store Stocks Monitoring
 ############################################
 
 class AvailableStoreStockManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(remaining_stocks__gt=0)
+
 
 class StoreStock(models.Model):
     requisition_voucher = models.ForeignKey(
@@ -336,8 +341,8 @@ class StoreStock(models.Model):
         on_delete=models.CASCADE
     )
     product = models.ForeignKey(
-        "fm.Product", 
-        verbose_name=_("Product"), 
+        "fm.Product",
+        verbose_name=_("Product"),
         on_delete=models.CASCADE
     )
     supplier_price = models.DecimalField(
@@ -359,20 +364,22 @@ class StoreStock(models.Model):
 
     def __str__(self):
         return self.product.full_description + ": " + str(self.remaining_stocks) + " item(s) left in store."
-    
+
 
 class ProducHistoryManagerForWarehouse(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(location=0) #0=Warehouse
+        return super().get_queryset().filter(location=0)  # 0=Warehouse
+
 
 class ProducHistoryManagerForStore(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(location=1) #1=Store
+        return super().get_queryset().filter(location=1)  # 1=Store
+
 
 class ProductHistory(models.Model):
     product = models.ForeignKey(
-        "fm.Product", 
-        verbose_name=_("Product"), 
+        "fm.Product",
+        verbose_name=_("Product"),
         on_delete=models.CASCADE
     )
     location = models.PositiveSmallIntegerField(
@@ -383,16 +390,16 @@ class ProductHistory(models.Model):
         default=0
     )
     remarks = models.CharField(
-        _("Remarks"), 
+        _("Remarks"),
         max_length=250
     )
     performed_on = models.DateField(
-        _("Performed on"), 
+        _("Performed on"),
         auto_now_add=True
     )
     performed_by = models.ForeignKey(
-        User, 
-        verbose_name=_("Performed By"), 
+        User,
+        verbose_name=_("Performed By"),
         on_delete=models.CASCADE
     )
     balance = models.IntegerField(
@@ -408,17 +415,17 @@ class ProductHistory(models.Model):
         verbose_name_plural = 'Product History'
 
     def __str__(self):
-        return  'Product: ' + self.product.full_description + '\n' + \
-                'Location: ' + 'Warehouse' if self.location == 0 else 'Store' + '\n' + \
-                'Quantity: ' + str(self.quantity) + '\n' + \
-                'Remarks: ' + self.remarks + '\n'    
+        return 'Product: ' + self.product.full_description + '\n' + \
+            'Location: ' + 'Warehouse' if self.location == 0 else 'Store' + '\n' + \
+            'Quantity: ' + str(self.quantity) + '\n' + \
+            'Remarks: ' + self.remarks + '\n'
 
     def set_current_balance(self):
         last_entry = ProductHistory.objects.filter(
-                product=self.product,
-                location=self.location,
-                pk__lt=self.pk
-            ).order_by('-pk')[:1]
+            product=self.product,
+            location=self.location,
+            pk__lt=self.pk
+        ).order_by('-pk')[:1]
 
         last_bal = 0
         if last_entry:
@@ -436,9 +443,9 @@ class StockAdjustment(models.Model):
     ]
 
     product = models.ForeignKey(
-        "fm.Product", 
+        "fm.Product",
         help_text=_("Product to adjust"),
-        verbose_name=_("Product"), 
+        verbose_name=_("Product"),
         on_delete=models.CASCADE
     )
     quantity = models.SmallIntegerField(
@@ -452,72 +459,72 @@ class StockAdjustment(models.Model):
     )
     reason = models.CharField(_("Reason for adjustment"), max_length=250)
     created_by = models.ForeignKey(
-        User, 
+        User,
         related_name='adjustment_requester',
         on_delete=models.RESTRICT
     )
     created_at = models.DateTimeField(
-        _("Created at"), 
+        _("Created at"),
         auto_now_add=True
     )
     checked_by = models.ForeignKey(
-        User, 
+        User,
         related_name='adjustment_checker',
-        on_delete=models.RESTRICT, 
+        on_delete=models.RESTRICT,
         null=True,
         blank=True,
-        default=None  
+        default=None
     )
     checked_at = models.DateTimeField(
-        _("Checked at"), 
+        _("Checked at"),
         null=True,
         blank=True,
-        default=None   
+        default=None
     )
     approved_by = models.ForeignKey(
-        User, 
+        User,
         related_name='adjustment_approver',
-        on_delete=models.RESTRICT, 
+        on_delete=models.RESTRICT,
         null=True,
         blank=True,
-        default=None  
+        default=None
     )
     approved_at = models.DateTimeField(
-        _("Approved at"), 
+        _("Approved at"),
         null=True,
         blank=True,
-        default=None   
+        default=None
     )
     performed_by = models.ForeignKey(
-        User, 
+        User,
         related_name='adjustment_performer',
-        on_delete=models.RESTRICT, 
+        on_delete=models.RESTRICT,
         null=True,
         blank=True,
-        default=None  
+        default=None
     )
     performed_at = models.DateTimeField(
-        _("Performed at"), 
+        _("Performed at"),
         null=True,
         blank=True,
-        default=None   
+        default=None
     )
     cancelled_by = models.ForeignKey(
-        User, 
+        User,
         related_name='adjustment_canceller',
-        on_delete=models.RESTRICT, 
+        on_delete=models.RESTRICT,
         null=True,
         blank=True,
-        default=None  
+        default=None
     )
     cancelled_at = models.DateTimeField(
-        _("Cancelled at"), 
+        _("Cancelled at"),
         null=True,
         blank=True,
-        default=None   
+        default=None
     )
     status = models.CharField(
-        _("Status"), 
+        _("Status"),
         max_length=10,
         default='Submitted'
     )
@@ -527,7 +534,7 @@ class StockAdjustment(models.Model):
 
     def __str__(self):
         return self.product.full_description + ": " + str(self.quantity) + " due to " + self.reason
-    
+
     @property
     def location_str(self):
         return 'Warehouse' if self.location == 0 else 'Store'
@@ -579,14 +586,16 @@ class StockAdjustment(models.Model):
 
         # get stocks of this product
         source = WarehouseStock if self.location == 0 else StoreStock
-        stock_source = source.availableStocks.filter(product=self.product).order_by('pk')
+        stock_source = source.availableStocks.filter(
+            product=self.product).order_by('pk')
         qty = self.quantity
         if qty > 0:
             # add qty to stocks
             if stock_source:
                 stock = stock_source.first()
             else:
-                stock = source.objects.filter(product=self.product).order_by('-pk').first()
+                stock = source.objects.filter(
+                    product=self.product).order_by('-pk').first()
             stock.remaining_stocks = stock.remaining_stocks + qty
             stock.save()
 
@@ -608,7 +617,7 @@ class StockAdjustment(models.Model):
                     # transfer only the remaining_stocks of this record
                     item.remaining_stocks = 0
                     item.save()
-        
+
         # record in history
         hist = ProductHistory()
         hist.product = self.product
@@ -618,7 +627,7 @@ class StockAdjustment(models.Model):
         hist.performed_by = self.created_by
         hist.save()
         hist.set_current_balance()
-        
+
         # update status
         self.performed_by = user
         self.performed_at = datetime.now()

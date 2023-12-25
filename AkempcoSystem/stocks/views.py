@@ -11,6 +11,7 @@ from AkempcoSystem.decorators import user_is_allowed
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 
+from admin_area.views import is_ajax
 from fm.models import Product
 from admin_area.models import Feature, Store
 from .models import RequisitionVoucher, RV_Product, StockAdjustment
@@ -28,7 +29,8 @@ def stock_list(request):
         count = RequisitionVoucher.objects.filter(process_step=3).count()
     elif userType == 'Storekeeper':
         count = RequisitionVoucher.objects.filter(process_step=4).count()
-    if count is None: count = 0
+    if count is None:
+        count = 0
 
     return render(request, "stocks/stock_list.html", {'count': count})
 
@@ -36,7 +38,8 @@ def stock_list(request):
 @method_decorator(login_required, name='dispatch')
 class StockDTListView(ServerSideDatatableView):
     model = Product
-    columns = ['pk', 'barcode', 'full_description', 'warehouse_stocks', 'store_stocks', 'total_stocks', 'reorder_point', 'category__category_description']
+    columns = ['pk', 'barcode', 'full_description', 'warehouse_stocks', 'store_stocks',
+               'total_stocks', 'reorder_point', 'category__category_description']
 
 
 @login_required
@@ -44,12 +47,13 @@ class StockDTListView(ServerSideDatatableView):
 def rv_list(request):
     return render(request, "stocks/requisition_voucher.html")
 
+
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_STOCKS), name='dispatch')
 class RVDTListView(ServerSideDatatableView):
     model = RequisitionVoucher
     columns = ['pk', 'item_count', 'requested_at', 'status', 'process_step']
-    
+
 
 @login_required
 @user_is_allowed(Feature.TR_STOCKS)
@@ -66,12 +70,11 @@ class RVDetailView(DetailView):
     model = RequisitionVoucher
     context_object_name = 'rv'
     template_name = "stocks/rv_products.html"
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["products"] = RV_Product.objects.filter(rv=self.object)
         return context
-
 
 
 @login_required
@@ -83,9 +86,9 @@ def delete_rv(request, pk):
         messages.success(request, "Requisition Voucher is now deleted.")
         return redirect('rv_list')
     except:
-        messages.error(request, "There was an error deleting the Requisition Voucher.")
+        messages.error(
+            request, "There was an error deleting the Requisition Voucher.")
         return redirect('rv_products', pk=pk)
-
 
 
 @method_decorator(login_required, name='dispatch')
@@ -97,27 +100,53 @@ class RVProductCreateView(BSModalCreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["form"].fields["product"].queryset = Product.objects.filter(status='ACTIVE')
+        context["form"].fields["product"].queryset = Product.objects.filter(
+            status='ACTIVE')
         return context
 
-    def post(self, request, *args, **kwargs):
-        my_form = self.form_class(self.request.POST)
-
-        if my_form.is_valid():
-            rv_prod = my_form.save(commit=False)
-            rv = get_object_or_404(RequisitionVoucher, pk=self.kwargs['pk']) 
-            new_qty = my_form.instance.quantity
-            old_qty = rv.get_product_requested(my_form.instance.product)
+    def form_valid(self, form):
+        if not is_ajax(self.request):
+            rv_prod = form.save(commit=False)
+            rv = get_object_or_404(RequisitionVoucher, pk=self.kwargs['pk'])
+            w_qty = rv_prod.product.warehouse_stocks
+            new_qty = form.instance.quantity
+            old_qty = rv.get_product_requested(form.instance.product)
             rv_prod.quantity = new_qty + old_qty
+            if rv_prod.quantity > w_qty:
+                rv_prod.quantity = w_qty
             rv_prod.rv = rv
             rv_prod.requested_by = self.request.user
             rv_prod.save()
             rv.set_item_count()
+        return super().form_valid(form)
 
-        else:
-            messages.error(self.request, 'Please fill-in all the required fields.')
-        
-        return redirect('rv_products', pk=self.kwargs['pk'])
+    def form_invalid(self, form):
+        messages.error(
+            self.request, 'Please fill-in all the required fields.')
+        return super().form_invalid(form)
+
+    def get_success_url(self):
+        return reverse('rv_products', kwargs={'pk': self.kwargs['pk']})
+
+    # def post(self, request, *args, **kwargs):
+    #     my_form = self.form_class(self.request.POST)
+
+    #     if my_form.is_valid():
+    #         rv_prod = my_form.save(commit=False)
+    #         rv = get_object_or_404(RequisitionVoucher, pk=self.kwargs['pk'])
+    #         new_qty = my_form.instance.quantity
+    #         old_qty = rv.get_product_requested(my_form.instance.product)
+    #         rv_prod.quantity = new_qty + old_qty
+    #         rv_prod.rv = rv
+    #         rv_prod.requested_by = self.request.user
+    #         rv_prod.save()
+    #         rv.set_item_count()
+
+    #     else:
+    #         messages.error(
+    #             self.request, 'Please fill-in all the required fields.')
+
+    #     return redirect('rv_products', pk=self.kwargs['pk'])
 
 
 @login_required
@@ -126,15 +155,17 @@ def delete_rv_product(request, pk):
     rv_pk = 0
     try:
         rv = get_object_or_404(RV_Product, pk=pk)
-        rv.set_item_count()
-        prod = rv.product.full_description
         rv_pk = rv.rv.pk
+        prod = rv.product.full_description
+        rv.rv.set_item_count()
         rv.delete()
-        messages.success(request, prod + " was removed from the requisition voucher.")
+        messages.success(
+            request, prod + " was removed from the requisition voucher.")
     except:
-        messages.error(request, "There was an error removing the product from the Requisition Voucher.")
+        messages.error(
+            request, "There was an error removing the product from the Requisition Voucher.")
     return redirect('rv_products', pk=rv_pk)
-    
+
 
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_STOCKS), name='dispatch')
@@ -145,14 +176,15 @@ class RVProductUpdateView(BSModalUpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["form"].fields["product"].queryset = Product.objects.filter(status='ACTIVE')
+        context["form"].fields["product"].queryset = Product.objects.filter(
+            status='ACTIVE')
         return context
 
     def get_success_url(self):
         self.object.rv.set_item_count()
         rv_pk = self.object.rv.pk
-        return reverse('rv_products', 
-                        kwargs={'pk' : rv_pk})
+        return reverse('rv_products',
+                       kwargs={'pk': rv_pk})
 
 
 @method_decorator(login_required, name='dispatch')
@@ -161,7 +193,7 @@ class PrintRVDetailView(DetailView):
     model = RequisitionVoucher
     context_object_name = 'rv'
     template_name = "stocks/rv_print.html"
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["products"] = RV_Product.objects.filter(rv=self.object)
@@ -175,7 +207,8 @@ def submit_rv(request, pk):
     rv = get_object_or_404(RequisitionVoucher, pk=pk)
     if request.method == 'POST':
         rv.submit()
-        messages.success(request, "Requisition Voucher was submitted for approval.")
+        messages.success(
+            request, "Requisition Voucher was submitted for approval.")
     return redirect('rv_list')
 
 
@@ -227,7 +260,7 @@ def receive_rv(request, pk):
 
     return redirect('rv_list')
 
-    
+
 @login_required()
 @user_is_allowed(Feature.TR_STOCKS)
 def clone_rv(request, pk):
@@ -235,7 +268,7 @@ def clone_rv(request, pk):
     new_rv = rv.clone(request.user)
     return redirect('rv_products', pk=new_rv.pk)
 
-    
+
 @login_required
 @user_is_allowed(Feature.TR_STOCKADJ)
 def adjustment_list(request):
@@ -246,9 +279,10 @@ def adjustment_list(request):
 @method_decorator(user_is_allowed(Feature.TR_STOCKADJ), name='dispatch')
 class StockAdjustmentDTListView(ServerSideDatatableView):
     model = StockAdjustment
-    columns = ['pk', 'product__full_description', 'quantity', 'location', 'reason', 'created_at', 'status']
+    columns = ['pk', 'product__full_description', 'quantity',
+               'location', 'reason', 'created_at', 'status']
 
-    
+
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_STOCKADJ), name='dispatch')
 class StockAdjustmentCreateView(SuccessMessageMixin, CreateView):
@@ -257,12 +291,13 @@ class StockAdjustmentCreateView(SuccessMessageMixin, CreateView):
     template_name = 'stocks/stock_adjustment_new.html'
     success_message = "New stock adjustment request created."
     success_url = reverse_lazy('adjustment_list')
-    
+
     def form_valid(self, form):
-       adjustment = form.save(commit=False)
-       form.instance.created_by = self.request.user
-       form.save()
-       return super().form_valid(form)
+        adjustment = form.save(commit=False)
+        form.instance.created_by = self.request.user
+        form.save()
+        return super().form_valid(form)
+
 
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_STOCKADJ), name='dispatch')
