@@ -80,7 +80,7 @@ def pos_view(request, pk=0):
     if ZReading.validations.is_report_generated_today():
         # already generated, so this is an error
         messages.error(
-            request, "A Z-Reading has already been generated for today. No further POS transactions are allowed this time.")
+            request, "A Z-Reading has already been generated for today. New POS transactions are not allowed this time.")
         return redirect('dashboard')
 
     # get the latest transaction in Sales
@@ -197,40 +197,6 @@ class SalesPaymentCreateView(BSModalCreateView):
         sales.fill_in_other_fields()
 
         return super().form_valid(form)
-
-    # def post(self, request, *args, **kwargs):
-    #     my_form = self.form_class(self.request.POST)
-
-    #     if my_form.is_valid():
-    #         pay_mode = my_form.save(commit=False)
-    #         amount = pay_mode.amount
-    #         sales = get_object_or_404(Sales, pk=self.kwargs['pk'])
-    #         if sales.customer == None and pay_mode.payment_mode == 'Charge':
-    #             # this is a Walk-in customer; no charges
-    #             messages.error(request, 'Charged sales are not allowed to walk-in customers.')
-    #         elif sales.customer != None and pay_mode.payment_mode == 'Charge' and sales.customer.remaining_credit < pay_mode.amount:
-    #             # insufficient balance
-    #             messages.error(request, 'Insufficient remaining credit.')
-    #         else:
-    #             prev = SalesPayment.objects.filter(sales=sales, payment_mode=pay_mode.payment_mode)
-    #             if prev:
-    #                 prev = prev.first()
-    #                 amount = amount + prev.amount
-    #                 prev.delete()
-
-    #             pay_mode.sales = sales
-    #             pay_mode.amount = amount
-    #             if sales.change > 0:
-    #                 pay_mode.value = amount - sales.change
-    #             else:
-    #                 pay_mode.value = amount
-    #             pay_mode.save()
-    #         sales.fill_in_other_fields()
-
-    #     else:
-    #         messages.error(self.request, 'Please fill-in all the required fields.')
-
-    #     return redirect('checkout', pk=self.kwargs['pk'])
 
     def get_success_url(self):
         return reverse('checkout', kwargs={'pk': self.kwargs['pk']})
