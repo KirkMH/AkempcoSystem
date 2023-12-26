@@ -1,3 +1,6 @@
+from django.forms.forms import BaseForm
+from django.forms.models import BaseModelForm
+from django.http.response import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from django.urls import reverse_lazy, reverse
@@ -8,7 +11,7 @@ from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from django.contrib.auth.hashers import check_password # for overriding validation
+from django.contrib.auth.hashers import check_password  # for overriding validation
 
 from django_serverside_datatable.views import ServerSideDatatableView
 from django.contrib.auth.models import User
@@ -38,7 +41,7 @@ def creditor_search(request, pk):
     }
 
     return render(request, 'sales/member_search.html', context)
-    
+
 
 @login_required()
 @user_is_allowed(Feature.TR_POS)
@@ -46,13 +49,13 @@ def do_creditor_search(request):
     key = request.GET.get('key', '')
     members = list(Creditor.members.filter(name__icontains=key).values())
     groups = list(Creditor.groups.filter(name__icontains=key).values())
-        
+
     data = {
         'members': members,
         'groups': groups,
     }
     return JsonResponse(data, safe=False)
-    
+
 
 @login_required()
 @user_is_allowed(Feature.TR_POS)
@@ -65,7 +68,7 @@ def update_creditor(request, pk):
     else:
         cred = get_object_or_404(Creditor, pk=creditor)
         sales.set_customer(cred)
-    
+
     return JsonResponse(True, safe=False)
 
 
@@ -76,7 +79,8 @@ def pos_view(request, pk=0):
     # not allowed when Z-Reading has been generated already
     if ZReading.validations.is_report_generated_today():
         # already generated, so this is an error
-        messages.error(request, "A Z-Reading has already been generated for today. No further POS transactions are allowed this time.")
+        messages.error(
+            request, "A Z-Reading has already been generated for today. No further POS transactions are allowed this time.")
         return redirect('dashboard')
 
     # get the latest transaction in Sales
@@ -88,7 +92,7 @@ def pos_view(request, pk=0):
             sales = get_object_or_404(Sales, pk=pk)
     except:
         pass
-    
+
     if sales == None or (sales and sales.status != 'WIP'):
         sales = Sales.objects.create()
     items = SalesItem.objects.filter(sales=sales)
@@ -139,9 +143,9 @@ def product_search(request, pk):
 
     return render(request, 'sales/product_search.html', {'transaction': transaction})
 
-    
+
 ##########################
-### CHECKOUT
+# CHECKOUT
 ##########################
 @method_decorator(login_required, name='dispatch')
 @method_decorator(user_is_allowed(Feature.TR_BO), name='dispatch')
@@ -149,7 +153,7 @@ class PaymentDetailView(DetailView):
     model = Sales
     context_object_name = 'transaction'
     template_name = "sales/checkout.html"
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["items"] = SalesPayment.objects.filter(sales=self.object)
@@ -163,42 +167,73 @@ class SalesPaymentCreateView(BSModalCreateView):
     model = SalesPayment
     form_class = SalesPaymentForm
 
-    def post(self, request, *args, **kwargs):
-        my_form = self.form_class(self.request.POST)
-
-        if my_form.is_valid():
-            pay_mode = my_form.save(commit=False)
-            amount = pay_mode.amount
-            sales = get_object_or_404(Sales, pk=self.kwargs['pk']) 
-            if sales.customer == None and pay_mode.payment_mode == 'Charge':
-                # this is a Walk-in customer; no charges
-                messages.error(request, 'Charged sales are not allowed to walk-in customers.')
-            elif sales.customer != None and pay_mode.payment_mode == 'Charge' and sales.customer.remaining_credit < pay_mode.amount:
-                # insufficient balance
-                messages.error(request, 'Insufficient remaining credit.')
-            else:
-                prev = SalesPayment.objects.filter(sales=sales, payment_mode=pay_mode.payment_mode)
-                if prev:
-                    prev = prev.first()
-                    amount = amount + prev.amount
-                    prev.delete()
-
-                pay_mode.sales = sales
-                pay_mode.amount = amount
-                if sales.change > 0:
-                    pay_mode.value = amount - sales.change
-                else:
-                    pay_mode.value = amount
-                pay_mode.save()
-            sales.fill_in_other_fields()
-
+    def form_valid(self, form: BaseForm) -> HttpResponse:
+        pay_mode = form.save(commit=False)
+        amount = pay_mode.amount
+        sales = get_object_or_404(Sales, pk=self.kwargs['pk'])
+        print(f'{sales.pk} {sales}')
+        if sales.customer == None and pay_mode.payment_mode == 'Charge':
+            # this is a Walk-in customer; no charges
+            messages.error(
+                self.request, 'Charged sales are not allowed to walk-in customers.')
+        elif sales.customer != None and pay_mode.payment_mode == 'Charge' and sales.customer.remaining_credit < pay_mode.amount:
+            # insufficient balance
+            messages.error(self.request, 'Insufficient remaining credit.')
         else:
-            messages.error(self.request, 'Please fill-in all the required fields.')
-            
-        return redirect('checkout', pk=self.kwargs['pk'])
+            prev = SalesPayment.objects.filter(
+                sales=sales, payment_mode=pay_mode.payment_mode)
+            if prev:
+                prev = prev.first()
+                amount = amount + prev.amount
+                prev.delete()
+
+            pay_mode.sales = sales
+            pay_mode.amount = amount
+            if sales.change > 0:
+                pay_mode.value = amount - sales.change
+            else:
+                pay_mode.value = amount
+            pay_mode.save()
+        sales.fill_in_other_fields()
+
+        return super().form_valid(form)
+
+    # def post(self, request, *args, **kwargs):
+    #     my_form = self.form_class(self.request.POST)
+
+    #     if my_form.is_valid():
+    #         pay_mode = my_form.save(commit=False)
+    #         amount = pay_mode.amount
+    #         sales = get_object_or_404(Sales, pk=self.kwargs['pk'])
+    #         if sales.customer == None and pay_mode.payment_mode == 'Charge':
+    #             # this is a Walk-in customer; no charges
+    #             messages.error(request, 'Charged sales are not allowed to walk-in customers.')
+    #         elif sales.customer != None and pay_mode.payment_mode == 'Charge' and sales.customer.remaining_credit < pay_mode.amount:
+    #             # insufficient balance
+    #             messages.error(request, 'Insufficient remaining credit.')
+    #         else:
+    #             prev = SalesPayment.objects.filter(sales=sales, payment_mode=pay_mode.payment_mode)
+    #             if prev:
+    #                 prev = prev.first()
+    #                 amount = amount + prev.amount
+    #                 prev.delete()
+
+    #             pay_mode.sales = sales
+    #             pay_mode.amount = amount
+    #             if sales.change > 0:
+    #                 pay_mode.value = amount - sales.change
+    #             else:
+    #                 pay_mode.value = amount
+    #             pay_mode.save()
+    #         sales.fill_in_other_fields()
+
+    #     else:
+    #         messages.error(self.request, 'Please fill-in all the required fields.')
+
+    #     return redirect('checkout', pk=self.kwargs['pk'])
 
     def get_success_url(self):
-        return reverse('checkout', kwargs={'pk' : self.kwargs['pk']})
+        return reverse('checkout', kwargs={'pk': self.kwargs['pk']})
 
 
 @login_required
@@ -209,7 +244,8 @@ def remove_payment(request, pk, payment_pk):
         payment.delete()
         messages.success(request, "Record was removed from the payment list.")
     except:
-        messages.error(request, "There was an error removing the record from the payment list.")
+        messages.error(
+            request, "There was an error removing the record from the payment list.")
     return redirect('checkout', pk=pk)
 
 
@@ -217,8 +253,10 @@ def remove_payment(request, pk, payment_pk):
 @user_is_allowed(Feature.TR_POS)
 def complete_checkout(request, pk):
     sales = Sales.objects.get(pk=pk)
-    details = request.POST.get('details', '')       # retrieve details from the form
-    details = None if details == '' else details    # make it null if there is no value
+    # retrieve details from the form
+    details = request.POST.get('details', '')
+    # make it null if there is no value
+    details = None if details == '' else details
     si = sales.complete(request.user, details)
     return redirect('sales_invoice', pk=si)
 
@@ -246,7 +284,8 @@ def open_receipt(request):
     pk = int(request.GET.get('si_number', 0))
     data = ""
     if SalesInvoice.objects.filter(pk=pk).exists():
-        data = reverse('open_sales_invoice', kwargs={'pk': pk, 'for_transaction': 1})
+        data = reverse('open_sales_invoice', kwargs={
+                       'pk': pk, 'for_transaction': 1})
     else:
         messages.error(request, 'Cannot find specified SI number.')
         data = reverse_lazy('pos')
@@ -260,13 +299,13 @@ def reprint_receipt(request, pk):
     si = get_object_or_404(SalesInvoice, pk=pk)
     si.reprint(request.user)
     return JsonResponse(data, safe=False)
-    
+
 
 def validate_password(password):
     gm_list = User.objects.filter(userdetail__userType='General Manager')
     for gm in gm_list:
         valid = check_password(password, gm.password)
-        if valid: 
+        if valid:
             return gm
     return None
 
@@ -279,14 +318,13 @@ def cancel_receipt(request, pk):
     # validate GM's password
     approver = validate_password(pw)
     valid = False
-    
+
     if approver:
         si = get_object_or_404(SalesInvoice, pk=pk)
         si.cancel(request.user, approver)
         valid = True
 
     return JsonResponse(valid, safe=False)
-    
 
 
 @login_required
@@ -308,21 +346,19 @@ class SalesDiscountUpdateView(BSModalUpdateView):
     model = Sales
     form_class = DiscountForm
 
-    def post(self, request, *args, **kwargs):
-        my_form = self.form_class(self.request.POST)
+    def form_valid(self, form: BaseForm) -> HttpResponse:
+        form.save()
+        return super().form_valid(form)
 
-        if my_form.is_valid():
-            my_form.save()
-            return super().post(request, args, kwargs)
-        else:
-            messages.error(self.request, "Please fill-in all the required fields.")
-            return redirect('checkout', pk=self.kwargs['pk'])
+    def form_invalid(self, form: BaseModelForm) -> HttpResponse:
+        messages.error(
+            self.request, "Please fill-in all the required fields.")
+        return super().form_invalid(form)
 
     def get_success_url(self):
         print(self.object)
         self.object.apply_discount()
         return reverse('checkout', kwargs={'pk': self.object.pk})
-    
 
 
 @login_required
@@ -333,13 +369,13 @@ def reset_cart(request, pk):
 
     data = True
     return JsonResponse(data, safe=False)
-    
+
 
 @login_required
 @user_is_allowed(Feature.TR_POS)
 def x_reading(request):
     xreading = Sales.reports.generate_xreading(request.user)
-    return render(request, 'sales/x_reading.html', {'xreading' : xreading})
+    return render(request, 'sales/x_reading.html', {'xreading': xreading})
 
 
 @login_required
@@ -350,12 +386,12 @@ def validate_gm_password(request):
     # validate GM's password
     approver = validate_password(pw)
     valid = False
-    
+
     if approver:
         valid = True
 
     return JsonResponse(valid, safe=False)
-    
+
 
 @login_required
 @user_is_allowed(Feature.TR_POS)
@@ -363,12 +399,13 @@ def z_reading(request):
     zreading = Sales.reports.generate_zreading(request.user)
     if zreading == False:
         # already generated; do not regenerate
-        messages.error(request, "A Z-Reading has already been generated for today. No further POS transactions are allowed this time.")
+        messages.error(
+            request, "A Z-Reading has already been generated for today. No further POS transactions are allowed this time.")
         return redirect('dashboard')
     else:
         context = {
-            'xreading' : zreading.xreading,
-            'zreading' : zreading
+            'xreading': zreading.xreading,
+            'zreading': zreading
         }
         return render(request, 'sales/z_reading.html', context)
 
@@ -382,12 +419,13 @@ def copy_receipt(request, pk):
         sales = get_object_or_404(SalesInvoice, pk=si).sales
         this = get_object_or_404(Sales, pk=pk)
         if sales.clone(this):
-            messages.success(request, 'Items in the specified SI has been copied successfully.')
+            messages.success(
+                request, 'Items in the specified SI has been copied successfully.')
             data = True
         else:
             messages.error(request, 'Failed to copy the specified SI.')
 
     else:
         messages.error(request, 'Cannot find specified SI number.')
-        
+
     return JsonResponse(data, safe=False)

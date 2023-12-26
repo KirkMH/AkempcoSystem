@@ -44,13 +44,18 @@
 
 <script>
 $(document).ready(function() {
-    //Initialize Select2 Elements
-    $('#id_discount_type').select2({
-      theme: 'bootstrap4'
-    });
-
     $('#discount_search_go').click(function() {
-        // validate password first
+        // validate required fields
+        let required_fields = ['id_discount_type', 'id_discount_amount'];
+        for (let i = 0; i < required_fields.length; i++) {
+            let field = required_fields[i];
+            if (!$('#' + field).val()) {
+                bootbox.alert("Please fill in all the required fields.");
+                return;
+            }
+        }
+
+        // validate password
         let pw = $('#id_password').val();
         console.log(pw);
         $.ajax({
