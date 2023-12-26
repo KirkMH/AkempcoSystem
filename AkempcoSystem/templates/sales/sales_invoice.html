@@ -23,7 +23,6 @@
                 <button class="btn btn-primary btn-menu" id="print">Print</button>
                 {% else %}
                 <button class="btn btn-warning btn-menu" id="reprint" {% if transaction.is_cancelled %}style="display: none;"{% endif %}>Re-Print</button>
-                <button class="btn btn-danger btn-menu" id="cancel" {% if transaction.is_cancelled %}style="display: none;"{% endif %}>Void</button>
                 {% endif %}
                 <a class="btn btn-secondary btn-menu" href="{% url 'pos' %}">POS</a>
             </div>
