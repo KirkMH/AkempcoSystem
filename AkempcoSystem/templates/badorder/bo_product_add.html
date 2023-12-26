@@ -120,8 +120,8 @@ $(document).ready(function() {
         .trigger( "change" );
 
     $('#go').click(function () {
-        let stocks = parseInt($('#id_stocks').val())
-        let quantity = parseInt($('#id_quantity').val())
+        const stocks = parseInt($('#id_stocks').val())
+        const quantity = parseInt($('#id_quantity').val())
 
         if (stocks >= quantity)
             $('#add_product_form').submit();
@@ -129,7 +129,17 @@ $(document).ready(function() {
             toastr.warning("The bad order quantity is more than the remaining stocks.");
     })
 
+    $("#add_product_form").submit(function (e) {
+        const quantity = parseInt($('#id_quantity').val())
+        const reason = $('#id_reason').val()
+        if (quantity == 0 || reason == '') {
+            e.preventDefault()
+            toastr.warning("Please fill-in all required fields.");
+        }
+    })
+
     
+    $('#id_quantity').val(0)
     $('#search').focus();
 });
 </script>

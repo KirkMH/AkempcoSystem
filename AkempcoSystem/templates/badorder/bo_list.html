@@ -28,6 +28,7 @@
                 <thead>
                     <tr>
                         <th class="text-center" width="10%">Action</th>
+                        <th>BO #</th>
                         <th class="for_audit">Location</th>
                         <th>Supplier</th>
                         <th>Date Discovered</th>
@@ -64,6 +65,13 @@
                         },
                         className: 'text-center'
                     },
+                    {
+                        name: "bo-number",
+                        data: 0,
+                        render: function(data) {
+                            return String(data).padStart(10, '0')
+                        }
+                    },
                     {   
                         name: "supplier_name",
                         data: 1,
@@ -81,7 +89,7 @@
                         name: "date_discovered",
                         data: 3,
                         render: function (data) {
-                            return $.datepicker.formatDate('MM d, yyyy', new Date(data));
+                            return $.datepicker.formatDate('MM d, yy', new Date(data));
                         }
                     },
                     {name: "number_of_items", data: 4, className: 'text-center'},
@@ -114,7 +122,7 @@
                         }
                     },
                 ],
-                order: [[2, 'asc']],
+                order: [[0, 'desc']],
                 initComplete: function () {
                     var api = this.api();
                     
@@ -125,7 +133,7 @@
                 }
             });
             if (userType !== 'Audit Committee')
-                $('.for_audit').hide();
+                $('.for_audit').visible = false
 
             $("#menu_trans").addClass("menu-open")
             $("#menu_trans_bo").addClass("active")

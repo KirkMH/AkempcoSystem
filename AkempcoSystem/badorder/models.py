@@ -20,12 +20,12 @@ class BO_PROCESS:
 
 class BadOrder(models.Model):
     supplier = models.ForeignKey(
-        Supplier, 
-        verbose_name=_("Supplier"), 
+        Supplier,
+        verbose_name=_("Supplier"),
         on_delete=models.CASCADE
     )
     date_discovered = models.DateField(
-        _("Date Discovered"), 
+        _("Date Discovered"),
         auto_now=False,
         auto_now_add=False
     )
@@ -35,77 +35,78 @@ class BadOrder(models.Model):
         default=True
     )
     date_reported = models.DateField(
-        _("Date Reported"), 
+        _("Date Reported"),
         auto_now=True
     )
     reported_by = models.ForeignKey(
-        User, 
-        verbose_name=_("Reported By"), 
+        User,
+        verbose_name=_("Reported By"),
         related_name='bo_reporter',
         on_delete=models.RESTRICT
-    )    
+    )
     date_approved = models.DateField(
-        _("Date Approved"), 
+        _("Date Approved"),
         null=True,
         default=None
     )
     approved_by = models.ForeignKey(
-        User, 
-        verbose_name=_("Approved By"), 
+        User,
+        verbose_name=_("Approved By"),
         related_name='bo_approver',
         on_delete=models.RESTRICT,
         null=True,
         default=None
     )
     date_rejected = models.DateField(
-        _("Date Cancelled"), 
+        _("Date Cancelled"),
         null=True,
         default=None
     )
     rejected_by = models.ForeignKey(
-        User, 
-        verbose_name=_("Cancelled By"), 
+        User,
+        verbose_name=_("Cancelled By"),
         related_name='bo_canceller',
         on_delete=models.RESTRICT,
         null=True,
         default=None
     )
     reject_reason = models.CharField(
-        _("Reject reason"), 
+        _("Reject reason"),
         max_length=250,
         null=True,
         default=None
     )
     action_taken = models.CharField(
-        _("Action Taken"), 
+        _("Action Taken"),
         max_length=100,
         null=True,
         default=None
     )
     process_step = models.PositiveSmallIntegerField(
         _("Process Step"),
-        default=1 #Pending
+        default=1  # Pending
     )
     number_of_items = models.PositiveIntegerField(
         _("Number of Items"),
         default=0
     )
     grand_total = models.DecimalField(
-        _("Grand Total"), 
-        max_digits=10, 
+        _("Grand Total"),
+        max_digits=10,
         decimal_places=2,
         default=0
     )
 
     class Meta:
-        ordering = ['supplier', '-pk']
+        ordering = ['-pk']
 
     def __str__(self):
         return self.supplier.supplier_name
 
     def fill_in_other_fields(self):
         self.number_of_items = self.bo_items.all().count()
-        self.grand_total = self.bo_items.all().aggregate(grand=Sum(F('quantity') * F('unit_price')))['grand']
+        self.grand_total = self.bo_items.all().aggregate(
+            grand=Sum(F('quantity') * F('unit_price')))['grand'] or 0
         self.save()
 
     def is_pending(self):
@@ -119,12 +120,12 @@ class BadOrder(models.Model):
 
     def is_closed(self):
         return self.process_step == 4
-        
+
     def is_rejected(self):
         return self.process_step == 5
 
     def is_updatable(self):
-        return self.process_step < 3 # not yet approved
+        return self.process_step < 3  # not yet approved
 
     def get_status(self):
         for step in BO_PROCESS.STEPS:
@@ -143,10 +144,14 @@ class BadOrder(models.Model):
             return 0
 
     def submit(self, user):
-        self.reported_by = user
-        self.in_warehouse = True if user.userdetail.userType == 'Warehouse Staff' else False
-        self.process_step = 2 # For Approval
-        self.save()
+        try:
+            self.reported_by = user
+            self.in_warehouse = True if user.userdetail.userType == 'Warehouse Staff' else False
+            self.process_step = 2  # For Approval
+            self.save()
+            return True
+        except Exception as e:
+            return e
 
     def approve(self, user):
         # deduct all items in BadOrderItem from product warehouse stocks
@@ -154,20 +159,26 @@ class BadOrder(models.Model):
         total_price = 0
         price_count = 0
         for item in items:
+            print(f'Processing {item.product.full_description}...')
             qty = item.quantity
             # deduct using FIFO
             while qty > 0:
+                print(f' {qty} remaining...')
                 stock = None
+                rem = 0
                 if self.in_warehouse:
-                    stock = WarehouseStock.availableStocks.filter(product=item.product).order_by('pk').first()
+                    stock = WarehouseStock.availableStocks.filter(
+                        product=item.product).order_by('pk').first()
                 else:
-                    stock = StoreStock.availableStocks.filter(product=item.product).order_by('pk').first()
+                    stock = StoreStock.availableStocks.filter(
+                        product=item.product).order_by('pk').first()
                 if stock:
                     rem = stock.remaining_stocks
                 else:
                     return False
+                print(f' {rem} remaining in stock #{stock.pk}...')
 
-                deduct = 0 # how many items will be deducted in this record
+                deduct = 0  # how many items will be deducted in this record
                 if rem >= qty:
                     deduct = qty
                     qty = 0
@@ -175,14 +186,16 @@ class BadOrder(models.Model):
                     deduct = rem
                     qty = qty - rem
 
-                # deduct qty from wh's remaining stocks
-                stock.remaining_stocks = deduct
+                # deduct qty from remaining stocks
+                stock.remaining_stocks = stock.remaining_stocks - deduct
                 stock.save()
 
                 # update price info
                 total_price = total_price + stock.supplier_price
                 price_count = price_count + 1
 
+            # ensure correct product count
+            item.product.set_stock_count()
             # update unit price
             item.unit_price = total_price / price_count
             item.save()
@@ -192,17 +205,18 @@ class BadOrder(models.Model):
             hist.product = item.product
             hist.location = 0 if self.in_warehouse else 1
             hist.quantity = 0 - deduct
+            hist.balance = item.product.warehouse_stocks if self.in_warehouse else item.product.store_stocks
             hist.remarks = 'Bad order: ' + item.reason
             hist.performed_by = self.reported_by
             hist.save()
 
             # update product stocks
-            item.product.set_stock_count() # update product stocks
-            
+            item.product.set_stock_count()  # update product stocks
+
         # update fields of this record
         self.approved_by = user
         self.date_approved = datetime.now()
-        self.process_step = 3 # Open (Approved)
+        self.process_step = 3  # Open (Approved)
         self.save()
 
         return True
@@ -211,14 +225,14 @@ class BadOrder(models.Model):
         self.rejected_by = user
         self.date_rejected = datetime.now()
         self.reject_reason = reason
-        self.process_step = 5 # Rejected
+        self.process_step = 5  # Rejected
         self.save()
 
     def close(self):
-        self.process_step = 4 # Closed
+        self.process_step = 4  # Closed
         self.save()
 
-    def save_action_taken(self, action, shouldClose = False):
+    def save_action_taken(self, action, shouldClose=False):
         # if action is "Replaced by the supplier.", should increment the stocks back
         if action == 'Replaced by the supplier.':
             pass
@@ -230,31 +244,31 @@ class BadOrder(models.Model):
 
 class BadOrderItem(models.Model):
     bad_order = models.ForeignKey(
-        BadOrder, 
-        verbose_name=_("Bad Order"), 
+        BadOrder,
+        verbose_name=_("Bad Order"),
         related_name='bo_items',
         on_delete=models.CASCADE
     )
     product = models.ForeignKey(
-        Product, 
-        verbose_name=_("Product"), 
+        Product,
+        verbose_name=_("Product"),
         on_delete=models.CASCADE
     )
     quantity = models.PositiveSmallIntegerField(_("Quantity"))
     unit_price = models.DecimalField(
-        _("Average Unit Price"), 
-        max_digits=8, 
+        _("Average Unit Price"),
+        max_digits=8,
         decimal_places=2,
         null=True,
         default=None
     )
     reason = models.CharField(
-        _("Reason"), 
+        _("Reason"),
         max_length=100
     )
     total_cost = models.DecimalField(
-        _("Total Cost"), 
-        max_digits=10, 
+        _("Total Cost"),
+        max_digits=10,
         decimal_places=2,
         default=0
     )
@@ -267,5 +281,3 @@ class BadOrderItem(models.Model):
     def __str__(self):
         return str(self.quantity) + " " + self.product.uom.uom_description + \
             " of  " + self.product.full_description + " due to " + self.reason
-    
-    

@@ -271,7 +271,7 @@
                 ],
                 callback: function (result) {
                     console.log(result);
-                    var action = "";
+                    let action = "";
                     if (result !== null) {
                         switch (result) {
                             case '1':
@@ -297,10 +297,12 @@
                                 });
                         }
                         console.log(action);
-                        $('#other_info').val(action);
-                        console.log($('#other_info'));
-                        $('#submit_bo_form').attr('action', "{% url 'set_action_taken' badorder.pk %}");
-                        $('#submit_bo_form').submit();
+                        if (action != '') {
+                            $('#other_info').val(action);
+                            console.log($('#other_info'));
+                            $('#submit_bo_form').attr('action', "{% url 'set_action_taken' badorder.pk %}");
+                            $('#submit_bo_form').submit();
+                        }
                     }
                 }
             });

@@ -54,39 +54,26 @@
     <ul class="navbar-nav ml-auto">
       <!-- Navbar Search -->
       <li class="nav-item">
-        <div class="nav-link">Hi, 
+        <h4 class="nav-link"><small>Hi, 
           {% if user.last_name %}
             {{ user.first_name.strip }} {{ user.last_name.strip }}
           {% else %}
             {{ user.get_username.strip }}
           {% endif %}!
-        </div>
-        <div class="navbar-search-block">
-          <form class="form-inline">
-            <div class="input-group input-group-sm">
-              <input class="form-control form-control-navbar" type="search" placeholder="Search" aria-label="Search">
-              <div class="input-group-append">
-                <button class="btn btn-navbar" type="submit">
-                  <i class="fas fa-search"></i>
-                </button>
-                <button class="btn btn-navbar" type="button" data-widget="navbar-search">
-                  <i class="fas fa-times"></i>
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
+        </small></h4>
       </li>
 
       <!-- Notifications Dropdown Menu -->
+      <li class="nav-item dropdown mt-1"> 
       {% include 'includes/notif.html' %}
+      </li>
 
       <!-- full screen -->
-      <li class="nav-item"> 
+      <li class="nav-item mt-1"> 
         <a class="nav-link" data-widget="fullscreen" href="#" role="button"> <i class="fas fa-expand-arrows-alt"></i> </a> 
       </li>
       <!-- settings -->
-      <li class="nav-item dropdown"> 
+      <li class="nav-item dropdown mt-1"> 
         <a class="nav-link" data-toggle="dropdown" href="#"> 
           <i class="fas fa-cogs"></i>
         </a> 
@@ -112,13 +99,14 @@
   <!-- Main Sidebar Container -->
   <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <!-- Brand Logo -->
-    <a href="#" class="brand-link">
+    <a href="#" class="brand-link" style="padding-top: 14px;">
       <img src="{% static 'img/logo.png' %}" alt="AKEMPCO SaInSys Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
-      <span class="brand-text font-weight-light">AKEMPCO</span>
+      <h4 class="brand-text">AKEMPCO</h4>
     </a>
 
     <!-- Sidebar -->
     <div class="sidebar">
+
       <!-- Sidebar Menu -->
       {% include 'includes/sidemenu.html' %}
       <!-- /.sidebar-menu -->

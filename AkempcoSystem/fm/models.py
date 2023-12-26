@@ -507,9 +507,11 @@ class Product(models.Model):
         return reduce_by
 
     def get_earliest_supplier_price_with_stock(self):
+        supplier_price = 0
         stock = WarehouseStock.availableStocks.filter(
             product=self).order_by('pk').first()
-        supplier_price = stock.supplier_price
+        if stock:
+            supplier_price = stock.supplier_price
         return supplier_price
 
     def set_latest_supplier_price(self):
