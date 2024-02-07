@@ -63,46 +63,56 @@ class XReading(models.Model):
     vat_removed = models.DecimalField(
         _('VAT Removed'),
         max_digits=10,
-        decimal_places=2
+        decimal_places=2,
+        default=0
     )
     discounts = models.DecimalField(
         _('Discounts'),
         max_digits=10,
-        decimal_places=2
+        decimal_places=2,
+        default=0
     )
     vatable = models.DecimalField(
         _('VATable Sales'),
         max_digits=10,
-        decimal_places=2
+        decimal_places=2,
+        default=0
     )
     vat = models.DecimalField(
         _('VAT Amount'),
         max_digits=10,
-        decimal_places=2
+        decimal_places=2,
+        default=0
     )
     vatex = models.DecimalField(
         _('VAT Exempt Sales'),
         max_digits=10,
-        decimal_places=2
+        decimal_places=2,
+        default=0
     )
     zero_rated = models.DecimalField(
         _('Zero Rated Sales'),
         max_digits=10,
-        decimal_places=2
+        decimal_places=2,
+        default=0
     )
     items_sold = models.PositiveIntegerField(
-        _('Number of Items Sold')
+        _('Number of Items Sold'),
+        default=0
     )
     transaction_count = models.PositiveIntegerField(
-        _('Transaction Count')
+        _('Transaction Count'),
+        default=0
     )
     void_count = models.PositiveIntegerField(
-        _('Void Count')
+        _('Void Count'),
+        default=0
     )
     void_total = models.DecimalField(
         _('Void Total'),
         max_digits=10,
-        decimal_places=2
+        decimal_places=2,
+        default=0
     )
     first_si = models.PositiveIntegerField(
         _('First Sales Invoice')
@@ -141,9 +151,11 @@ class XReading(models.Model):
 
     def fill_in_other_fields(self):
         self.total_sales = TenderReport.objects.filter(
-            xreading=self).aggregate(val=Sum('amount'))['val']
-        self.gross_sales = self.total_sales + self.vat_removed + self.discounts
-        self.vd_total_sales = self.vatable + self.vat + self.vatex + self.zero_rated
+            xreading=self).aggregate(val=Sum('amount'))['val'] or 0
+        self.gross_sales = (self.total_sales or 0) + \
+            (self.vat_removed or 0) + (self.discounts or 0)
+        self.vd_total_sales = (self.vatable or 0) + (self.vat or 0) + \
+            (self.vatex or 0) + (self.zero_rated or 0)
         self.save()
 
     def __str__(self):
@@ -211,17 +223,20 @@ class ZReading(models.Model):
     void_sales = models.DecimalField(
         _('Beginning Balance'),
         max_digits=10,
-        decimal_places=2
+        decimal_places=2,
+        default=0
     )
     beginning_bal = models.DecimalField(
         _('Beginning Balance'),
         max_digits=10,
-        decimal_places=2
+        decimal_places=2,
+        default=0
     )
     ending_bal = models.DecimalField(
         _('Ending Balance'),
         max_digits=10,
-        decimal_places=2
+        decimal_places=2,
+        default=0
     )
     transaction_count = models.PositiveIntegerField(_('Transaction Count'))
     objects = models.Manager()
@@ -604,6 +619,7 @@ class Sales(models.Model):
 
     def cancel_discount(self):
         # get products and their quantity
+        disc = self.discount_type
         items = SalesItem.objects.filter(sales=self)
         prod_qty = []
         for item in items:
@@ -611,11 +627,16 @@ class Sales(models.Model):
             prod_qty.append(pq)
         # delete all items
         items.delete()
+        self.discount_type = None
+        self.save()
+        self.fill_in_other_fields()
         # add products with quantity
         for pq in prod_qty:
             self.add_product(pq[0].barcode, pq[1])
 
         # If the discount_type was set to none, reset customer details too
+        self.discount_type = disc
+        self.save()
         print(self.discount_type)
         if self.discount_type == None:
             self.customer_name = None
@@ -1037,6 +1058,7 @@ class SalesInvoice(models.Model):
                 # return quantity to where it came from
                 sic.store_stock.remaining_stocks = sic.store_stock.remaining_stocks + sic.quantity
                 sic.store_stock.save()
+                sic.save()
                 print(sic.store_stock.remaining_stocks)
             # record this in the history
             hist = ProductHistory()
@@ -1044,7 +1066,7 @@ class SalesInvoice(models.Model):
             hist.location = 1  # Store
             hist.quantity = sales_item.quantity
             hist.balance = sales_item.product.store_stocks
-            hist.remarks = "Cancelled sales invoice."
+            hist.remarks = f"Cancelled sales invoice #{self.pk :08d}"
             hist.performed_on = datetime.now()
             hist.performed_by = cashier
             hist.save()

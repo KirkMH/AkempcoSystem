@@ -60,8 +60,9 @@
                             <div class="col-lg-3 col-md-6 text-large">DISCOUNT</div>
                             <div class="col-lg-9 col-md-6 text-large text-right text-danger">
                                 <h4 class="mb-0">{{ transaction.discount|peso }}</h4>
-                                {% if transaction.discount_type %}
-                                    <span class="text-muted mt-0">({{ transaction.discount_type.name }} Granted)</span>
+                                {% if transaction.discount_type or transaction.discount %}
+                                    <span class="text-muted mt-0">({{ transaction.discount_type.name }} Discount Granted)</span>
+                                    <a href="{% url 'cancel_discount' transaction.pk %}"><i class="far fa-minus-square text-danger" title="Remove"></i></a>
                                 {% endif %}
                             </div>
                         </div>

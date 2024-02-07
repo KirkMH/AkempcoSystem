@@ -176,24 +176,27 @@ class SalesPaymentCreateView(BSModalCreateView):
             # this is a Walk-in customer; no charges
             messages.error(
                 self.request, 'Charged sales are not allowed to walk-in customers.')
+            return redirect('checkout', pk=self.kwargs['pk'])
         elif sales.customer != None and pay_mode.payment_mode == 'Charge' and sales.customer.remaining_credit < pay_mode.amount:
             # insufficient balance
             messages.error(self.request, 'Insufficient remaining credit.')
-        else:
-            prev = SalesPayment.objects.filter(
-                sales=sales, payment_mode=pay_mode.payment_mode)
-            if prev:
-                prev = prev.first()
-                amount = amount + prev.amount
-                prev.delete()
+            return redirect('checkout', pk=self.kwargs['pk'])
 
-            pay_mode.sales = sales
-            pay_mode.amount = amount
-            if sales.change > 0:
-                pay_mode.value = amount - sales.change
-            else:
-                pay_mode.value = amount
-            pay_mode.save()
+        # all good; proceed
+        prev = SalesPayment.objects.filter(
+            sales=sales, payment_mode=pay_mode.payment_mode)
+        if prev:
+            prev = prev.first()
+            amount = amount + prev.amount
+            prev.delete()
+
+        pay_mode.sales = sales
+        pay_mode.amount = amount
+        if sales.change > 0:
+            pay_mode.value = amount - sales.change
+        else:
+            pay_mode.value = amount
+        pay_mode.save()
         sales.fill_in_other_fields()
 
         return super().form_valid(form)
@@ -325,6 +328,16 @@ class SalesDiscountUpdateView(BSModalUpdateView):
         print(self.object)
         self.object.apply_discount()
         return reverse('checkout', kwargs={'pk': self.object.pk})
+
+
+@login_required
+@user_is_allowed(Feature.TR_POS)
+def cancel_discount(request, pk):
+    sales = get_object_or_404(Sales, pk=pk)
+    sales.discount_type = None
+    sales.save()
+    sales.cancel_discount()
+    return redirect('checkout', pk=pk)
 
 
 @login_required

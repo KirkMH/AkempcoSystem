@@ -46,7 +46,7 @@
 $(document).ready(function() {
     $('#discount_search_go').click(function() {
         // validate required fields
-        let required_fields = ['id_discount_type', 'id_discount_amount'];
+        let required_fields = ['id_discount_type'];
         for (let i = 0; i < required_fields.length; i++) {
             let field = required_fields[i];
             if (!$('#' + field).val()) {
