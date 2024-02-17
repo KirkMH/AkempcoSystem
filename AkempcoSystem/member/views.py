@@ -236,8 +236,9 @@ def upload_csv(request):
                     for col in csv.reader(io_string, delimiter=','):
                         pk = col[0]
                         creditor = Creditor.objects.get(pk=pk)
-                        if len(col) == 4:
-                            amt = col[3]
+                        print(col)
+                        try:
+                            amt = float(col[3])
 
                             payment = CreditorPayment(
                                 creditor=creditor,
@@ -245,10 +246,14 @@ def upload_csv(request):
                                 posted_by=request.user
                             )
                             payments.append(payment)
+                        except ValueError:
+                            # just proceed to the next row
+                            pass
 
                     # actual saving to database
                     for payment in payments:
                         payment.save()
+                        payment.creditor.fill_in_other_fields()
 
                 messages.success(
                     request, "Successully uploaded the file for member payments.")

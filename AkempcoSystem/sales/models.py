@@ -776,6 +776,7 @@ class Sales(models.Model):
         self.cashier = cashier
         self.status = Sales.COMPLETED
         self.save()
+        self.customer.fill_in_other_fields()
         return invoice.pk
 
     def set_customer(self, who):

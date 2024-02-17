@@ -12,6 +12,7 @@ from AkempcoSystem.decorators import user_is_allowed
 from admin_area.models import Feature, Store
 from fm.models import Product
 from stocks.models import ProductHistory
+from sales.models import ZReading, XReading
 
 
 @login_required
@@ -139,4 +140,32 @@ class InventoryTurnoverRatioDTView(ServerSideDatatableView):
         self.queryset = products
         self.columns = ['pk', 'barcode', 'full_description',
                         'cogs', 'avg_inventory', 'itr']
+        return super().get(request, *args, **kwargs)
+
+
+@login_required
+def sales_report(request):
+    akempco = Store.objects.all().first()
+    context = {
+        'akempco': akempco,
+        #     'product': get_object_or_404(Product, pk=pk)
+    }
+    return render(request, 'reports/sales_report.html', context)
+
+
+@method_decorator(login_required, name='dispatch')
+class GenerateSalesReport(ServerSideDatatableView):
+
+    def get(self, request, *args, **kwargs):
+        fromDate = request.GET.get('from', 0)
+        toDate = request.GET.get('to', 0)
+        print(fromDate, toDate)
+
+        qs = ZReading.objects.filter(
+            xreading__created_at__date__range=(fromDate, toDate))
+        print(qs)
+
+        self.queryset = qs
+        self.columns = ['pk', 'xreading__created_at', 'xreading__transaction_count',
+                        'xreading__void_count', 'xreading__total_sales']
         return super().get(request, *args, **kwargs)
