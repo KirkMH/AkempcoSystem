@@ -52,16 +52,6 @@
 
     <!-- Right navbar links -->
     <ul class="navbar-nav ml-auto">
-      <!-- Navbar Search -->
-      <li class="nav-item">
-        <h4 class="nav-link"><small>Hi, 
-          {% if user.last_name %}
-            {{ user.first_name.strip }} {{ user.last_name.strip }}
-          {% else %}
-            {{ user.get_username.strip }}
-          {% endif %}!
-        </small></h4>
-      </li>
 
       <!-- Notifications Dropdown Menu -->
       <li class="nav-item dropdown mt-1"> 
@@ -75,18 +65,17 @@
       <!-- settings -->
       <li class="nav-item dropdown mt-1"> 
         <a class="nav-link" data-toggle="dropdown" href="#"> 
-          <i class="fas fa-cogs"></i>
+          <i class="fas fa-user"></i>&nbsp;
+          {% if user.last_name %}
+            {{ user.first_name.strip }} {{ user.last_name.strip }}
+          {% else %}
+            {{ user.get_username.strip }}
+          {% endif %}&nbsp;<i class="fa fa-chevron-down"></i>
         </a> 
         <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right"> 
-          <span class="dropdown-item dropdown-header">Settings</span> 
-          <div class="dropdown-divider"></div> 
-          <a href="#" class="dropdown-item"> 
-            <i class="far fa-user-circle"></i> Profile
-          </a> 
           <a href="#" class="dropdown-item"> 
             <i class="fas fa-key"></i> Change password
           </a> 
-          <div class="dropdown-divider"></div> 
           <a href="{% url 'logout' %}" class="dropdown-item"> 
             <i class="fas fa-sign-out-alt"></i> Sign out
           </a> 
