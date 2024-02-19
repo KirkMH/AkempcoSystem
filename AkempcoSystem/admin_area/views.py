@@ -2,7 +2,13 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
+from django.db.models import Sum
+
+from dateutil.relativedelta import relativedelta
+from django.utils import timezone
+
 from fm.models import Product, Supplier
+from sales.models import XReading
 from purchases.models import PurchaseOrder
 from member.models import Creditor
 from .models import Feature, UserType
@@ -51,12 +57,33 @@ def dashboard_view(request):
     # number of suppliers
     supplier_count = Supplier.objects.filter(status='Active').count()
 
+    # get the month six months ago
+    six_months_ago = timezone.now() - relativedelta(months=5)
+
+    # calculate monthly sales
+    monthly_sales = []
+    displays = []
+    for i in range(6):
+        month = six_months_ago + relativedelta(months=i)
+        total = 0
+        total_sales = XReading.objects.filter(
+            created_at__month=month.month, created_at__year=month.year,
+            zreading__isnull=False).aggregate(
+            total_sales=Sum('total_sales'))['total_sales']
+        month_display = month.strftime('%B %Y')
+        if total_sales is not None:
+            total = float(total_sales)
+        monthly_sales.append(total)
+        displays.append(month_display)
+
     # pass to template
     context = {
         'critical_count': critical_count,
         'filled_percent': int(filled_percent),
         'member_count': member_count,
-        'supplier_count': supplier_count
+        'supplier_count': supplier_count,
+        'monthly_sales': monthly_sales,
+        'displays': displays
     }
     return render(request, 'dashboard.html', context)
 
