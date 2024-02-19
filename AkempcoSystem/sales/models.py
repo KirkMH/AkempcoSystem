@@ -1039,8 +1039,9 @@ class SalesInvoice(models.Model):
     def cancel(self, cashier, approver):
         # cancel parent sales record
         self.sales.status = Sales.CANCELLED
-        self.is_cancelled = True
         self.sales.save()
+        self.is_cancelled = True
+        self.save()
         # create SalesVoid for Void Transaction Number
         void = SalesVoid()
         void.sales_invoice = self
