@@ -1,3 +1,5 @@
+import csv
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView
@@ -12,7 +14,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 
 from admin_area.views import is_ajax
-from fm.models import Product
+from fm.models import Product, Category
 from admin_area.models import Feature, Store
 from .models import RequisitionVoucher, RV_Product, StockAdjustment
 from .forms import RV_ProductForm, StockAdjustmentForm
@@ -303,3 +305,57 @@ def cancel_adjustment(request, pk):
     adjustment.cancel(request.user)
     messages.success(request, "Stock adjustment was cancelled.")
     return redirect('adjustment_list')
+
+
+@login_required
+def inventory_count(request):
+    return render(request, "stocks/inventory_count.html")
+
+
+@login_required
+def inventory_count_form_store(request):
+    # Create the HttpResponse object with the appropriate CSV header.
+    response = HttpResponse(
+        content_type='text/csv',
+        headers={'Content-Disposition': 'attachment; filename="store-stocks.csv"'},
+    )
+
+    writer = csv.writer(response)
+    writer.writerow(["Barcode", 'Description', 'Store Stocks',
+                    "Physical Count", "Variance"])
+    categories = Category.objects.filter(status='ACTIVE')
+    for cat in categories:
+        writer.writerow(['', '', '', '', ''])
+        writer.writerow([cat.category_description, '', '', '', ''])
+        products = Product.objects.filter(
+            category=cat, status='ACTIVE').order_by('full_description')
+        for prod in products:
+            writer.writerow(["'" + str(prod.barcode), prod.full_description,
+                            prod.store_stocks, '', ''])
+
+    return response
+
+
+@login_required
+def inventory_count_form_warehouse(request):
+    # Create the HttpResponse object with the appropriate CSV header.
+    response = HttpResponse(
+        content_type='text/csv',
+        headers={
+            'Content-Disposition': 'attachment; filename="warehouse-stocks.csv"'},
+    )
+
+    writer = csv.writer(response)
+    writer.writerow(["Barcode", 'Description', 'Store Stocks',
+                    "Physical Count", "Variance"])
+    categories = Category.objects.filter(status='ACTIVE')
+    for cat in categories:
+        writer.writerow(['', '', '', '', ''])
+        writer.writerow([cat.category_description, '', '', '', ''])
+        products = Product.objects.filter(
+            category=cat, status='ACTIVE').order_by('full_description')
+        for prod in products:
+            writer.writerow(["'" + str(prod.barcode), prod.full_description,
+                            prod.warehouse_stocks, '', ''])
+
+    return response

@@ -101,7 +101,7 @@ class CriticalStockDTListView(ServerSideDatatableView):
 
 @login_required
 @user_is_allowed(Feature.RP_ITR)
-def inventoryTurnoverRatio(request, rpt):
+def inventoryTurnoverRatio(request):
     # update inventory turnover ratios of all products
     products = Product.objects.filter(status='ACTIVE')
     for p in products:
@@ -109,8 +109,7 @@ def inventoryTurnoverRatio(request, rpt):
     # render the page
     akempco = Store.objects.all().first()
     context = {
-        'akempco': akempco,
-        'rpt': rpt
+        'akempco': akempco
     }
     return render(request, 'reports/inventory_turnover_ratio.html', context)
 
@@ -120,22 +119,7 @@ def inventoryTurnoverRatio(request, rpt):
 class InventoryTurnoverRatioDTView(ServerSideDatatableView):
 
     def get(self, request, *args, **kwargs):
-        products = None
-
-        # if nothing is given, have ITR of all products
-        rpt = kwargs.get('rpt')
-        print(f"rpt: {rpt}")
-        if rpt == 0:
-            # slow-moving products only
-            products = Product.objects.filter(status='ACTIVE', itr__lte=3)
-
-        elif rpt == 1:
-            # fast-moving products only
-            products = Product.objects.filter(status='ACTIVE', itr__gte=7)
-
-        else:
-            # get ITR of all products
-            products = Product.objects.filter(status='ACTIVE')
+        products = Product.objects.filter(status='ACTIVE')
 
         self.queryset = products
         self.columns = ['pk', 'barcode', 'full_description',

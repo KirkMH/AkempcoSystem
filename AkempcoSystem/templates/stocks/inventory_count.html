@@ -1,0 +1,57 @@
+{% extends '../base.html' %}
+{% load static form_tags %}
+
+{% block extra_header %}
+{% include '../includes/datatable.html' %}    
+{% endblock extra_header %}
+
+{% block css %}
+    <link rel="stylesheet" href="{% static 'css/table_setup.css' %}">
+{% endblock css %}
+    
+{% block page_title %}Inventory Count{% endblock page_title %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item active">Inventory Count</li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+<div class="card m-4">
+    <form method="get">
+        <div class="card-header">
+            <div class="row">
+            <div class="col-12">
+                <a href="{% url 'inventory_count_form_store' %}" class="btn btn-info"><i class="fa fa-download"></i> Download Form for the Store</a>
+                <br /><br />
+                <a href="{% url 'inventory_count_form_warehouse' %}" class="btn btn-success"><i class="fa fa-download"></i> Download Form for the Warewehouse</a>
+            </div>
+            </div>
+        </div>
+    </form>
+    <div class="card-body">
+        <h4>Instructions</h4>
+        <ol>
+            <li>Download the inventory count form. It contains the list of items per category and the expected count from the system.</li>
+            <li>Print the form and bring it to the store and the warehouse.</li>
+            <li>Count the items and write the actual count on the form.</li>
+            <li>After counting, determine the items with variances.</li>
+            <li>Verify the quantity of these items by doing a recount.</li>
+            <li>Repeat steps 4 and 5 until either there are no variances or that the variance have been validated.</li>
+            <li>Create a stock adjustment request for each items with variances.</li>
+            <li>Submit the stock adjustment request for approval.</li>
+            <li>Let the admin perform the approved requests.</li>
+        </ol>
+    </div>
+</div>
+{% endblock main_content %}
+
+
+{% block js %}
+    <script>
+        $(document).ready(function() {
+            $("#menu_trans").addClass("menu-open")
+            $("#menu_inv_count").addClass("active")
+        })
+    </script>
+{% endblock js %}

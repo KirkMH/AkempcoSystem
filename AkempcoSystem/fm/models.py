@@ -434,7 +434,10 @@ class Product(models.Model):
         # computing beginning inventory, average inventory, and itr
         beg_inv = ending_inv + computed_cogs - purchases
         computed_avg_inventory = (beg_inv + ending_inv) / 2
-        computed_itr = computed_cogs / computed_avg_inventory
+        print(
+            f"beg_inv: {beg_inv}, ending_inv: {ending_inv}, computed_avg_inventory: {computed_avg_inventory}")
+        computed_itr = computed_cogs / \
+            computed_avg_inventory if computed_avg_inventory > 0 else 0
         # save computed results
         self.cogs = computed_cogs
         self.avg_inventory = computed_avg_inventory

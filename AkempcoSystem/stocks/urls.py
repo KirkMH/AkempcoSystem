@@ -3,7 +3,7 @@ from . import views
 
 urlpatterns = [
     path('', views.stock_list, name='stock_list'),
-    path('dt', views.StockDTListView.as_view(), name='stock_dtlist'),    
+    path('dt', views.StockDTListView.as_view(), name='stock_dtlist'),
     path('rv', views.rv_list, name='rv_list'),
     path('rv/dt', views.RVDTListView.as_view(), name='rv_dtlist'),
     path('rv/new', views.create_new_rv, name='new_rv'),
@@ -15,16 +15,30 @@ urlpatterns = [
     path('rv/<int:pk>/release', views.release_rv, name='release_rv'),
     path('rv/<int:pk>/receive', views.receive_rv, name='receive_rv'),
     path('rv/<int:pk>/clone', views.clone_rv, name='clone_rv'),
-    
+
     path('rv/<int:pk>/products', views.RVDetailView.as_view(), name='rv_products'),
-    path('rv/<int:pk>/products/add', views.RVProductCreateView.as_view(), name='rv_products_add'),
-    path('rv/products/<int:pk>/delete', views.delete_rv_product, name='delete_rv_product'),
-    path('rv/products/<int:pk>/update', views.RVProductUpdateView.as_view(), name='update_rv_product'),
+    path('rv/<int:pk>/products/add',
+         views.RVProductCreateView.as_view(), name='rv_products_add'),
+    path('rv/products/<int:pk>/delete',
+         views.delete_rv_product, name='delete_rv_product'),
+    path('rv/products/<int:pk>/update',
+         views.RVProductUpdateView.as_view(), name='update_rv_product'),
 
     path('adjustment', views.adjustment_list, name='adjustment_list'),
-    path('adjustment/dt', views.StockAdjustmentDTListView.as_view(), name='adjustment_dtlist'),
-    path('adjustment/new', views.StockAdjustmentCreateView.as_view(), name='adjustment_new'),
-    path('adjustment/<int:pk>/view', views.StockAdjustmentDetailView.as_view(), name='adjustment_view'),
-    path('adjustment/<int:pk>/approve', views.approve_adjustment, name='adjustment_approve'),
-    path('adjustment/<int:pk>/cancel', views.cancel_adjustment, name='adjustment_cancel'),
+    path('adjustment/dt', views.StockAdjustmentDTListView.as_view(),
+         name='adjustment_dtlist'),
+    path('adjustment/new', views.StockAdjustmentCreateView.as_view(),
+         name='adjustment_new'),
+    path('adjustment/<int:pk>/view',
+         views.StockAdjustmentDetailView.as_view(), name='adjustment_view'),
+    path('adjustment/<int:pk>/approve',
+         views.approve_adjustment, name='adjustment_approve'),
+    path('adjustment/<int:pk>/cancel',
+         views.cancel_adjustment, name='adjustment_cancel'),
+
+    path('count', views.inventory_count, name='inventory_count'),
+    path('count/store', views.inventory_count_form_store,
+         name='inventory_count_form_store'),
+    path('count/warehouse', views.inventory_count_form_warehouse,
+         name='inventory_count_form_warehouse'),
 ]

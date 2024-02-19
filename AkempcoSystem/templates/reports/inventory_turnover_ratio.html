@@ -27,22 +27,15 @@ Inventory Turnover Ratio Report<br>
 
 {% block main_content %}
 <div class="card m-4">
-    <form method="get">
-        <div class="card-header">
-            <div class="row">
-            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                <div class="form-group">
-                    <label for="filter">Filter:&nbsp;</label>
-                    <select style="display: inline; width: auto;" class="form-control" id="filter">
-                        <option value="0" {% if rpt == 0 %}selected{% endif %}>Slow-moving products</option>
-                        <option value="1" {% if rpt == 1 %}selected{% endif %}>Fast-moving products</option>
-                        <option value="2" {% if rpt == 2 %}selected{% endif %}>All products</option>
-                    </select>
-                </div>
-            </div>
-            </div>
+    <div class="card-header">
+        <div class="row">
+        <div class="col-12">
+            <p>Inventory Turnover Ratio is a financial metric used to measure how many times a company's inventory is sold and replaced within a specific period, usually a year.</p>
+            <h5 class="text-primary">Inventory Turnover Ratio = Cost of Goods Sold ÷ Average Inventory</h5>
+            <h5 class="text-info">Days Inventory = 365 ÷ Inventory Turnover Ratio</h5>
         </div>
-    </form>
+        </div>
+    </div>
     <div class="card-body table-responsive">
         <table id="dtItr" class="table table-hover table-head-fixed table-sm">
             <thead>
@@ -52,6 +45,7 @@ Inventory Turnover Ratio Report<br>
                     <th class="text-center">Cost of Goods Sold</th>
                     <th class="text-center">Average Inventory</th>
                     <th class="text-center">Inventory Turnover Ratio</th>
+                    <th class="text-center">Days Inventory</th>
                 </tr>
             </thead>
             <tbody>
@@ -69,7 +63,7 @@ Inventory Turnover Ratio Report<br>
             $("#dtItr").DataTable({
                 destroy: true,
                 serverSide: true,
-                sAjaxSource: "../../itr/" + val + "/dt", 
+                sAjaxSource: "{% url 'itr_dtlist' %}", 
                 columns: [
                     { name: 'barcode', data: 1, className: 'text-center'},
                     { name: 'full_description', data: 2},
@@ -90,6 +84,17 @@ Inventory Turnover Ratio Report<br>
                         }
                     },
                     { name: 'itr', data: 5, className: 'text-center'},
+                    { 
+                        name: 'days-inventory', 
+                        data: 5, 
+                        className: 'text-center',
+                        render: function(data) {
+                            if (data == 0) {
+                                return "N/A";
+                            }
+                            return (365 / data).toFixed(0) + " days";
+                        }
+                    },
                 ],
                 order: [[2, 'asc']],
             });
