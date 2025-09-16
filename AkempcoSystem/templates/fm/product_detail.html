@@ -69,7 +69,7 @@
             </div>
             <div class="row mb-2">
                 <div class="col-lg-4 col-md-4 col-sm-4">
-                    <p class="card-text"><span class="text-muted">Last price update: </span>{{ product.price_updated_on|naturaltime }}</p>
+                    <p class="card-text"><span class="text-muted">Last price update: </span>{{ product.price_updated_on|naturalday }}</p>
                 </div>
                 <div class="col-lg-4 col-md-4 col-sm-4">
                     <p class="card-text"><span class="text-muted">Created: </span>{{ product.created_at|naturaltime }}</p>

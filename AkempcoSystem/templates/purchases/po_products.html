@@ -65,7 +65,7 @@
         <div class="row invoice-info">
             <div class="col-lg-1 invoice-col">Status:</div>
             <div class="col-lg-5 invoice-col font-weight-bold">
-                {{ po.get_status }}
+                {{ po.status }}
                 
                 {% if po.is_rejected %}
                     <p class="text-danger">{{ po.reject_reason }}</p>

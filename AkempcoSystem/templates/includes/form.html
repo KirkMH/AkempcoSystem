@@ -16,9 +16,15 @@ It’s a collection of errors that are not related to a specific field.
 
 {% for field in form %}
 <div class="form-group">
-    {{ field.label_tag }}
-
-    {% render_field field class=field|input_class %}
+    {% if field.field.widget.input_type == 'checkbox' %}
+        <div class="form-check">
+            {% render_field field class=field|input_class %}
+            {{ field.label_tag }}
+    {% else %}
+        {{ field.label_tag }}
+        {% render_field field class=field|input_class %}
+    {% endif %}
+    
     {% for error in field.errors %}
         <div class="text-danger">
             <small>{{ error }}</small>
@@ -29,6 +35,9 @@ It’s a collection of errors that are not related to a specific field.
         <small class="form-text text-muted">
             {{ field.help_text|safe }}
         </small>
+    {% endif %}
+    {% if field.field.widget.input_type == 'checkbox' %}
+        </div>
     {% endif %}
 </div>
 {% endfor %}

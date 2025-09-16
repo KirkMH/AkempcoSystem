@@ -21,12 +21,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-$gazvcsu2fps$=3+_rmn^#hp2oca+%#c5p-9#n64eygiahf_2*'
+SECRET_KEY = 'secret-4B494B4B-akempco'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['akempco-system.herokuapp.com', '127.0.0.1']
+ALLOWED_HOSTS = ['127.0.0.1']
 
 
 # Application definition
@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'sales',    # POS
     'badorder',
     'member',
+    'import',
 ]
 
 # setting the default pack to be used by crispy-form
@@ -101,7 +102,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'django_akempcosystem',
         'USER': 'root',
-        'PASSWORD': 'p@$$w0rD',
+        'PASSWORD': 'p4$$DB',
         'HOST': 'localhost'
     }
 }
