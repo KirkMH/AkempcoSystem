@@ -2,30 +2,33 @@
 {% load static form_tags %}
 
 {% block extra_header %}
-{% include '../includes/datatable.html' %}    
+{% include '../includes/datatable.html' %}
 {% endblock extra_header %}
 
 {% block css %}
-    <link rel="stylesheet" href="{% static 'css/table_setup.css' %}">
-    <style>
-        tr.bg-danger a i {
-            color: rgb(220, 220, 220);
-        }
-        tr.bg-info a i {
-            color: rgb(55, 53, 53);
-        }
-    </style>
+<link rel="stylesheet" href="{% static 'css/table_setup.css' %}">
+<style>
+    tr.bg-danger a i {
+        color: rgb(220, 220, 220);
+    }
+
+    tr.bg-info a i {
+        color: rgb(55, 53, 53);
+    }
+</style>
 {% endblock css %}
-    
+
 {% block page_title %}
 {{ supplier.supplier_name }}
-<div class="text-muted"><h4>Purchase Orders</h4></div>
+<div class="text-muted">
+    <h4>Purchase Orders</h4>
+</div>
 {% endblock page_title %}
 
 {% block breadcrumb %}
-    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-    <li class="breadcrumb-item"><a href="{% url 'purchase_suppliers' %}">Purchases</a></li>
-    <li class="breadcrumb-item active">Purchase Orders</li>
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item"><a href="{% url 'purchase_suppliers' %}">Purchases</a></li>
+<li class="breadcrumb-item active">Purchase Orders</li>
 {% endblock breadcrumb %}
 
 {% block main_content %}
@@ -33,9 +36,9 @@
     <form method="get">
         <div class="card-header">
             <div class="row">
-            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
-                <a href="{% url 'po_create' supplier_pk %}" class="btn btn-primary">New Purchase Order</a>
-            </div>
+                <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
+                    <a href="{% url 'po_create' supplier.pk %}" class="btn btn-primary">New Purchase Order</a>
+                </div>
             </div>
         </div>
     </form>
@@ -61,55 +64,55 @@
 
 
 {% block js %}
-    <script>
-        $(document).ready(function() {
-            $("#dtPO").DataTable({
-                serverSide: true,
-                sAjaxSource: "{% url 'po_dtlist' %}", 
-                columns: [
-                    {   
-                        name: 'links',
-                        data: null,
-                        render: function (data) {
-                            
-                            if (data[5] === 'Open')
-                                return '<a href="../../po/'+ data[0] + '/products" title="Manage PO"><i class="fas fa-check-double"></i></a>';
-                            else
-                                return '<a href="../../po/'+ data[0] + '/products" title="View PO"><i class="far fa-eye"></i></a>';
-                        },
-                        className: 'text-center'
-                    },
-                    { 
-                        name: 'pk', 
-                        data: 0,
-                        render: function (data) {
-                            return String(data).padStart(12, '0');
-                        }
-                    },
-                    { 
-                        name: 'po_date', 
-                        data: 1,
-                        render: function (data) {
-                            return $.datepicker.formatDate('MM d, yy', new Date(data));
-                        }
-                    },
-                    { name: 'category', data: 2, className: 'text-center'},
-                    { name: 'item_count', data: 3, className: 'text-center'},
-                    {
-                        name: "total", 
-                        data: 4, 
-                        className: 'text-right',
-                        render: function (data) {
-                            return peso.format(data);
-                        }
-                    },
-                    { name: 'status', data: 5, className: 'text-center'},
-                ],
-                order: [[1, 'desc']],
-            });
+<script>
+    $(document).ready(function () {
+        $("#dtPO").DataTable({
+            serverSide: true,
+            sAjaxSource: "{% url 'po_dtlist' %}",
+            columns: [
+                {
+                    name: 'links',
+                    data: null,
+                    render: function (data) {
 
-            $("#menu_trans").addClass("menu-open")
-            $("#menu_trans_purchases").addClass("active")
-        })
-    </script>
+                        if (data[5] === 'Open')
+                            return '<a href="../../po/' + data[0] + '/products" title="Manage PO"><i class="fas fa-check-double"></i></a>';
+                        else
+                            return '<a href="../../po/' + data[0] + '/products" title="View PO"><i class="far fa-eye"></i></a>';
+                    },
+                    className: 'text-center'
+                },
+                {
+                    name: 'pk',
+                    data: 0,
+                    render: function (data) {
+                        return String(data).padStart(12, '0');
+                    }
+                },
+                {
+                    name: 'po_date',
+                    data: 1,
+                    render: function (data) {
+                        return $.datepicker.formatDate('MM d, yy', new Date(data));
+                    }
+                },
+                { name: 'category', data: 2, className: 'text-center' },
+                { name: 'item_count', data: 3, className: 'text-center' },
+                {
+                    name: "total",
+                    data: 4,
+                    className: 'text-right',
+                    render: function (data) {
+                        return peso.format(data);
+                    }
+                },
+                { name: 'status', data: 5, className: 'text-center' },
+            ],
+            order: [[1, 'desc']],
+        });
+
+        $("#menu_trans").addClass("menu-open")
+        $("#menu_trans_purchases").addClass("active")
+    })
+</script>
 {% endblock js %}

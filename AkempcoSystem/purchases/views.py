@@ -80,7 +80,8 @@ class ApprovalListView(ListView):
 @user_is_allowed(Feature.TR_PURCHASES)
 def supplier_orders(request, pk):
     request.session['po_supplier_id'] = pk
-    return render(request, "purchases/po_list.html", {'supplier_pk': pk})
+    supplier = get_object_or_404(Supplier, pk=pk)
+    return render(request, "purchases/po_list.html", {'supplier': supplier})
 
 
 # PO List of selected supplier
