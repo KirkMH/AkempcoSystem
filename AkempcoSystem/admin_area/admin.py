@@ -46,7 +46,7 @@ class UserAdmin(BaseUserAdmin):
         (_('Personal information'), 
             {'fields': ('first_name', 'last_name', 'email')}),
         (_('Permissions'), 
-            {'fields': ('is_active', 'is_staff')}),
+            {'fields': ('is_active', 'is_superuser')}),
         (_('Important dates'), 
             {'fields': ('last_login', 'date_joined')}),
     )
@@ -54,7 +54,7 @@ class UserAdmin(BaseUserAdmin):
     def get_form(self, request, obj=None, **kwargs):
          self.exclude = ("user_permissions", "user_groups")
          ## Dynamically overriding
-         self.fieldsets[2][1]["fields"] = ('is_active', 'is_staff')
+         self.fieldsets[2][1]["fields"] = ('is_active', 'is_superuser')
          form = super(UserAdmin, self).get_form(request, obj, **kwargs)
          return form
 
