@@ -377,8 +377,14 @@ def validate_gm_password(request):
 @login_required
 @user_is_allowed(Feature.TR_POS)
 def z_reading(request):
-    zreading = Sales.reports.generate_zreading(request.user)
-    if zreading == False:
+    pk = request.GET.get('pk', None)
+    mode = None
+    if pk:
+        zreading = get_object_or_404(ZReading, pk=pk)
+        mode = 'view'
+    else:
+        zreading = Sales.reports.generate_zreading(request.user)
+    if pk and zreading == False:
         # already generated; do not regenerate
         messages.error(
             request, "A Z-Reading has already been generated for today. No further POS transactions are allowed this time.")
@@ -386,7 +392,8 @@ def z_reading(request):
     else:
         context = {
             'xreading': zreading.xreading,
-            'zreading': zreading
+            'zreading': zreading,
+            'mode': mode
         }
         return render(request, 'sales/z_reading.html', context)
 

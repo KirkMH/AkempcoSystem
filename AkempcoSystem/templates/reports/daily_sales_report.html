@@ -69,9 +69,6 @@
             </tbody>
         </table>
     </div>
-    <div class="card-footer">
-        <a href="#" class="btn btn-success">Print</a>
-    </div>
 </div>
 {% endblock main_content %}
 
@@ -113,14 +110,18 @@
                 
                 $("#dtSales").DataTable({
                     serverSide: true,
-                    sAjaxSource: "{% url 'generate_sales_report' %}" + `?from=${strFrom}&to=${strTo}`, 
+                    dom: '<"no-print"B>frtip',
+                    buttons: [
+                        'copy', 'excel', 'pdf', 'csv'
+                    ],
+                    sAjaxSource: "{% url 'generate_daily_sales_report' %}" + `?from=${strFrom}&to=${strTo}`, 
                     columns: [
                         {
                             name: 'links',
                             data: 0,
                             className: 'text-center',
                             render: function(data) {
-                                return  '<a href="#" title="View Z-Reading"><i class="fas fa-report"></i></a>';
+                                return  '<a href="../../sales/pos/z_reading?pk=' + data + '" title="View Z-Reading" target="_blank"><i class="fa fa-file-invoice" aria-hidden="true"></i></a>';
                             }
                         },
                         { 
@@ -130,9 +131,24 @@
                                 return new Date(data).toDateString();
                             }
                         },
-                        { name: 'totalTrans', data: 2},
-                        { name: 'voidTrans', data: 3},
-                        { name: 'totalSales', data: 4},
+                        { 
+                            name: 'totalTrans', 
+                            data: 2, 
+                            className: 'text-center'
+                        },
+                        { 
+                            name: 'voidTrans', 
+                            data: 3, 
+                            className: 'text-center'
+                        },
+                        { 
+                            name: 'totalSales', 
+                            data: 4, 
+                            className: 'text-right', 
+                            render: function(data) { 
+                                return '₱ ' + data; 
+                            }
+                        },
                     ],
                     order: [[2, 'asc']],
                 });

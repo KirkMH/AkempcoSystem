@@ -128,17 +128,16 @@ class InventoryTurnoverRatioDTView(ServerSideDatatableView):
 
 
 @login_required
-def sales_report(request):
+def daily_sales_report(request):
     akempco = Store.objects.all().first()
     context = {
         'akempco': akempco,
-        #     'product': get_object_or_404(Product, pk=pk)
     }
-    return render(request, 'reports/sales_report.html', context)
+    return render(request, 'reports/daily_sales_report.html', context)
 
 
 @method_decorator(login_required, name='dispatch')
-class GenerateSalesReport(ServerSideDatatableView):
+class GenerateDailySalesReport(ServerSideDatatableView):
 
     def get(self, request, *args, **kwargs):
         fromDate = request.GET.get('from', 0)
@@ -147,11 +146,11 @@ class GenerateSalesReport(ServerSideDatatableView):
 
         if fromDate == 0 or toDate == 0:
             messages.error(request, 'Please select a valid date range')
-            return redirect('sales_report')
+            return redirect('daily_sales_report')
 
         elif fromDate > toDate:
             messages.error(request, 'From date should be less than to date')
-            return redirect('sales_report')
+            return redirect('daily_sales_report')
 
         qs = ZReading.objects.filter(
             xreading__created_at__date__range=(fromDate, toDate))

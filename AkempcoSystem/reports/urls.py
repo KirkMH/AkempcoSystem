@@ -21,7 +21,7 @@ urlpatterns = [
     path('itr/dt',
          views.InventoryTurnoverRatioDTView.as_view(), name='itr_dtlist'),
 
-    path('sales', views.sales_report, name='sales_report'),
-    path('sales/dt', views.GenerateSalesReport.as_view(),
-         name='generate_sales_report'),
+    path('sales/daily', views.daily_sales_report, name='daily_sales_report'),
+    path('sales/daily/dt', views.GenerateDailySalesReport.as_view(),
+         name='generate_daily_sales_report'),
 ]
