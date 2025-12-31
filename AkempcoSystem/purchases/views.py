@@ -201,6 +201,8 @@ class POProductCreateView(BSModalCreateView):
             prod_qty = po.get_product_ordered(form.instance.product)
             po_prod.ordered_quantity = ordered_quantity + prod_qty
             po_prod.purchase_order = po
+            if po_prod.unit_price > 0:
+                po_prod.is_price_originally_set = True
             po_prod.save()
             po_prod.compute_fields()
             po.fill_in_other_po_fields()

@@ -549,6 +549,10 @@ class PO_Product(models.Model):
         blank=True,
         default=0
     )
+    is_price_originally_set = models.BooleanField(
+        _("Price Originally Set?"),
+        default=False
+    )
     ordered_quantity = models.PositiveIntegerField(
         _("Ordered Quantity")
     )
