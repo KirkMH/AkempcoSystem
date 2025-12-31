@@ -13,10 +13,32 @@
 {% endblock breadcrumb %}
 
 {% block main_content %}
+<div class="mx-4">
+    <ul class="nav nav-pills">
+    <li class="nav-item">
+        <a class="nav-link active" href="#">Daily</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#">Weekly</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#">Monthly</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#">Yearly</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#">Per Product</a>
+    </li>
+    </ul>
+</div>
+
 <div class="card m-4">
     <div class="card-header">
         <div class="row">
         <div class="col-12">
+            <h5>Day-End (Daily) Sales Report</h5>
+            <div class="text-muted">Please select a date range to generate the report.</div>
             
             <form class="form-inline" id="sales-report-filter" name="sales-report-filter" method="get">
                 <div class="form-group p-2">

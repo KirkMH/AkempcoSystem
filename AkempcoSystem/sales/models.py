@@ -297,7 +297,7 @@ class SalesReport(models.Manager):
             .aggregate(val=Sum('quantity'))['val'] or 0
         t_count = SalesItem.objects \
             .filter(sales__in=sales, sales__status='Completed') \
-            .count() - 1
+            .count()
         xreading.transaction_count = t_count if t_count >= 0 else 0
         xreading.void_count = SalesVoid.objects \
             .filter(sales_invoice__sales__in=sales) \
@@ -362,6 +362,7 @@ class SalesReport(models.Manager):
         xreading = self.generate_report(sales, cashier)
         if xreading == None:
             return None
+        xreading.fill_in_other_fields()
 
         # Create a new Z-Reading
         zreading = ZReading()

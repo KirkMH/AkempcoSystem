@@ -145,6 +145,14 @@ class GenerateSalesReport(ServerSideDatatableView):
         toDate = request.GET.get('to', 0)
         print(fromDate, toDate)
 
+        if fromDate == 0 or toDate == 0:
+            messages.error(request, 'Please select a valid date range')
+            return redirect('sales_report')
+
+        elif fromDate > toDate:
+            messages.error(request, 'From date should be less than to date')
+            return redirect('sales_report')
+
         qs = ZReading.objects.filter(
             xreading__created_at__date__range=(fromDate, toDate))
         print(qs)
