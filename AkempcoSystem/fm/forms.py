@@ -1,5 +1,6 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
+from sales.models import Discount
 from .models import *
 
 
@@ -22,6 +23,41 @@ class UpdateUOMForm(forms.ModelForm):
     class Meta:
         model = UnitOfMeasure
         fields = ['uom_description', 'status']
+
+
+############################
+#       Discount
+############################
+class NewDiscountForm(forms.ModelForm):
+    necessity_only = forms.TypedChoiceField(
+        coerce=lambda x: x == 'True',
+        choices=[(True, 'Yes'), (False, 'No')],
+        widget=forms.Select,
+        required=False
+    )
+
+    required_css_class = 'required'
+    class Meta:
+        model = Discount
+        exclude = ['active']
+
+class UpdateDiscountForm(forms.ModelForm):
+    necessity_only = forms.TypedChoiceField(
+        coerce=lambda x: str(x).lower() == 'true',
+        choices=[(True, 'Yes'), (False, 'No')],
+        widget=forms.Select,
+        required=False
+    )
+    active = forms.TypedChoiceField(
+        coerce=lambda x: str(x).lower() == 'true',
+        choices=[(True, 'Yes'), (False, 'No')],
+        widget=forms.Select,
+        required=False
+    )
+    required_css_class = 'required'
+    class Meta:
+        model = Discount
+        fields = '__all__'
 
 
 ############################

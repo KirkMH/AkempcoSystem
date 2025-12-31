@@ -12,6 +12,7 @@ from django.db.models import Q
 from django_serverside_datatable.views import ServerSideDatatableView
 from AkempcoSystem.decorators import user_is_allowed
 from admin_area.models import Feature
+from sales.models import Discount
 from .models import *
 from .forms import *
 
@@ -69,7 +70,7 @@ class UomCreateView(CreateView):
                 return redirect('uom_list')
         
         else:
-            return render(request, 'fm/uom_new.html', {'form': form})
+            return render(request, 'fm/uom_form.html', {'form': form})
         
 
 @method_decorator(login_required, name='dispatch')
@@ -82,6 +83,56 @@ class UomUpdateView(SuccessMessageMixin, UpdateView):
     pk_url_kwarg = 'pk'
     success_url = reverse_lazy('uom_list')
     success_message = "%(uom_description)s was updated successfully."
+
+
+################################
+#   Discount
+################################
+
+@login_required()
+@user_is_allowed(Feature.FM_DISCOUNT)
+def discount_list(request):
+    return render(request, 'fm/discount_list.html')
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.FM_DISCOUNT), name='dispatch')
+class DiscountDTListView(ServerSideDatatableView):
+    # queryset is all discounts ordered by active (true first) and name
+    queryset = Discount.objects.all().order_by('-active', 'name')
+    columns = ['pk', 'name', 'discount_type', 'necessity_only', 'value', 'active']
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.FM_DISCOUNT), name='dispatch')
+class DiscountCreateView(CreateView):
+    model = Discount
+    form_class = NewDiscountForm
+    template_name = 'fm/discount_form.html'
+
+    def post(self, request, *args, **kwargs):
+        form = NewDiscountForm(request.POST)
+        if form.is_valid():
+            discount = form.save()
+            discount.save()
+            messages.success(request, discount.name + " discount was created successfully.")
+            if "another" in request.POST:
+                return redirect('new_discount')
+            else:
+                return redirect('discount_list')
+        
+        else:
+            return render(request, 'fm/discount_form.html', {'form': form})
+        
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(user_is_allowed(Feature.FM_DISCOUNT), name='dispatch')
+class DiscountUpdateView(SuccessMessageMixin, UpdateView):
+    model = Discount
+    context_object_name = 'discount'
+    form_class = UpdateDiscountForm
+    template_name = "fm/discount_form.html"
+    pk_url_kwarg = 'pk'
+    success_url = reverse_lazy('discount_list')
+    success_message = "%(name)s discount was updated successfully."
 
 
 
@@ -101,7 +152,7 @@ class CategoryDTListView(ServerSideDatatableView):
 	columns = ['pk', 'category_description', 'status']
     
 @method_decorator(login_required, name='dispatch')
-@method_decorator(user_is_allowed(Feature.FM_UOM), name='dispatch')
+@method_decorator(user_is_allowed(Feature.FM_CATEGORY), name='dispatch')
 class CategoryCreateView(CreateView):
     model = Category
     form_class = NewCategoryForm
@@ -119,11 +170,11 @@ class CategoryCreateView(CreateView):
                 return redirect('category_list')
         
         else:
-            return render(request, 'fm/category_new.html', {'form': form})
+            return render(request, 'fm/category_form.html', {'form': form})
         
 
 @method_decorator(login_required, name='dispatch')
-@method_decorator(user_is_allowed(Feature.FM_UOM), name='dispatch')
+@method_decorator(user_is_allowed(Feature.FM_CATEGORY), name='dispatch')
 class CategoryUpdateView(SuccessMessageMixin, UpdateView):
     model = Category
     context_object_name = 'category'
@@ -176,7 +227,7 @@ class SupplierCreateView(CreateView):
                 return redirect('supplier_list')
         
         else:
-            return render(request, 'fm/supplier_new.html', {'form': form})
+            return render(request, 'fm/supplier_form.html', {'form': form})
         
 
 @method_decorator(login_required, name='dispatch')
@@ -241,7 +292,7 @@ class ProductCreateView(CreateView):
                 return redirect('product_list')
         
         else:
-            return render(request, 'fm/product_new.html', {'form': form})
+            return render(request, 'fm/product_form.html', {'form': form})
         
 
 @method_decorator(login_required, name='dispatch')

@@ -8,6 +8,11 @@ urlpatterns = [
     path('uom/new/', views.UomCreateView.as_view(), name='new_uom'),
     path('uom/<int:pk>/edit/', views.UomUpdateView.as_view(), name='edit_uom'),
 
+    path('discount', views.discount_list, name='discount_list'),
+    path('discount/dt', views.DiscountDTListView.as_view(), name='discount_dtlist'),
+    path('discount/new/', views.DiscountCreateView.as_view(), name='new_discount'),
+    path('discount/<int:pk>/edit/', views.DiscountUpdateView.as_view(), name='edit_discount'),
+
     path('category', views.category_list, name='category_list'),
     path('category/dt', views.CategoryDTListView.as_view(), name='category_dtlist'),
     path('category/new/', views.CategoryCreateView.as_view(), name='new_category'),
