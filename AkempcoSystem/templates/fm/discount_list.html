@@ -1,0 +1,78 @@
+{% extends '../base.html' %}
+{% load static %}
+
+{% block extra_header %}
+{% include '../includes/datatable.html' %}    
+{% endblock extra_header %}
+
+{% block page_title %}List of Discounts{% endblock page_title %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item active">Discount</li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+    <div class="card m-4">
+        <form method="get">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                        <a href="{% url 'new_discount' %}" class="btn btn-primary">New</a>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <div class="card-body table-responsive">
+            <table id="dtDiscount" class="table table-hover table-head-fixed table-sm">
+                <thead>
+                    <tr>
+                        <th class="text-center" width="10%">Action</th>
+                        <th>Discount Name</th>
+                        <th>Necessity Only</th>
+                        <th>Value</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+{% endblock main_content %}
+
+
+{% block js %}
+    <script>
+        $(document).ready(function() {
+            $("#dtDiscount").DataTable({
+                serverSide: true,
+                sAjaxSource: "{% url 'discount_dtlist' %}", 
+                columns: [
+                    {   
+                        data: 0,
+                        render: function (data) {
+                            return '<a href="discount/' + data + '/edit" title="Edit"><i class="far fa-edit"></i></a>';
+                        },
+                        className: 'text-center'
+                    },
+                    {name: "name", data: 1},
+                    {name: "necessity_only", data: 3, render: function (data) {
+                        return data ? "Yes" : "No";
+                    }},
+                    {name: "value", data: null, render: function (data) {
+                        return data[2] == 'peso' ? 'Php ' + data[4] : data[4] + '%';
+                    }},
+                    {name: "active", data: 5, render: function (data) {
+                        return data ? "Active" : "Inactive";
+                    }},
+                ],
+                order: [[1, 'asc']],
+            });
+            
+            $("#menu_fm").addClass("menu-open")
+            $("#menu_fm_discount").addClass("active")
+        })
+    </script>
+{% endblock js %}
+    
