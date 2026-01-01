@@ -24,4 +24,7 @@ urlpatterns = [
     path('sales/daily', views.daily_sales_report, name='daily_sales_report'),
     path('sales/daily/dt', views.GenerateDailySalesReport.as_view(),
          name='generate_daily_sales_report'),
+    path('sales/product', views.product_sales_report, name='product_sales_report'),
+    path('sales/product/dt', views.GenerateProductSalesReport.as_view(),
+         name='generate_product_sales_report'),
 ]

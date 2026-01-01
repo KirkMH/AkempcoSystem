@@ -1,0 +1,160 @@
+{% extends '../base.html' %}
+{% load static form_tags %}
+
+{% block extra_header %}
+{% include '../includes/datatable.html' %}    
+{% endblock extra_header %}
+
+{% block page_title %}Sales Report{% endblock page_title %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+    <li class="breadcrumb-item active">Sales Report</li>
+{% endblock breadcrumb %}
+
+{% block main_content %}
+<div class="mx-4">
+    <ul class="nav nav-pills">
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'daily_sales_report' %}">Daily</a>
+    </li>
+    <!--
+    <li class="nav-item">
+        <a class="nav-link" href="#">Monthly</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#">Yearly</a>
+    </li>
+    -->
+    <li class="nav-item">
+        <a class="nav-link active" href="#">Per Product</a>
+    </li>
+    </ul>
+</div>
+
+<div class="card m-4">
+    <div class="card-header">
+        <div class="row">
+        <div class="col-12">
+            <h5>Product Sales Report</h5>
+            <div class="text-muted">Please select a date range to generate the report.</div>
+            
+            <form class="form-inline" id="sales-report-filter" name="sales-report-filter" method="get">
+                <div class="form-group p-2">
+                    <label class="pr-2" for="from">From:</label>
+                    <input class="form-control" type="date" name="from" id="from" />
+                </div>
+                <div class="form-group p-2">
+                    <label class="pr-2" for="to">To:</label>
+                    <input class="form-control" type="date" name="to" id="to" />
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="generate" name="generate">Generate</button>
+            </form>
+        </div>
+        </div>
+    </div>
+    <div class="card-body table-responsive">
+        <table id="dtSales" class="table table-hover table-head-fixed table-sm">
+            <thead>
+                <tr>
+                    <th class="text-center">Barcode</th>
+                    <th class="text-center">Product Description</th>
+                    <th class="text-center">Number of Sold Items</th>
+                    <th width="10%" class="text-center">Total COGS</th>
+                    <th width="10%" class="text-center">Total Sales</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock main_content %}
+
+
+{% block js %}
+    <script src="{% static 'js/date-format.js' %}"></script>
+    <script>
+        $(document).ready(function() {
+            $("#generate").on("click", () => {
+                const strFrom = $("#from").val();
+                const strTo = $("#to").val();
+                const from = Date.parse(strFrom);
+                const to = Date.parse(strTo);
+
+                // make sure from and to are valid dates
+                if (isNaN(from) || isNaN(to)) {
+                    toastr.error("Please enter valid dates in both From and To fields.");
+                    return;
+                }
+                // from must not be greater than to
+                if (from > to) {
+                    toastr.error("The From date must not be later than the To date.");
+                    return;
+                }
+                // from and to must not be in the future
+                const now = Date.now();
+                if (from > now || to > now) {
+                    toastr.error("Neither the From date nor the To date can be in the future.");
+                    return;
+                }
+
+                $(".card-body").show();
+                $(".card-footer").show();
+
+                if ( $.fn.dataTable.isDataTable( '#dtSales' ) ) {
+                    table = $('#dtSales').DataTable();
+                    table.destroy();
+                }
+                
+                $("#dtSales").DataTable({
+                    serverSide: true,
+                    dom: '<"no-print"B>frtip',
+                    buttons: [
+                        'copy', 'excel', 'pdf', 'csv'
+                    ],
+                    sAjaxSource: "{% url 'generate_product_sales_report' %}" + `?from=${strFrom}&to=${strTo}`, 
+                    columns: [
+                        {
+                            name: 'barcode',
+                            data: 1,
+                            className: 'text-center',
+                        },
+                        { 
+                            name: 'product_description', 
+                            data: 2,
+                        },
+                        { 
+                            name: 'number_of_sold_items', 
+                            data: 3, 
+                            className: 'text-center'
+                        },
+                        { 
+                            name: 'total_cogs', 
+                            data: 4, 
+                            className: 'text-right', 
+                            render: function(data) { 
+                                return '₱ ' + data; 
+                            }
+                        },
+                        { 
+                            name: 'total_sales', 
+                            data: 5, 
+                            className: 'text-right', 
+                            render: function(data) { 
+                                return '₱ ' + data; 
+                            }
+                        },
+                    ],
+                    order: [[1, 'asc']],
+                });
+            });
+
+                
+            $("#menu_rpt").addClass("menu-open")
+            $("#menu_rpt_sales").addClass("active");
+            $(".card-body").hide();
+            $(".card-footer").hide();
+        })
+    </script>
+{% endblock js %}

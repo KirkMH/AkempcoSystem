@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.shortcuts import get_object_or_404
 from django.db.models import Sum, F, Max, Min
 import decimal
 from datetime import datetime
@@ -8,6 +9,7 @@ from django.contrib.auth.models import User
 from fm.models import Product
 from admin_area.models import get_vatable_percentage, is_store_vatable
 from stocks.models import StoreStock, ProductHistory
+from reports.models import ProductSalesReport, ProductSalesReportItem
 
 
 class Discount(models.Model):
@@ -386,6 +388,49 @@ class SalesReport(models.Manager):
         print(f"zreading: {zreading}")
         zreading.save()
         return zreading
+
+    def generate_product_sales_report(self, cashier, fromDate, toDate):
+        sales = Sales.objects.filter(
+            salesinvoice__sales_datetime__date__range=(fromDate, toDate)
+        ).filter(status='Completed')
+        print(f"sales: {sales}")
+
+        # gather all products sold in these sales
+        sale_items = SalesItem.objects.filter(sales__in=sales)
+        print(f"sale_items: {sale_items}")
+        cogs = SalesItemCogs.objects.filter(sales_item__in=sale_items)
+        print(f"cogs: {cogs}")
+        # unique products from sale_items
+        products = sale_items.values('product').distinct()
+        print(f"products: {products}")
+
+        # needed columns: barcode, product description, number of sold items, total sales, total cogs
+        report = ProductSalesReport()
+        report.generated_by = cashier
+        report.save()
+        for product in products:
+            # sold_items is the sum of quantity of all sales_items for this product
+            sold_items = sale_items.filter(product=product['product']).aggregate(total=Sum('quantity'))['total']
+            print(f"sold_items: {sold_items}")
+            # total_sales is the sum of subtotal of all sales_items for this product
+            total_sales = sale_items.filter(product=product['product']).aggregate(total=Sum('subtotal'))['total']
+            print(f"total_sales: {total_sales}")
+            # total_cogs is the sum of cogs of all sales_items for this product
+            filtered_cogs = cogs.filter(sales_item__product=product['product'], sales_item__in=sale_items)
+            total_cogs = 0
+            for item in filtered_cogs:
+                total_cogs += item.cogs * item.quantity #cogs is a property (supplier's price) that is not a field in the database
+            print(f"total_cogs: {total_cogs}")
+
+            report_item = ProductSalesReportItem()
+            report_item.report = report
+            report_item.product = get_object_or_404(Product, pk=product['product'])
+            report_item.number_of_sold_items = sold_items
+            report_item.total_sales = total_sales
+            report_item.total_cogs = total_cogs
+            report_item.save()
+        
+        return report
 
 
 class Sales(models.Model):

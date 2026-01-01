@@ -12,7 +12,7 @@ from AkempcoSystem.decorators import user_is_allowed
 from admin_area.models import Feature, Store
 from fm.models import Product
 from stocks.models import ProductHistory
-from sales.models import ZReading, XReading
+from sales.models import ZReading, Sales, ProductSalesReportItem
 
 
 @login_required
@@ -133,7 +133,7 @@ def daily_sales_report(request):
     context = {
         'akempco': akempco,
     }
-    return render(request, 'reports/daily_sales_report.html', context)
+    return render(request, 'reports/sales_report_daily.html', context)
 
 
 @method_decorator(login_required, name='dispatch')
@@ -146,11 +146,11 @@ class GenerateDailySalesReport(ServerSideDatatableView):
 
         if fromDate == 0 or toDate == 0:
             messages.error(request, 'Please select a valid date range')
-            return redirect('daily_sales_report')
+            return redirect('sales_report_daily')
 
         elif fromDate > toDate:
             messages.error(request, 'From date should be less than to date')
-            return redirect('daily_sales_report')
+            return redirect('sales_report_daily')
 
         qs = ZReading.objects.filter(
             xreading__created_at__date__range=(fromDate, toDate))
@@ -159,4 +159,37 @@ class GenerateDailySalesReport(ServerSideDatatableView):
         self.queryset = qs
         self.columns = ['pk', 'xreading__created_at', 'xreading__transaction_count',
                         'xreading__void_count', 'xreading__total_sales']
+        return super().get(request, *args, **kwargs)
+
+
+@login_required
+def product_sales_report(request):
+    akempco = Store.objects.all().first()
+    context = {
+        'akempco': akempco,
+    }
+    return render(request, 'reports/sales_report_product.html', context)
+
+
+@method_decorator(login_required, name='dispatch')
+class GenerateProductSalesReport(ServerSideDatatableView):
+
+    def get(self, request, *args, **kwargs):
+        fromDate = request.GET.get('from', 0)
+        toDate = request.GET.get('to', 0)
+        print(fromDate, toDate)
+
+        if fromDate == 0 or toDate == 0:
+            messages.error(request, 'Please select a valid date range')
+            return redirect('product_sales_report')
+
+        elif fromDate > toDate:
+            messages.error(request, 'From date should be less than to date')
+            return redirect('product_sales_report')
+
+        report = Sales.reports.generate_product_sales_report(cashier=request.user, fromDate=fromDate, toDate=toDate)
+        print(report)
+
+        self.queryset = ProductSalesReportItem.objects.filter(report=report)
+        self.columns = ['pk', 'product__barcode', 'product__full_description', 'number_of_sold_items', 'total_cogs', 'total_sales']
         return super().get(request, *args, **kwargs)
