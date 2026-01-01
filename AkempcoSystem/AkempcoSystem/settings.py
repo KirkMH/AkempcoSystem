@@ -26,7 +26,7 @@ SECRET_KEY = 'secret-4B494B4B-akempco'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1']
+ALLOWED_HOSTS = ['akempco.pythonanywhere.com', '127.0.0.1']
 
 
 # Application definition
@@ -104,6 +104,13 @@ DATABASES = {
         'USER': 'root',
         'PASSWORD': 'p4$$DB',
         'HOST': 'localhost'
+    },
+    'prod': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'akempco$default',
+        'USER': 'akempco',
+        'PASSWORD': 'C00perative',
+        'HOST': 'akempco.mysql.pythonanywhere-services.com'
     }
 }
 
