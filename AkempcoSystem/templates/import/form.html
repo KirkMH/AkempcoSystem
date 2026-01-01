@@ -16,6 +16,20 @@ Import {% if type == 'D' %}Data{% elif type == 'S' %}Suppliers{% elif type == 'C
 {% endblock breadcrumb %}
 
 {% block main_content %}
+<div class="mx-4">
+    <ul class="nav nav-pills">
+    <li class="nav-item">
+        <a class="nav-link {% if type == 'D' %}active{% endif %}" href="{% url 'import_form' %}?type=D">Data</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if type == 'S' %}active{% endif %}" href="{% url 'import_form' %}?type=S">Suppliers</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if type == 'C' %}active{% endif %}" href="{% url 'import_form' %}?type=C">Creditors</a>
+    </li>
+    </ul>
+</div>
+
     <div class="card m-4">
         {% if msg %}
             <div class="alert alert-{{ msg_type }}">
@@ -50,13 +64,7 @@ Import {% if type == 'D' %}Data{% elif type == 'S' %}Suppliers{% elif type == 'C
     <script>
         $(document).ready(function() {
             $("#menu_trans").addClass("menu-open")
-            if ('{{ type }}' == 'D') {
-                $("#menu_import_data").addClass("active")
-            } else if ('{{ type }}' == 'S') {
-                $("#menu_import_suppliers").addClass("active")
-            } else if ('{{ type }}' == 'C') {
-                $("#menu_import_creditors").addClass("active")
-            }
+            $("#menu_import_data").addClass("active")
         })
     </script>
 {% endblock js %}
