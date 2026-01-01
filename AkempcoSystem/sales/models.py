@@ -297,10 +297,7 @@ class SalesReport(models.Manager):
         xreading.items_sold = SalesItem.objects \
             .filter(sales__in=sales, sales__status='Completed') \
             .aggregate(val=Sum('quantity'))['val'] or 0
-        t_count = SalesItem.objects \
-            .filter(sales__in=sales, sales__status='Completed') \
-            .count()
-        xreading.transaction_count = t_count if t_count >= 0 else 0
+        xreading.transaction_count = sales.count()
         xreading.void_count = SalesVoid.objects \
             .filter(sales_invoice__sales__in=sales) \
             .count()
