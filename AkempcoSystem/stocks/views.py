@@ -308,11 +308,6 @@ def cancel_adjustment(request, pk):
 
 
 @login_required
-def inventory_count(request):
-    return render(request, "stocks/inventory_count.html")
-
-
-@login_required
 def inventory_count_form_store(request):
     # Create the HttpResponse object with the appropriate CSV header.
     response = HttpResponse(

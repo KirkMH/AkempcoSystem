@@ -36,7 +36,6 @@ urlpatterns = [
     path('adjustment/<int:pk>/cancel',
          views.cancel_adjustment, name='adjustment_cancel'),
 
-    path('count', views.inventory_count, name='inventory_count'),
     path('count/store', views.inventory_count_form_store,
          name='inventory_count_form_store'),
     path('count/warehouse', views.inventory_count_form_warehouse,

@@ -1,9 +1,11 @@
+from reports.models import InventoryCountItem
 from django.shortcuts import render, get_object_or_404
-from django.views.generic import ListView, DetailView
+from django.urls import reverse_lazy
+from django.views.generic import DetailView, CreateView, UpdateView
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from django.db.models import Q, F
+from django.db.models import F
 from django_serverside_datatable.views import ServerSideDatatableView
 
 # from fm.views import get_index, add_search_key
@@ -13,6 +15,8 @@ from admin_area.models import Feature, Store
 from fm.models import Product
 from stocks.models import ProductHistory
 from sales.models import ZReading, Sales, ProductSalesReportItem
+from .models import InventoryCountReport
+from .forms import InventoryCountReportForm
 
 
 @login_required
@@ -193,3 +197,97 @@ class GenerateProductSalesReport(ServerSideDatatableView):
         self.queryset = ProductSalesReportItem.objects.filter(report=report)
         self.columns = ['pk', 'product__barcode', 'product__full_description', 'number_of_sold_items', 'total_cogs', 'total_sales']
         return super().get(request, *args, **kwargs)
+
+
+
+@login_required
+def inventory_count(request):
+    return render(request, "reports/inventory_count.html")
+
+
+@method_decorator(login_required, name='dispatch')
+class InventoryCountDTView(ServerSideDatatableView):
+    def get(self, request, *args, **kwargs):
+        self.queryset = InventoryCountReport.objects.all()
+        print(self.queryset)
+        self.columns = ['pk', 'description', 'inventory_date', 'warehouse_count_status', 'store_count_status', 'overall_status', 'generated_by__username', 'created_at']
+        return super().get(request, *args, **kwargs)
+
+
+@method_decorator(login_required, name='dispatch')
+class InventoryCountCreateView(CreateView):
+    model = InventoryCountReport
+    template_name = 'reports/inventory_count_new.html'
+    form_class = InventoryCountReportForm
+
+    def form_valid(self, form):
+        form.instance.generated_by = self.request.user
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy('inventory_count_view', kwargs={'pk': self.object.pk})
+
+
+@method_decorator(login_required, name='dispatch')
+class InventoryCountUpdateView(UpdateView):
+    model = InventoryCountReport
+    template_name = 'reports/inventory_count_new.html'
+    form_class = InventoryCountReportForm
+
+    def form_valid(self, form):
+        form.instance.generated_by = self.request.user
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy('inventory_count_view', kwargs={'pk': self.object.pk})
+
+
+@method_decorator(login_required, name='dispatch')
+class InventoryCountDetailView(DetailView):
+    model = InventoryCountReport
+    template_name = 'reports/inventory_count_detail.html'
+    context_object_name = 'report'
+
+
+@login_required
+def show_inventory_cycle(request, pk):
+    report = InventoryCountReport.objects.get(pk=pk)
+    location = request.GET.get('location', 'warehouse')
+    cycle = request.GET.get('cycle', 1)
+    is_open = True
+    if location == 'warehouse' and report.was_warehouse_count_completed():
+        is_open = False
+    elif location == 'store' and report.was_store_count_completed():
+        is_open = False
+
+    data = report.get_summary(location, cycle)
+
+    context = {
+        'report': report,
+        'location': location,
+        'cycle': cycle,
+        'is_open': is_open,
+        'data': data
+    }
+    return render(request, 'reports/inventory_count_cycle.html', context)
+
+
+@method_decorator(login_required, name='dispatch')
+class InventoryCountCycleDTView(ServerSideDatatableView):
+    def get(self, request, *args, **kwargs):
+        report = InventoryCountReport.objects.get(pk=kwargs['pk'])
+        location = request.GET.get('location', 'warehouse')
+        cycle = request.GET.get('cycle', 1)
+        self.queryset = InventoryCountItem.objects.filter(report=report, location=location, cycle=cycle)
+        self.columns = ['pk', 'product__barcode', 'product__full_description', 'expected_count', 'physical_count', 'variance']
+        return super().get(request, *args, **kwargs)
+
+
+@login_required
+def upload_inventory_count(request, pk):
+    pass
+
+
+@login_required
+def accept_inventory_count(request, pk):
+    pass
