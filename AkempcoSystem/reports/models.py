@@ -183,11 +183,28 @@ class InventoryCountReport(models.Model):
         return 0
 
     def get_last_cycle(self, location):
-        if location == "Warehouse":
+        if location.lower() == "warehouse":
             return self.last_warehouse_cycle()
-        elif location == "Store":
+        elif location.lower() == "store":
             return self.last_store_cycle()
         return 0
+
+    def update_completed_date(self, location, cycle):
+        if location.lower() == "warehouse":
+            if cycle == 1:
+                self.warehouse_cycle_1 = timezone.now()
+            elif cycle == 2:
+                self.warehouse_cycle_2 = timezone.now()
+            elif cycle == 3:
+                self.warehouse_cycle_3 = timezone.now()
+        elif location.lower() == "store":
+            if cycle == 1:
+                self.store_cycle_1 = timezone.now()
+            elif cycle == 2:
+                self.store_cycle_2 = timezone.now()
+            elif cycle == 3:
+                self.store_cycle_3 = timezone.now()
+        self.save()
 
     def was_warehouse_count_completed(self):
         return self.warehouse_count_status == "Completed"
@@ -245,7 +262,7 @@ class InventoryCountItem(models.Model):
         _("Expected Count"),
         default=0
     )
-    variance = models.PositiveIntegerField(
+    variance = models.IntegerField(
         _("Variance"),
         default=0
     )

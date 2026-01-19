@@ -16,6 +16,7 @@ from django.utils.decorators import method_decorator
 from admin_area.views import is_ajax
 from fm.models import Product, Category
 from admin_area.models import Feature, Store
+from reports.models import InventoryCountItem
 from .models import RequisitionVoucher, RV_Product, StockAdjustment
 from .forms import RV_ProductForm, StockAdjustmentForm
 
@@ -307,50 +308,70 @@ def cancel_adjustment(request, pk):
     return redirect('adjustment_list')
 
 
-@login_required
-def inventory_count_form_store(request):
+def _generate_inventory_csv(location, cycle, report_id):
     # Create the HttpResponse object with the appropriate CSV header.
+    filename = f"{location.lower()}-stocks.csv"
     response = HttpResponse(
         content_type='text/csv',
-        headers={'Content-Disposition': 'attachment; filename="store-stocks.csv"'},
+        headers={'Content-Disposition': f'attachment; filename="{filename}"'},
     )
 
     writer = csv.writer(response)
-    writer.writerow(["Barcode", 'Description', 'Store Stocks',
-                    "Physical Count", "Variance"])
+    writer.writerow(['ID (Do not modify)', 'Barcode',
+                    'Description', 'Physical Count'])
+
+    # Fetch all active categories to maintain order and include empty ones
     categories = Category.objects.filter(status='ACTIVE')
+    category_map = {c.pk: c for c in categories}
+
+    # Fetch products efficiently
+    products_by_category = {}
+    
+    if cycle == 1:
+        # For cycle 1, fetch all active products
+        products_qs = Product.objects.filter(
+            status='ACTIVE'
+        ).select_related('category').order_by('full_description')
+    else:
+        # For other cycles, fetch products with variances from the previous cycle
+        prod_ids = InventoryCountItem.objects.filter(
+            cycle=cycle-1, 
+            location=location, 
+            report_id=report_id
+        ).exclude(variance=0).values_list('product', flat=True)
+        
+        products_qs = Product.objects.filter(
+            pk__in=prod_ids
+        ).select_related('category').order_by('full_description')
+
+    # Group products by category in memory
+    for prod in products_qs:
+        # Only include products belonging to active categories
+        if prod.category_id in category_map:
+            products_by_category.setdefault(prod.category_id, []).append(prod)
+
+    # Write to CSV
     for cat in categories:
-        writer.writerow(['', '', '', '', ''])
-        writer.writerow([cat.category_description, '', '', '', ''])
-        products = Product.objects.filter(
-            category=cat, status='ACTIVE').order_by('full_description')
-        for prod in products:
-            writer.writerow(["'" + str(prod.barcode), prod.full_description,
-                            prod.store_stocks, '', ''])
+        writer.writerow(['', '', '', ''])
+        writer.writerow([cat.category_description, '', '', ''])
+        
+        cat_products = products_by_category.get(cat.pk, [])
+        for prod in cat_products:
+            writer.writerow(
+                [prod.pk, "'" + str(prod.barcode), prod.full_description, ''])
 
     return response
+
+
+@login_required
+def inventory_count_form_store(request):
+    cycle = int(request.GET.get('cycle', 1))
+    report_id = request.GET.get('report_id', None)
+    return _generate_inventory_csv("Store", cycle, report_id)
 
 
 @login_required
 def inventory_count_form_warehouse(request):
-    # Create the HttpResponse object with the appropriate CSV header.
-    response = HttpResponse(
-        content_type='text/csv',
-        headers={
-            'Content-Disposition': 'attachment; filename="warehouse-stocks.csv"'},
-    )
-
-    writer = csv.writer(response)
-    writer.writerow(["Barcode", 'Description', 'Store Stocks',
-                    "Physical Count", "Variance"])
-    categories = Category.objects.filter(status='ACTIVE')
-    for cat in categories:
-        writer.writerow(['', '', '', '', ''])
-        writer.writerow([cat.category_description, '', '', '', ''])
-        products = Product.objects.filter(
-            category=cat, status='ACTIVE').order_by('full_description')
-        for prod in products:
-            writer.writerow(["'" + str(prod.barcode), prod.full_description,
-                            prod.warehouse_stocks, '', ''])
-
-    return response
+    cycle = int(request.GET.get('cycle', 1))
+    report_id = request.GET.get('report_id', None)
+    return _generate_inventory_csv("Warehouse", cycle, report_id)

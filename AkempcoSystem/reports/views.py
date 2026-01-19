@@ -1,12 +1,14 @@
 from reports.models import InventoryCountItem
-from django.shortcuts import render, get_object_or_404
-from django.urls import reverse_lazy
+from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse_lazy, reverse 
 from django.views.generic import DetailView, CreateView, UpdateView
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.db.models import F
 from django_serverside_datatable.views import ServerSideDatatableView
+import csv
+import io
 
 # from fm.views import get_index, add_search_key
 
@@ -253,19 +255,19 @@ class InventoryCountDetailView(DetailView):
 def show_inventory_cycle(request, pk):
     report = InventoryCountReport.objects.get(pk=pk)
     location = request.GET.get('location', 'warehouse')
-    cycle = request.GET.get('cycle', 1)
+    cycle_count = request.GET.get('cycle_count', 1)
     is_open = True
     if location == 'warehouse' and report.was_warehouse_count_completed():
         is_open = False
     elif location == 'store' and report.was_store_count_completed():
         is_open = False
 
-    data = report.get_summary(location, cycle)
+    data = report.get_summary(location, cycle_count)
 
     context = {
         'report': report,
         'location': location,
-        'cycle': cycle,
+        'cycle_count': cycle_count,
         'is_open': is_open,
         'data': data
     }
@@ -277,15 +279,94 @@ class InventoryCountCycleDTView(ServerSideDatatableView):
     def get(self, request, *args, **kwargs):
         report = InventoryCountReport.objects.get(pk=kwargs['pk'])
         location = request.GET.get('location', 'warehouse')
-        cycle = request.GET.get('cycle', 1)
-        self.queryset = InventoryCountItem.objects.filter(report=report, location=location, cycle=cycle)
+        cycle_count = request.GET.get('cycle_count', 1)
+        self.queryset = InventoryCountItem.objects.filter(report=report, location=location, cycle=cycle_count)
         self.columns = ['pk', 'product__barcode', 'product__full_description', 'expected_count', 'physical_count', 'variance']
         return super().get(request, *args, **kwargs)
 
 
 @login_required
-def upload_inventory_count(request, pk):
-    pass
+def upload_inventory_count(request, pk, location, cycle):
+    report = InventoryCountReport.objects.get(pk=pk)
+    print(f'location: {location}, cycle: {cycle}')
+
+    # Read the CSV file with different encodings
+    csv_file = request.FILES['file']
+    file_content = csv_file.read()
+    
+    # Try different encodings
+    encodings = ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
+    data_set = None
+    
+    for encoding in encodings:
+        try:
+            data_set = file_content.decode(encoding)
+            break
+        except UnicodeDecodeError:
+            continue
+    
+    if data_set is None:
+        raise ValueError("Failed to decode the file. Please ensure the file is in a supported encoding (UTF-8, Latin-1, Windows-1252, or ISO-8859-1).")
+
+    io_string = io.StringIO(data_set)
+    # Skip header row
+    next(io_string, None)
+    
+    csv_reader = csv.reader(io_string, delimiter=',', quotechar='"')
+    rows = list(csv_reader)
+    
+    # Collect valid product IDs
+    product_ids = [int(row[0]) for row in rows if row and row[0].isdigit()]
+    
+    # Batch fetch products using in_bulk
+    products_map = Product.objects.in_bulk(product_ids)
+    
+    inventory_items = []
+    
+    # loop through the rows
+    for row in rows:
+        # if row[0] is non-numeric, skip it
+        if not row or not row[0].isdigit():
+            continue
+            
+        product_id = int(row[0])
+        product = products_map.get(product_id)
+        
+        if not product:
+            continue
+            
+        # get the expected count
+        if location.lower() == 'store':
+            expected_count = product.store_stocks
+        else:
+            expected_count = product.warehouse_stocks
+            
+        # get the physical count
+        physical_count = int(row[3] or 0)
+        
+        # get the variance
+        variance = physical_count - expected_count
+
+        # prepare the inventory count item
+        inventory_items.append(
+            InventoryCountItem(
+                report=report,
+                location=location,
+                cycle=cycle,
+                product=product,
+                physical_count=physical_count,
+                expected_count=expected_count,
+                variance=variance
+            )
+        )
+        
+    # Bulk create items
+    if inventory_items:
+        InventoryCountItem.objects.bulk_create(inventory_items)
+        report.update_completed_date(location, cycle)
+
+    url = reverse('show_inventory_cycle', args=[pk])
+    return redirect(url + f'?location={location}&cycle_count={cycle}')
 
 
 @login_required

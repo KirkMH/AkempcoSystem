@@ -15,7 +15,7 @@
     <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
     <li class="breadcrumb-item"><a href="{% url 'inventory_count' %}">Inventory Count</a></li>
     <li class="breadcrumb-item"><a href="{% url 'inventory_count_view' report.id %}">Detail</a></li>
-    <li class="breadcrumb-item active">{{ location|title }} - Cycle {{ cycle }}</li>
+    <li class="breadcrumb-item active">{{ location|title }} - Cycle {{ cycle_count }}</li>
 {% endblock breadcrumb %}
 
 {% block main_content %}
@@ -39,51 +39,53 @@
     <div class="card-body">
         <div class="row">
             <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                <h4>{{ location|title }} - Cycle # {{ cycle }}</h4>
+                <h4>{{ location|title }} - Cycle # {{ cycle_count }}</h4>
             </div>
         </div>
         {% if data %}
         <!-- uploaded; display data -->
         <div class="row">
-            <div class="card">
-                <div class="card-header">Summary</div>
+            <div class="card col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                <h5 class="card-header">Summary</h5>
                 <div class="card-body">
-                    <div class="col-lg-3 col-md-3 col-sm-3 col-xs-3">
-                        <div class="card">
-                            <div class="card-body">
-                                <h4>{{ data.count }}</h4>
-                                <p>Product Count</p>
+                    <div class="row">
+                        <div class="col-lg-3 col-md-3 col-sm-3 col-xs-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h4>{{ data.count }}</h4>
+                                    <p>Product Count</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-lg-3 col-md-3 col-sm-3 col-xs-3">
-                        <div class="card">
-                            <div class="card-body">
-                                <h4>{{ data.shortages }}</h4>
-                                <p>Shortages</p>
+                        <div class="col-lg-3 col-md-3 col-sm-3 col-xs-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h4>{{ data.shortages }}</h4>
+                                    <p>Shortages</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-lg-3 col-md-3 col-sm-3 col-xs-3">
-                        <div class="card">
-                            <div class="card-body">
-                                <h4>{{ data.overages }}</h4>
-                                <p>Overages</p>
+                        <div class="col-lg-3 col-md-3 col-sm-3 col-xs-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h4>{{ data.overages }}</h4>
+                                    <p>Overages</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-lg-3 col-md-3 col-sm-3 col-xs-3">
-                        <div class="card">
-                            <div class="card-body">
-                                <h4>{{ data.variance }}</h4>
-                                <p>Total Variance</p>
+                        <div class="col-lg-3 col-md-3 col-sm-3 col-xs-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h4>{{ data.variance }}</h4>
+                                    <p>Total Variance</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 {% if is_open %}
                 <div class="card-footer">
-                    {% if cycle < 3 %}
+                    {% if cycle_count < 3 %}
                     <p>If this count is correct, click the button below to accept the count. The system will then update the inventory levels.</p>
                     <p>Otherwise, you may <a href="{% url 'inventory_count_view' report.id %}">start the next cycle</a>.</p>
                     {% else %}
@@ -113,15 +115,15 @@
         <!-- not uploaded; display download button and upload form -->
         <div class="row mt-2">
             {% if location == "store" %}
-            <a href="{% url 'inventory_count_form_store' %}?cycle={{ cycle }}&report={{ report.id }}" class="btn btn-info"><i class="fa fa-download"></i> Download Inventory Form</a>
+            <a href="{% url 'inventory_count_form_store' %}?cycle={{ cycle_count }}&report={{ report.id }}" class="btn btn-info"><i class="fa fa-download"></i> Download Inventory Form</a>
             {% else %}
-            <a href="{% url 'inventory_count_form_warehouse' %}?cycle={{ cycle }}&report={{ report.id }}" class="btn btn-info"><i class="fa fa-download"></i> Download Inventory Form</a>
+            <a href="{% url 'inventory_count_form_warehouse' %}?cycle={{ cycle_count }}&report={{ report.id }}" class="btn btn-info"><i class="fa fa-download"></i> Download Inventory Form</a>
             {% endif %}
         </div>
         <div class="row mt-4">
             <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
                 <p>Count ready? Upload the file here.</p>
-                <form method="post" enctype="multipart/form-data">
+                <form method="post" enctype="multipart/form-data" action="{% url 'upload_inventory_count' pk=report.id location=location cycle=cycle_count %}">
                     {% csrf_token %}
                     <input type="file" name="file" required>
                     <button type="submit" class="btn btn-primary">Upload</button>
@@ -143,18 +145,18 @@
             $('#dtReport').DataTable({
                 processing: true,
                 serverSide: true,
-                sAjaxSource: "{% url 'inventory_count_cycle_dt' report.id %}?location={{ location }}&cycle={{ cycle }}",
+                sAjaxSource: "{% url 'inventory_count_cycle_dt' report.id %}?location={{ location }}&cycle_count={{ cycle_count }}",
                 columns: [
-                    { data: 0, name: 'barcode' },
-                    { data: 1, name: 'full_description' },
-                    { data: 2, name: 'expected_count' },
-                    { data: 3, name: 'physical_count' },
-                    { data: 4, name: 'variance' },
+                    { data: 1, name: 'barcode' },
+                    { data: 2, name: 'full_description' },
+                    { data: 3, name: 'expected_count' },
+                    { data: 4, name: 'physical_count' },
+                    { data: 5, name: 'variance' },
                 ],
                 buttons: [
                     'csv'
                 ],
-                order: [[0, 'desc']],
+                order: [[2, 'asc']],
             });
         })
     </script>
