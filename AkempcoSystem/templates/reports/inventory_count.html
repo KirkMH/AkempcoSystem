@@ -22,7 +22,9 @@
         <div class="card-header">
             <div class="row">
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                    <a href="{% url 'inventory_count_new' %}" class="btn btn-primary">New</a>
+                    {% if is_last_report_open %}<span title="Please complete the last report before creating a new one">{% endif %}
+                    <a href="{% url 'inventory_count_new' %}" class="btn btn-primary {% if is_last_report_open %}disabled{% endif %}">New</a>
+                    {% if is_last_report_open %}</span>{% endif %}
                 </div>
             </div>
         </div>

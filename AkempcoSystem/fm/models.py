@@ -391,6 +391,14 @@ class Product(models.Model):
         null=True,
         blank=True
     )
+    store_count = models.PositiveIntegerField(
+        _("Store Count"),
+        default=0
+    )
+    warehouse_count = models.PositiveIntegerField(
+        _("Warehouse Count"),
+        default=0
+    )
 
     @property
     def tax_type_description(self):

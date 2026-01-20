@@ -40,4 +40,6 @@ urlpatterns = [
          name='inventory_count_form_store'),
     path('count/warehouse', views.inventory_count_form_warehouse,
          name='inventory_count_form_warehouse'),
+    path('count/<int:pk>/accept', views.accept_inventory_count, name='accept_inventory_count'),
+
 ]

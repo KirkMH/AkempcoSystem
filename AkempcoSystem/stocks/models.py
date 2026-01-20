@@ -623,7 +623,7 @@ class StockAdjustment(models.Model):
         hist.product = self.product
         hist.location = self.location
         hist.quantity = self.quantity
-        hist.remarks = 'Stock adjustment'
+        hist.remarks = 'Stock adjustment: ' + self.reason
         hist.performed_by = self.created_by
         hist.save()
         hist.set_current_balance()

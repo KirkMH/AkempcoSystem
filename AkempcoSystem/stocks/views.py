@@ -277,8 +277,8 @@ class StockAdjustmentCreateView(SuccessMessageMixin, CreateView):
 
     def form_valid(self, form):
         adjustment = form.save(commit=False)
-        form.instance.created_by = self.request.user
-        form.save()
+        adjustment.created_by = self.request.user
+        adjustment.save()
         return super().form_valid(form)
 
 
@@ -309,8 +309,9 @@ def cancel_adjustment(request, pk):
 
 
 def _generate_inventory_csv(location, cycle, report_id):
+    print(f"location: {location}, cycle: {cycle}, report_id: {report_id}")
     # Create the HttpResponse object with the appropriate CSV header.
-    filename = f"{location.lower()}-stocks.csv"
+    filename = f"{location.lower()}-stocks-{cycle}.csv"
     response = HttpResponse(
         content_type='text/csv',
         headers={'Content-Disposition': f'attachment; filename="{filename}"'},
@@ -336,9 +337,10 @@ def _generate_inventory_csv(location, cycle, report_id):
         # For other cycles, fetch products with variances from the previous cycle
         prod_ids = InventoryCountItem.objects.filter(
             cycle=cycle-1, 
-            location=location, 
+            location__icontains=location, 
             report_id=report_id
         ).exclude(variance=0).values_list('product', flat=True)
+        print(f"prod_ids: {prod_ids}")
         
         products_qs = Product.objects.filter(
             pk__in=prod_ids
@@ -366,12 +368,19 @@ def _generate_inventory_csv(location, cycle, report_id):
 @login_required
 def inventory_count_form_store(request):
     cycle = int(request.GET.get('cycle', 1))
-    report_id = request.GET.get('report_id', None)
+    report_id = request.GET.get('report', None)
+    print(f"cycle: {cycle}, report_id: {report_id}")
     return _generate_inventory_csv("Store", cycle, report_id)
 
 
 @login_required
 def inventory_count_form_warehouse(request):
     cycle = int(request.GET.get('cycle', 1))
-    report_id = request.GET.get('report_id', None)
+    report_id = request.GET.get('report', None)
+    print(f"cycle: {cycle}, report_id: {report_id}")
     return _generate_inventory_csv("Warehouse", cycle, report_id)
+
+
+@login_required
+def accept_inventory_count(request, pk):
+    pass

@@ -36,5 +36,5 @@ urlpatterns = [
     path('inventory/<int:pk>/cycle', views.show_inventory_cycle, name='show_inventory_cycle'),
     path('inventory/<int:pk>/cycle/dt', views.InventoryCountCycleDTView.as_view(), name='inventory_count_cycle_dt'),
     path('inventory/<int:pk>/upload/<str:location>/<int:cycle>/', views.upload_inventory_count, name='upload_inventory_count'),
-    path('inventory/<int:pk>/accept', views.accept_inventory_count, name='accept_inventory_count'),
+    path('inventory/<int:pk>/accept/<str:location>/<int:cycle>/', views.accept_inventory_count, name='accept_inventory_count'),
 ]

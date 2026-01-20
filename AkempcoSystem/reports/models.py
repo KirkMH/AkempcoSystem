@@ -224,6 +224,9 @@ class InventoryCountReport(models.Model):
             }        
         return None
 
+    def was_completed(self):
+        return self.overall_status == "Completed"
+
 class InventoryCountItem(models.Model):
     MAX_CYCLES = 3
     LOCATION_CHOICES = (

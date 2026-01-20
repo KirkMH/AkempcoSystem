@@ -55,14 +55,14 @@
                 {%if report.store_cycle_1 %}
                 <a href="{% url 'show_inventory_cycle' report.pk %}?location=store&cycle=1">{{ report.store_cycle_1 }}</a>
                 {%else%}
-                <a href="{% url 'show_inventory_cycle' report.pk %}?location=store&cycle=1" class="btn btn-success">Start</a>
+                <a href="{% url 'show_inventory_cycle' report.pk %}?location=store&cycle=1" class="btn btn-success">Open</a>
                 {%endif%}
             </div>
             <div class="col-lg-5 col-md-5 col-sm-5 col-xs-5">
                 {%if report.warehouse_cycle_1 %}
                 <a href="{% url 'show_inventory_cycle' report.pk %}?location=warehouse&cycle=1">{{ report.warehouse_cycle_1 }}</a>
                 {%else%}
-                <a href="{% url 'show_inventory_cycle' report.pk %}?location=warehouse&cycle=1" class="btn btn-success">Start</a>
+                <a href="{% url 'show_inventory_cycle' report.pk %}?location=warehouse&cycle=1" class="btn btn-success">Open</a>
                 {%endif%}
             </div>
         </div>
@@ -72,7 +72,7 @@
                 {%if report.store_cycle_2 %}
                 <a href="{% url 'show_inventory_cycle' report.pk %}?location=store&cycle=2">{{ report.store_cycle_2 }}</a>
                 {%elif report.last_store_cycle == 1 and not report.was_store_count_completed %}
-                <a href="{% url 'show_inventory_cycle' report.pk %}?location=store&cycle=2" class="btn btn-success">Start</a>
+                <a href="{% url 'show_inventory_cycle' report.pk %}?location=store&cycle=2" class="btn btn-success">Open</a>
                 {%else%}
                 -
                 {%endif%}
@@ -81,7 +81,7 @@
                 {%if report.warehouse_cycle_2 %}
                 <a href="{% url 'show_inventory_cycle' report.pk %}?location=warehouse&cycle=2">{{ report.warehouse_cycle_2 }}</a>
                 {%elif report.last_warehouse_cycle == 1 and not report.was_warehouse_count_completed %}
-                <a href="{% url 'show_inventory_cycle' report.pk %}?location=warehouse&cycle=2" class="btn btn-success">Start</a>
+                <a href="{% url 'show_inventory_cycle' report.pk %}?location=warehouse&cycle=2" class="btn btn-success">Open</a>
                 {%else%}
                 -
                 {%endif%}
@@ -93,7 +93,7 @@
                 {%if report.store_cycle_3 %}
                 <a href="{% url 'show_inventory_cycle' report.pk %}?location=store&cycle=3">{{ report.store_cycle_3 }}</a>
                 {%elif report.last_store_cycle == 2 and not report.was_store_count_completed %}
-                <a href="{% url 'show_inventory_cycle' report.pk %}?location=store&cycle=3" class="btn btn-success">Start</a>
+                <a href="{% url 'show_inventory_cycle' report.pk %}?location=store&cycle=3" class="btn btn-success">Open</a>
                 {%else%}
                 -
                 {%endif%}
@@ -102,7 +102,7 @@
                 {%if report.warehouse_cycle_3 %}
                 <a href="{% url 'show_inventory_cycle' report.pk %}?location=warehouse&cycle=3">{{ report.warehouse_cycle_3 }}</a>
                 {%elif report.last_warehouse_cycle == 2 and not report.was_warehouse_count_completed %}
-                <a href="{% url 'show_inventory_cycle' report.pk %}?location=warehouse&cycle=3" class="btn btn-success">Start</a>
+                <a href="{% url 'show_inventory_cycle' report.pk %}?location=warehouse&cycle=3" class="btn btn-success">Open</a>
                 {%else%}
                 -
                 {%endif%}

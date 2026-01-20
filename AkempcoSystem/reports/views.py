@@ -15,7 +15,7 @@ import io
 from AkempcoSystem.decorators import user_is_allowed
 from admin_area.models import Feature, Store
 from fm.models import Product
-from stocks.models import ProductHistory
+from stocks.models import ProductHistory, StockAdjustment
 from sales.models import ZReading, Sales, ProductSalesReportItem
 from .models import InventoryCountReport
 from .forms import InventoryCountReportForm
@@ -204,7 +204,14 @@ class GenerateProductSalesReport(ServerSideDatatableView):
 
 @login_required
 def inventory_count(request):
-    return render(request, "reports/inventory_count.html")
+    last_report = InventoryCountReport.objects.last()
+    is_last_report_open = False
+    if last_report and not last_report.was_completed():
+        is_last_report_open = True
+    context = {
+        'is_last_report_open': is_last_report_open,
+    }
+    return render(request, "reports/inventory_count.html", context)
 
 
 @method_decorator(login_required, name='dispatch')
@@ -255,7 +262,7 @@ class InventoryCountDetailView(DetailView):
 def show_inventory_cycle(request, pk):
     report = InventoryCountReport.objects.get(pk=pk)
     location = request.GET.get('location', 'warehouse')
-    cycle_count = request.GET.get('cycle_count', 1)
+    cycle_count = request.GET.get('cycle', 1)
     is_open = True
     if location == 'warehouse' and report.was_warehouse_count_completed():
         is_open = False
@@ -271,6 +278,7 @@ def show_inventory_cycle(request, pk):
         'is_open': is_open,
         'data': data
     }
+    print(f"context: {context}")
     return render(request, 'reports/inventory_count_cycle.html', context)
 
 
@@ -280,6 +288,7 @@ class InventoryCountCycleDTView(ServerSideDatatableView):
         report = InventoryCountReport.objects.get(pk=kwargs['pk'])
         location = request.GET.get('location', 'warehouse')
         cycle_count = request.GET.get('cycle_count', 1)
+        print(f"request.GET: {request.GET}, location: {location}, cycle_count: {cycle_count}")
         self.queryset = InventoryCountItem.objects.filter(report=report, location=location, cycle=cycle_count)
         self.columns = ['pk', 'product__barcode', 'product__full_description', 'expected_count', 'physical_count', 'variance']
         return super().get(request, *args, **kwargs)
@@ -322,6 +331,7 @@ def upload_inventory_count(request, pk, location, cycle):
     products_map = Product.objects.in_bulk(product_ids)
     
     inventory_items = []
+    has_no_discrepancy = True
     
     # loop through the rows
     for row in rows:
@@ -343,6 +353,14 @@ def upload_inventory_count(request, pk, location, cycle):
             
         # get the physical count
         physical_count = int(row[3] or 0)
+        if location.lower() == 'store':
+            if cycle > 1 and product.store_count != physical_count:
+                has_no_discrepancy = False
+            product.store_count = physical_count
+        else:
+            if cycle > 1 and product.warehouse_count != physical_count:
+                has_no_discrepancy = False
+            product.warehouse_count = physical_count
         
         # get the variance
         variance = physical_count - expected_count
@@ -365,10 +383,35 @@ def upload_inventory_count(request, pk, location, cycle):
         InventoryCountItem.objects.bulk_create(inventory_items)
         report.update_completed_date(location, cycle)
 
+    # save the products
+    Product.objects.bulk_update(products_map.values(), ['store_count', 'warehouse_count'])
+
+    if (cycle > 1 and has_no_discrepancy) or cycle == 3:
+        # auto-accept
+        return redirect(reverse('accept_inventory_count', args=[pk, location, cycle]))
+    
     url = reverse('show_inventory_cycle', args=[pk])
-    return redirect(url + f'?location={location}&cycle_count={cycle}')
+    return redirect(url + f'?location={location}&cycle={cycle}')
 
 
-@login_required
-def accept_inventory_count(request, pk):
-    pass
+def accept_inventory_count(request, pk, location, cycle):
+    report = InventoryCountReport.objects.get(pk=pk)
+    
+    products = Product.objects.all()
+    if location.lower() == 'store':
+        products = products.exclude(store_stocks=F('store_count'))
+    else:
+        products = products.exclude(warehouse_stocks=F('warehouse_count'))
+
+    for product in products:
+        adjustment = StockAdjustment()
+        adjustment.product = product
+        adjustment.location = 0 if location.lower() == 'warehouse' else 1
+        adjustment.quantity = product.store_stocks - product.store_count if location.lower() == 'store' else product.warehouse_stocks - product.warehouse_count
+        adjustment.reason = 'Inventory count adjustment'
+        adjustment.created_by = request.user
+        adjustment.save()
+        adjustment.perform(request.user)
+
+    url = reverse('show_inventory_cycle', args=[pk])
+    return redirect(url + f'?location={location}&cycle={cycle}')
