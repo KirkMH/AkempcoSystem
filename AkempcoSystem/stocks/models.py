@@ -589,6 +589,7 @@ class StockAdjustment(models.Model):
         stock_source = source.availableStocks.filter(
             product=self.product).order_by('pk')
         qty = self.quantity
+
         if qty > 0:
             # add qty to stocks
             if stock_source:
@@ -596,8 +597,9 @@ class StockAdjustment(models.Model):
             else:
                 stock = source.objects.filter(
                     product=self.product).order_by('-pk').first()
-            stock.remaining_stocks = stock.remaining_stocks + qty
-            stock.save()
+            if stock:
+                stock.remaining_stocks = stock.remaining_stocks + qty
+                stock.save()
 
         else:
             # deduct qty from stock

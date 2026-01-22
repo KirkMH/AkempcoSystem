@@ -91,7 +91,10 @@
                     {% else %}
                     <p>This count is complete. Please click the button below to update the inventory levels.</p>
                     {% endif %}
-                    <button class="btn btn-primary">Accept Count</button>
+                    <form method="post" action="{% url 'accept_inventory_count' pk=report.id location=location cycle=cycle_count %}">
+                        {% csrf_token %}
+                        <button class="btn btn-primary">Accept Count</button>
+                    </form>
                 </div>
                 {% endif %}
             </div>

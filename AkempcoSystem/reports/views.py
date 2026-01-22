@@ -383,12 +383,14 @@ def upload_inventory_count(request, pk, location, cycle):
         InventoryCountItem.objects.bulk_create(inventory_items)
         report.update_completed_date(location, cycle)
 
-    # save the products
-    Product.objects.bulk_update(products_map.values(), ['store_count', 'warehouse_count'])
+        # save the products
+        Product.objects.bulk_update(products_map.values(), ['store_count', 'warehouse_count'])
 
-    if (cycle > 1 and has_no_discrepancy) or cycle == 3:
-        # auto-accept
-        return redirect(reverse('accept_inventory_count', args=[pk, location, cycle]))
+        if (cycle > 1 and has_no_discrepancy) or cycle == 3:
+            # auto-accept
+            return redirect(reverse('accept_inventory_count', args=[pk, location, cycle]))
+    else:
+        messages.warning(request, 'No valid products found in the uploaded file.')
     
     url = reverse('show_inventory_cycle', args=[pk])
     return redirect(url + f'?location={location}&cycle={cycle}')
@@ -400,18 +402,21 @@ def accept_inventory_count(request, pk, location, cycle):
     products = Product.objects.all()
     if location.lower() == 'store':
         products = products.exclude(store_stocks=F('store_count'))
+        report.store_count_status = 'Completed'
     else:
         products = products.exclude(warehouse_stocks=F('warehouse_count'))
+        report.warehouse_count_status = 'Completed'
 
     for product in products:
         adjustment = StockAdjustment()
         adjustment.product = product
         adjustment.location = 0 if location.lower() == 'warehouse' else 1
-        adjustment.quantity = product.store_stocks - product.store_count if location.lower() == 'store' else product.warehouse_stocks - product.warehouse_count
+        adjustment.quantity = product.store_count - product.store_stocks if location.lower() == 'store' else product.warehouse_count - product.warehouse_stocks
         adjustment.reason = 'Inventory count adjustment'
         adjustment.created_by = request.user
         adjustment.save()
         adjustment.perform(request.user)
 
+    report.save()
     url = reverse('show_inventory_cycle', args=[pk])
     return redirect(url + f'?location={location}&cycle={cycle}')
