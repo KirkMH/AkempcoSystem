@@ -333,12 +333,14 @@ class StoreStock(models.Model):
     requisition_voucher = models.ForeignKey(
         RequisitionVoucher,
         verbose_name=_("Source from requisition voucher"),
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        null=True, blank=True   # must only be null from the initial import
     )
     warehouse_stock = models.ForeignKey(
         WarehouseStock,
         verbose_name=_("Source from warehouse stock"),
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        null=True, blank=True   # must only be null from the initial import
     )
     product = models.ForeignKey(
         "fm.Product",

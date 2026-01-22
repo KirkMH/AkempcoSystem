@@ -1,3 +1,4 @@
+from stocks.models import WarehouseStock, StoreStock
 from django.db import models
 from django.contrib import admin
 from django.utils import timezone
@@ -85,7 +86,7 @@ class ImportItem(models.Model):
     def __str__(self):
         return self.full_description
 
-    def do_import(self):
+    def do_import(self, user):
         uom, _ = UnitOfMeasure.objects.get_or_create(
             uom_description=self.uom,
             status='Active'
@@ -139,6 +140,17 @@ class ImportItem(models.Model):
                 price_updated_on=timezone.now(),
                 status='Active'
             )
+        WarehouseStock.objects.create(
+            product=product,
+            received_by=user,
+            quantity=self.warehouse_qty,
+            remaining_stocks=self.warehouse_qty
+        )
+        StoreStock.objects.create(
+            product=product,
+            quantity=self.store_qty,
+            remaining_stocks=self.store_qty
+        )
         product.suppliers.add(*supplier_references)
         product.save()
         return product
@@ -163,7 +175,7 @@ class SupplierItem(models.Model):
     def __str__(self):
         return self.supplier_name
 
-    def do_import(self):
+    def do_import(self, user):
         supplier = Supplier.objects.filter(
             supplier_name=self.supplier_name,
             address=self.address
@@ -226,7 +238,7 @@ class CreditorItem(models.Model):
     def __str__(self):
         return self.name
 
-    def do_import(self):
+    def do_import(self, user):
         creditor = Creditor.objects.filter(
             creditor_type=self.creditor_type,
             id_number=self.id_number,

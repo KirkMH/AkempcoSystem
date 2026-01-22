@@ -101,7 +101,7 @@ def import_form(request):
                         )
 
                     if data:
-                        data.do_import()
+                        data.do_import(request.user)
                 
                 # Update import status to completed
                 import_ref.import_status = 'Completed'
