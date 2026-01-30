@@ -105,7 +105,7 @@ class Creditor(models.Model):
         if records and sales:
             records = records.filter(
                 sales__in=list(sales), payment_mode='Charge')
-            charges = records.aggregate(s_amt=Sum('amount'))['s_amt']
+            charges = records.aggregate(s_amt=Sum('amount'))['s_amt'] or 0
         self.total_charges = charges
 
         sales = Sales.objects.filter(customer=self, status='Completed')
