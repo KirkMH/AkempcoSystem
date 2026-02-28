@@ -101,16 +101,16 @@ class StockAdjustmentAdmin(admin.ModelAdmin):
 admin.site.register(StockAdjustment, StockAdjustmentAdmin)
 
 # ── Entry Adjustment ─────────────────────────────────────────────────────────
-@admin.action(description='Perform selected requests')
-def perform_entry_adj_requests(modeladmin, request, queryset):
-    for req in queryset:
-        req.perform(request.user)
+# @admin.action(description='Perform selected requests')
+# def perform_entry_adj_requests(modeladmin, request, queryset):
+#     for req in queryset:
+#         req.perform(request.user)
 
-class EntryAdjustmentAdmin(admin.ModelAdmin):
-    list_display = ('requested_at', 'transaction_type', 'reference_num', 'adjustment_detail', 'reason', 'requested_by', 'status')
-    actions = [perform_entry_adj_requests]
+# class EntryAdjustmentAdmin(admin.ModelAdmin):
+#     list_display = ('requested_at', 'transaction_type', 'reference_num', 'adjustment_detail', 'reason', 'requested_by', 'status')
+#     actions = [perform_entry_adj_requests]
 
-admin.site.register(EntryAdjustment, EntryAdjustmentAdmin)
+# admin.site.register(EntryAdjustment, EntryAdjustmentAdmin)
 
 # ── Purchase Order (parent) → PO_Product (child) ─────────────────────────────
 class POProductInline(admin.TabularInline):
